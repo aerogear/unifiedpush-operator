@@ -1,0 +1,7 @@
+apiVersion: aerogear.org/v1alpha1
+kind: UnifiedPushServer
+metadata:
+  name: example-unifiedpushserver
+spec:
+  # Add fields here
+  size: 3
