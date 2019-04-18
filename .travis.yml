@@ -17,9 +17,10 @@ jobs:
   include:
   - stage: test
     script:
-    - cd ${HOME}/gopath/src/github.com/integr8ly/${OPERATOR_NAME}
+    - cd ${HOME}/gopath/src/github.com/aerogear/${OPERATOR_NAME}
     - make setup/travis test/unit
   - stage: compile
+    script:
     - make setup/travis
     - operator-sdk build quay.io/aerogear/${OPERATOR_NAME}:$(git rev-parse --short ${TRAVIS_COMMIT})
   - stage: push

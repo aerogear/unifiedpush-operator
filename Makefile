@@ -5,8 +5,8 @@ setup/travis:
 	@echo Installing dep
 	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 	@echo Installing Operator SDK
-	curl -Lo ${GOPATH}/bin/operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v0.0.7/operator-sdk-v0.0.7-x86_64-linux-gnu
-	chmod +x operator-sdk
+	curl -Lo ${GOPATH}/bin/operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v0.7.0/operator-sdk-v0.7.0-x86_64-linux-gnu
+	chmod +x ${GOPATH}/bin/operator-sdk
 	@echo setup complete
 
 .PHONY: code/run
