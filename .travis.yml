@@ -30,5 +30,6 @@ jobs:
     - docker login --password "${QUAY_PASSWORD}" --username "${QUAY_USERNAME}" quay.io
     - make setup/travis
     - operator-sdk build quay.io/aerogear/${OPERATOR_NAME}:${TAG}
+    - docker push quay.io/aerogear/${OPERATOR_NAME}:${TAG}
     - docker tag quay.io/aerogear/${OPERATOR_NAME}:${TAG} quay.io/aerogear/${OPERATOR_NAME}:${BRANCH}
     - docker push quay.io/aerogear/${OPERATOR_NAME}:${BRANCH}
