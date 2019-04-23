@@ -129,7 +129,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	return reconcile.Result{}, nil
 }
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
 func newPodForCR(cr *aerogearv1alpha1.UnifiedPushServer) *corev1.Pod {
 	labels := map[string]string{
 		"app": cr.Name,
@@ -143,8 +142,8 @@ func newPodForCR(cr *aerogearv1alpha1.UnifiedPushServer) *corev1.Pod {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:    "busybox",
-					Image:   "busybox",
+					Name:    "ups",
+					Image:   cr.Spec.Image,
 					Command: []string{"sleep", "3600"},
 				},
 			},

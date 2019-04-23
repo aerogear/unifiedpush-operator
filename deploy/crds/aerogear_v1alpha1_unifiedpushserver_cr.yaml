@@ -3,5 +3,4 @@ kind: UnifiedPushServer
 metadata:
   name: example-unifiedpushserver
 spec:
-  # Add fields here
-  size: 3
+  image: quay.io/aerogear/unifiedpush-operator:master
