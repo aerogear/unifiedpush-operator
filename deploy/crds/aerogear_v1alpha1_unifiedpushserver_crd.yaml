@@ -9,6 +9,8 @@ spec:
     listKind: UnifiedPushServerList
     plural: unifiedpushservers
     singular: unifiedpushserver
+    shortNames:
+      - ups
   scope: Namespaced
   subresources:
     status: {}
@@ -28,7 +30,11 @@ spec:
         metadata:
           type: object
         spec:
-          type: object
+          properties:
+            image:
+              description: 'Image specifies the UnifiedPushServer container image
+                to be deployed. E.g. quay.io/aerogear/unifiedpush-operator:master'
+              type: string
         status:
           type: object
   version: v1alpha1
