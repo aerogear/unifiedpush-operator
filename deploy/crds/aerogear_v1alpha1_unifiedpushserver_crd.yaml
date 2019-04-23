@@ -9,6 +9,8 @@ spec:
     listKind: UnifiedPushServerList
     plural: unifiedpushservers
     singular: unifiedpushserver
+    shortNames:
+      - ups
   scope: Namespaced
   subresources:
     status: {}
