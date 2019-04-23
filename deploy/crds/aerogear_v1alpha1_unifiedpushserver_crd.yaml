@@ -30,11 +30,7 @@ spec:
         metadata:
           type: object
         spec:
-          properties:
-            image:
-              description: 'Image specifies the UnifiedPushServer container image
-                to be deployed. E.g. quay.io/aerogear/unifiedpush-operator:master'
-              type: string
+          type: object
         status:
           type: object
   version: v1alpha1
