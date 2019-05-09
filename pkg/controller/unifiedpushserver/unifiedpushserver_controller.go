@@ -4,10 +4,10 @@ import (
 	"context"
 
 	aerogearv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/aerogear/v1alpha1"
+	routev1 "github.com/openshift/api/route/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -93,8 +93,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to secondary resource RoleBinding and requeue the owner UnifiedPushServer
-	err = c.Watch(&source.Kind{Type: &rbacv1.RoleBinding{}}, &handler.EnqueueRequestForOwner{
+	// Watch for changes to secondary resource Route and requeue the owner UnifiedPushServer
+	err = c.Watch(&source.Kind{Type: &routev1.Route{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &aerogearv1alpha1.UnifiedPushServer{},
 	})
@@ -227,26 +227,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, err
 	}
 
-	roleBinding := newOauthProxySaRoleBinding(instance)
-
-	// Set UnifiedPushServer instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, roleBinding, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Check if this ServiceAccount already exists
-	foundRoleBinding := &rbacv1.RoleBinding{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: roleBinding.Name, Namespace: roleBinding.Namespace}, foundRoleBinding)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new RoleBinding", "RoleBinding.Namespace", roleBinding.Namespace, "RoleBinding.Name", roleBinding.Name)
-		err = r.client.Create(context.TODO(), roleBinding)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	} else if err != nil {
-		return reconcile.Result{}, err
-	}
-
 	postgresqlSecret, err := newPostgresqlSecret(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -286,6 +266,29 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Service", "Service.Namespace", oauthProxyService.Namespace, "Service.Name", oauthProxyService.Name)
 		err = r.client.Create(context.TODO(), oauthProxyService)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	oauthProxyRoute, err := newOauthProxyRoute(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Set UnifiedPushServer instance as the owner and controller
+	if err := controllerutil.SetControllerReference(instance, oauthProxyRoute, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this Route already exists
+	foundOauthProxyRoute := &routev1.Route{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: oauthProxyRoute.Name, Namespace: oauthProxyRoute.Namespace}, foundOauthProxyRoute)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a new Route", "Route.Namespace", oauthProxyRoute.Namespace, "Route.Name", oauthProxyRoute.Name)
+		err = r.client.Create(context.TODO(), oauthProxyRoute)
 		if err != nil {
 			return reconcile.Result{}, err
 		}

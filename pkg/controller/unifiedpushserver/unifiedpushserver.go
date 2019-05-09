@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	aerogearv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/aerogear/v1alpha1"
+	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -19,25 +19,6 @@ func newOauthProxyServiceAccount(cr *aerogearv1alpha1.UnifiedPushServer) *corev1
 			Annotations: map[string]string{
 				"serviceaccounts.openshift.io/oauth-redirectreference.ups": fmt.Sprintf("{\"kind\":\"OAuthRedirectReference\",\"apiVersion\":\"v1\",\"reference\":{\"kind\":\"Route\",\"name\":\"%s-unifiedpush-proxy\"}}", cr.Name),
 			},
-		},
-	}
-}
-
-func newOauthProxySaRoleBinding(cr *aerogearv1alpha1.UnifiedPushServer) *rbacv1.RoleBinding {
-	return &rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name,
-			Namespace: cr.Namespace,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind: "ServiceAccount",
-				Name: cr.Name,
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			Kind: "Role",
-			Name: "admin",
 		},
 	}
 }
@@ -60,6 +41,22 @@ func newOauthProxyService(cr *aerogearv1alpha1.UnifiedPushServer) (*corev1.Servi
 						IntVal: 4180,
 					},
 				},
+			},
+		},
+	}, nil
+}
+
+func newOauthProxyRoute(cr *aerogearv1alpha1.UnifiedPushServer) (*routev1.Route, error) {
+	return &routev1.Route{
+		ObjectMeta: objectMeta(cr, "unifiedpush-proxy"),
+		Spec: routev1.RouteSpec{
+			To: routev1.RouteTargetReference{
+				Kind: "Service",
+				Name: fmt.Sprintf("%s-%s", cr.Name, "unifiedpush-proxy"),
+			},
+			TLS: &routev1.TLSConfig{
+				Termination:                   routev1.TLSTerminationEdge,
+				InsecureEdgeTerminationPolicy: routev1.InsecureEdgeTerminationPolicyNone,
 			},
 		},
 	}, nil
@@ -170,7 +167,6 @@ func newUnifiedPushServerDeployment(cr *aerogearv1alpha1.UnifiedPushServer) *app
 								"--provider=openshift",
 								fmt.Sprintf("--openshift-service-account=%s", cr.Name),
 								"--upstream=http://localhost:8080",
-								fmt.Sprintf("--openshift-sar={\"namespace\":%q,\"resource\":\"deployments\",\"name\":\"%s\",\"verb\":\"update\"}", cr.Namespace, cr.Name),
 								"--http-address=0.0.0.0:4180",
 								"--skip-auth-regex=/rest/sender,/rest/registry/device,/rest/prometheus/metrics,/rest/auth/config",
 								"--https-address=",
