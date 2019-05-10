@@ -159,6 +159,19 @@ func newUnifiedPushServerDeployment(cr *aerogearv1alpha1.UnifiedPushServer) (*ap
 								InitialDelaySeconds: 15,
 								TimeoutSeconds:      2,
 							},
+							LivenessProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/rest/applications",
+										Port: intstr.IntOrString{
+											Type:   intstr.Int,
+											IntVal: 8080,
+										},
+									},
+								},
+								InitialDelaySeconds: 60,
+								TimeoutSeconds:      2,
+							},
 						},
 						{
 							Name:            "ups-oauth-proxy",
