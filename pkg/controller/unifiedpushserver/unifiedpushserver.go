@@ -9,9 +9,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/pkg/errors"
 )
 
-func newOauthProxyServiceAccount(cr *aerogearv1alpha1.UnifiedPushServer) *corev1.ServiceAccount {
+func newUnifiedPushServiceAccount(cr *aerogearv1alpha1.UnifiedPushServer) (*corev1.ServiceAccount, error) {
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
@@ -20,7 +22,7 @@ func newOauthProxyServiceAccount(cr *aerogearv1alpha1.UnifiedPushServer) *corev1
 				"serviceaccounts.openshift.io/oauth-redirectreference.ups": fmt.Sprintf("{\"kind\":\"OAuthRedirectReference\",\"apiVersion\":\"v1\",\"reference\":{\"kind\":\"Route\",\"name\":\"%s-unifiedpush-proxy\"}}", cr.Name),
 			},
 		},
-	}
+	}, nil
 }
 
 func newOauthProxyService(cr *aerogearv1alpha1.UnifiedPushServer) (*corev1.Service, error) {
@@ -62,11 +64,17 @@ func newOauthProxyRoute(cr *aerogearv1alpha1.UnifiedPushServer) (*routev1.Route,
 	}, nil
 }
 
-func newUnifiedPushServerDeployment(cr *aerogearv1alpha1.UnifiedPushServer) *appsv1.Deployment {
+func newUnifiedPushServerDeployment(cr *aerogearv1alpha1.UnifiedPushServer) (*appsv1.Deployment, error) {
 	labels := map[string]string{
 		"app":     cr.Name,
 		"service": "ups",
 	}
+
+	cookieSecret, err := generatePassword()
+	if err != nil {
+		return nil, errors.Wrap(err, "error generating cookie secret")
+	}
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
@@ -170,14 +178,14 @@ func newUnifiedPushServerDeployment(cr *aerogearv1alpha1.UnifiedPushServer) *app
 								"--http-address=0.0.0.0:4180",
 								"--skip-auth-regex=/rest/sender,/rest/registry/device,/rest/prometheus/metrics,/rest/auth/config",
 								"--https-address=",
-								"--cookie-secret=SECRET",
+								fmt.Sprintf("--cookie-secret=%s", cookieSecret),
 							},
 						},
 					},
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func newUnifiedPushServerService(cr *aerogearv1alpha1.UnifiedPushServer) (*corev1.Service, error) {

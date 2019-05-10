@@ -51,5 +51,5 @@ func generatePassword() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "error generating password")
 	}
-	return strings.Replace(generatedPassword.String(), "-", "", 10), nil
+	return strings.Replace(generatedPassword.String(), "-", "", -1), nil
 }

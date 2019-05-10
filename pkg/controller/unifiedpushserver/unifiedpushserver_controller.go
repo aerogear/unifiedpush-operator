@@ -207,7 +207,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, err
 	}
 
-	serviceAccount := newOauthProxyServiceAccount(instance)
+	serviceAccount, err := newUnifiedPushServiceAccount(instance)
 
 	// Set UnifiedPushServer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, serviceAccount, r.scheme); err != nil {
@@ -297,7 +297,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	}
 
 	// Define a new Deployment object
-	unifiedpushDeployment := newUnifiedPushServerDeployment(instance)
+	unifiedpushDeployment, err := newUnifiedPushServerDeployment(instance)
 
 	if err := controllerutil.SetControllerReference(instance, unifiedpushDeployment, r.scheme); err != nil {
 		return reconcile.Result{}, err
