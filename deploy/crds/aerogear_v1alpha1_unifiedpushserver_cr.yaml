@@ -2,5 +2,3 @@ apiVersion: aerogear.org/v1alpha1
 kind: UnifiedPushServer
 metadata:
   name: example-unifiedpushserver
-spec:
-  image: quay.io/aerogear/unifiedpush-operator:master
