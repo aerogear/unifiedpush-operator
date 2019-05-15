@@ -187,6 +187,26 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 	} else if err != nil {
 		return reconcile.Result{}, err
+	} else {
+		desiredImage := postgresql.image()
+
+		containerSpec := findContainerSpec(foundPostgresqlDeployment, POSTGRES_CONTAINER_NAME)
+		if containerSpec == nil {
+			reqLogger.Info("Skipping image reconcile: Unable to find container spec in deployment", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name, "ContainerSpec", POSTGRES_CONTAINER_NAME)
+		} else if containerSpec.Image != desiredImage {
+			reqLogger.Info("Container spec in deployment is using a different image. Going to update it now.", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name, "ContainerSpec", POSTGRES_CONTAINER_NAME, "ExistingImage", containerSpec.Image, "DesiredImage", desiredImage)
+
+			// update
+			updateContainerSpecImage(foundPostgresqlDeployment, POSTGRES_CONTAINER_NAME, desiredImage)
+
+			// enqueue
+			err = r.client.Update(context.TODO(), foundPostgresqlDeployment)
+			if err != nil {
+				reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name)
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{Requeue: true}, nil
+		}
 	}
 
 	postgresqlService, err := newPostgresqlService(instance)
@@ -322,6 +342,45 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
+	} else {
+		desiredUnifiedPushImage := unifiedpush.image()
+		desiredProxyImage := proxy.image()
+
+		unifiedPushContainerSpec := findContainerSpec(foundUnifiedpushDeployment, UPS_CONTAINER_NAME)
+		if unifiedPushContainerSpec == nil {
+			reqLogger.Info("Skipping image reconcile: Unable to find container spec in deployment", "Deployment.Namespace", foundUnifiedpushDeployment.Namespace, "Deployment.Name", foundUnifiedpushDeployment.Name, "ContainerSpec", UPS_CONTAINER_NAME)
+		} else if unifiedPushContainerSpec.Image != desiredUnifiedPushImage {
+			reqLogger.Info("Container spec in deployment is using a different image. Going to update it now.", "Deployment.Namespace", foundUnifiedpushDeployment.Namespace, "Deployment.Name", foundUnifiedpushDeployment.Name, "ContainerSpec", UPS_CONTAINER_NAME, "ExistingImage", unifiedPushContainerSpec.Image, "DesiredImage", desiredUnifiedPushImage)
+
+			// update
+			updateContainerSpecImage(foundUnifiedpushDeployment, UPS_CONTAINER_NAME, desiredUnifiedPushImage)
+
+			// enqueue
+			err = r.client.Update(context.TODO(), foundUnifiedpushDeployment)
+			if err != nil {
+				reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundUnifiedpushDeployment.Namespace, "Deployment.Name", foundUnifiedpushDeployment.Name)
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{Requeue: true}, nil
+		}
+
+		proxyContainerSpec := findContainerSpec(foundUnifiedpushDeployment, OAUTH_PROXY_CONTAINER_NAME)
+		if proxyContainerSpec == nil {
+			reqLogger.Info("Skipping image reconcile: Unable to find container spec in deployment", "Deployment.Namespace", foundUnifiedpushDeployment.Namespace, "Deployment.Name", foundUnifiedpushDeployment.Name, "ContainerSpec", OAUTH_PROXY_CONTAINER_NAME)
+		} else if proxyContainerSpec.Image != desiredProxyImage {
+			reqLogger.Info("Container spec in deployment is using a different image. Going to update it now.", "Deployment.Namespace", foundUnifiedpushDeployment.Namespace, "Deployment.Name", foundUnifiedpushDeployment.Name, "ContainerSpec", OAUTH_PROXY_CONTAINER_NAME, "ExistingImage", proxyContainerSpec.Image, "DesiredImage", desiredProxyImage)
+
+			// update
+			updateContainerSpecImage(foundUnifiedpushDeployment, OAUTH_PROXY_CONTAINER_NAME, desiredProxyImage)
+
+			// enqueue
+			err = r.client.Update(context.TODO(), foundUnifiedpushDeployment)
+			if err != nil {
+				reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundUnifiedpushDeployment.Namespace, "Deployment.Name", foundUnifiedpushDeployment.Name)
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{Requeue: true}, nil
+		}
 	}
 
 	if foundUnifiedpushDeployment.Status.ReadyReplicas > 0 && instance.Status.Phase != aerogearv1alpha1.PhaseComplete {
