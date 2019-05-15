@@ -93,7 +93,7 @@ func newUnifiedPushServerDeployment(cr *aerogearv1alpha1.UnifiedPushServer) (*ap
 					ServiceAccountName: cr.Name,
 					Containers: []corev1.Container{
 						{
-							Name:            "ups",
+							Name:            UPS_CONTAINER_NAME,
 							Image:           unifiedpush.image(),
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
@@ -141,7 +141,7 @@ func newUnifiedPushServerDeployment(cr *aerogearv1alpha1.UnifiedPushServer) (*ap
 							},
 							Ports: []corev1.ContainerPort{
 								{
-									Name:          "ups",
+									Name:          UPS_CONTAINER_NAME,
 									Protocol:      corev1.ProtocolTCP,
 									ContainerPort: 8080,
 								},
@@ -174,7 +174,7 @@ func newUnifiedPushServerDeployment(cr *aerogearv1alpha1.UnifiedPushServer) (*ap
 							},
 						},
 						{
-							Name:            "ups-oauth-proxy",
+							Name:            OAUTH_PROXY_CONTAINER_NAME,
 							Image:           proxy.image(),
 							ImagePullPolicy: corev1.PullAlways,
 							Ports: []corev1.ContainerPort{

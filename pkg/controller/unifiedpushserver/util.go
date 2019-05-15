@@ -2,6 +2,8 @@ package unifiedpushserver
 
 import (
 	"fmt"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"os"
 	"strings"
 
@@ -52,4 +54,30 @@ func generatePassword() (string, error) {
 		return "", errors.Wrap(err, "error generating password")
 	}
 	return strings.Replace(generatedPassword.String(), "-", "", -1), nil
+}
+
+func findContainerSpec(deployment *appsv1.Deployment, name string) *corev1.Container {
+	if deployment == nil || &deployment.Spec == nil || &deployment.Spec.Template == nil || &deployment.Spec.Template.Spec == nil || &deployment.Spec.Template.Spec.Containers == nil || len(deployment.Spec.Template.Spec.Containers) == 0 {
+		return nil
+	}
+
+	for _, spec := range deployment.Spec.Template.Spec.Containers {
+		if spec.Name == name {
+			return &spec
+		}
+	}
+
+	return nil
+}
+
+func updateContainerSpecImage(deployment *appsv1.Deployment, name string, image string) {
+	if deployment == nil || &deployment.Spec == nil || &deployment.Spec.Template == nil || &deployment.Spec.Template.Spec == nil || &deployment.Spec.Template.Spec.Containers == nil || len(deployment.Spec.Template.Spec.Containers) == 0 {
+		return
+	}
+
+	for idx, spec := range deployment.Spec.Template.Spec.Containers {
+		if spec.Name == name {
+			deployment.Spec.Template.Spec.Containers[idx].Image = image
+		}
+	}
 }

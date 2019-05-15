@@ -68,7 +68,7 @@ func newPostgresqlDeployment(cr *aerogearv1alpha1.UnifiedPushServer) (*appsv1.De
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:            "postgresql",
+							Name:            POSTGRES_CONTAINER_NAME,
 							Image:           postgresql.image(),
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
@@ -108,7 +108,7 @@ func newPostgresqlDeployment(cr *aerogearv1alpha1.UnifiedPushServer) (*appsv1.De
 							},
 							Ports: []corev1.ContainerPort{
 								{
-									Name:          "postgresql",
+									Name:          POSTGRES_CONTAINER_NAME,
 									Protocol:      corev1.ProtocolTCP,
 									ContainerPort: 5432,
 								},
