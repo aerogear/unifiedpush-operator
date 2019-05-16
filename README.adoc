@@ -1,5 +1,18 @@
 = UnifiedPush Operator
 
+== Metrics
+
+The application-monitoring stack provisioned by the
+https://github.com/integr8ly/application-monitoring-operator[application-monitoring-operator]
+can be used to gather metrics from the operator here.  Once you have
+provisioned that (or the ServiceMonitor CRD at a minimum), you can run
+the following commands to configure it:
+
+```
+kubectl label namespace unifiedpush monitoring-key=middleware
+kubectl create -n unifiedpush -f deploy/service_monitor.yaml
+```
+
 == Development
 
 === Prerequisites
@@ -7,7 +20,7 @@
 - Access to an OpenShift cluster with admin privileges to be able to create Roles.
   https://github.com/minishift/minishift[Minishift] is suggested.
 
-- Go, Make, dep, operator-sdk, oc, kubectl (kubectl can just be a symlink to oc)
+- Go, Make, dep, operator-sdk, kubectl (kubectl can just be a symlink to oc)
 
 === Running the operator
 
@@ -32,7 +45,7 @@ kubectl apply -f deploy/crds/aerogear_v1alpha1_unifiedpushserver_cr.yaml
 4. Watch the status of your UPS instance provisioning (optional):
 
 ```
-watch -n1 "oc get po && echo '' && oc get ups -o yaml"
+watch -n1 "kubectl get po && echo '' && kubectl get ups -o yaml"
 ```
 
 5. When finished, clean up:
