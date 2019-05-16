@@ -29,11 +29,12 @@ test/unit:
 
 .PHONY: cluster/prepare
 cluster/prepare:
-	-oc new-project $(NAMESPACE)
-	-kubectl create -f deploy/service_account.yaml
-	-kubectl create -f deploy/role.yaml
-	-kubectl create -f deploy/role_binding.yaml
-	-kubectl create -f deploy/crds/aerogear_v1alpha1_unifiedpushserver_crd.yaml
+	-kubectl create namespace $(NAMESPACE)
+	-kubectl label namespace $(NAMESPACE) monitoring-key=middleware
+	-kubectl create -n $(NAMESPACE) -f deploy/service_account.yaml
+	-kubectl create -n $(NAMESPACE) -f deploy/role.yaml
+	-kubectl create -n $(NAMESPACE) -f deploy/role_binding.yaml
+	-kubectl create -n $(NAMESPACE) -f deploy/crds/aerogear_v1alpha1_unifiedpushserver_crd.yaml
 
 .PHONY: cluster/clean
 cluster/clean:
