@@ -138,6 +138,11 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, err
 	}
 
+	if instance.Status.Phase == aerogearv1alpha1.PhaseEmpty {
+		instance.Status.Phase = aerogearv1alpha1.PhaseProvision
+		r.client.Status().Update(context.TODO(), instance)
+	}
+
 	persistentVolumeClaim, err := newPostgresqlPersistentVolumeClaim(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -317,6 +322,11 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	if foundUnifiedpushDeployment.Status.ReadyReplicas > 0 && instance.Status.Phase != aerogearv1alpha1.PhaseComplete {
+		instance.Status.Phase = aerogearv1alpha1.PhaseComplete
+		r.client.Status().Update(context.TODO(), instance)
 	}
 
 	// Resources already exist - don't requeue

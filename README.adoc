@@ -1,2 +1,42 @@
 = UnifiedPush Operator
 
+== Development
+
+=== Prerequisites
+
+- Access to an OpenShift cluster with admin privileges to be able to create Roles.
+  https://github.com/minishift/minishift[Minishift] is suggested.
+
+- Go, Make, dep, operator-sdk, oc, kubectl (kubectl can just be a symlink to oc)
+
+=== Running the operator
+
+1. Prepare the operator project:
+
+```
+make cluster/prepare
+```
+
+2. Run the operator (locally, not in OpenShift):
+
+```
+make code/run
+```
+
+3. Create a UPS instance (in another terminal):
+
+```
+kubectl apply -f deploy/crds/aerogear_v1alpha1_unifiedpushserver_cr.yaml
+```
+
+4. Watch the status of your UPS instance provisioning (optional):
+
+```
+watch -n1 "oc get po && echo '' && oc get ups -o yaml"
+```
+
+5. When finished, clean up:
+
+```
+make cluster/clean
+```

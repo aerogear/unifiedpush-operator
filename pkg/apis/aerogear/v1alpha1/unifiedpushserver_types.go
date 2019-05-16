@@ -18,9 +18,7 @@ type UnifiedPushServerSpec struct {
 // UnifiedPushServerStatus defines the observed state of UnifiedPushServer
 // +k8s:openapi-gen=true
 type UnifiedPushServerStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
+	Phase StatusPhase `json:"phase"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -43,6 +41,14 @@ type UnifiedPushServerList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []UnifiedPushServer `json:"items"`
 }
+
+type StatusPhase string
+
+var (
+	PhaseEmpty     StatusPhase = ""
+	PhaseComplete  StatusPhase = "Complete"
+	PhaseProvision StatusPhase = "Provisioning"
+)
 
 func init() {
 	SchemeBuilder.Register(&UnifiedPushServer{}, &UnifiedPushServerList{})
