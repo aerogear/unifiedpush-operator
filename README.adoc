@@ -1,55 +1,169 @@
+:toc:
+:toc-placement!:
+
+// gEmoji for admonitions, see
+// https://gist.github.com/dcode/0cfbf2699a1fe9b46ff04c41721dda74#admonitions
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+
+// Links (alphabetical order)
+:apache_license: http://www.apache.org/licenses/LICENSE-2.0[Apache License, Version 2.0]
+:application_monitoring_operator: https://github.com/integr8ly/application-monitoring-operator[application-monitoring-operator]
+:code_of_conduct: link:CODE_OF_CONDUCT.md[Contributor Code of Conduct]
+:export_policy: https://aerogear.org/legal/export.html[AeroGear Export Policy]
+:aerogear_freenode: irc://irc.freenode.net/aerogear[#aerogear on FreeNode IRC]
+:aerogear_jira: https://issues.jboss.org/projects/AEROGEAR/issues[AeroGear on JBoss Jira]
+:aerogear_matrix: https://matrix.to/#/!IipcvbGVqkiTUQauSC:matrix.org[#aerogear:matrix.org on Matrix]
+:mailing_list: https://groups.google.com/forum/#!forum/aerogear[Google Groups Mailing List]
+:minishift: https://github.com/minishift/minishift[Minishift]
+:rh_product_security: https://access.redhat.com/security/team/contact[Red Hat Product Security team]
+
 = UnifiedPush Operator
 
-== Metrics
+The UnifiedPush Operator for Kubernetes provides an easy way to
+install and manage an AeroGear UnifiedPush Server on Kubernetes.
+
+toc::[]
+
+== Installation
+
+As a user with admin permissions, you can easily install the
+unifiedpush-operator in your OpenShift cluster as follows:
+
+....
+kubectl create namespace unifiedpush
+kubectl create -n unifiedpush -f deploy/service_account.yaml
+kubectl create -n unifiedpush -f deploy/role.yaml
+kubectl create -n unifiedpush -f deploy/role_binding.yaml
+kubectl create -n unifiedpush -f deploy/crds/aerogear_v1alpha1_unifiedpushserver_crd.yaml
+kubectl create -n unifiedpush -f deploy/operator.yaml
+....
+
+== Configuration
+
+=== Deploying custom images
+
+There are default images that this operator will use for the
+containers in the deployed pods. These can be configured with the use
+of environment variables. The following table shows the available
+environment variable names, along with their default values:
+
+.Environment Variables
+|===
+|Name |Default Value
+
+|UNIFIEDPUSH_IMAGE
+|docker.io/aerogear/unifiedpush-wildfly-plain:2.2.1.Final
+
+|POSTGRESQL_IMAGE
+|docker.io/centos/postgresql-96-centos7:9.6
+
+|OAUTH_PROXY_IMAGE
+|docker.io/openshift/oauth-proxy:v1.1.0
+|===
+
+CAUTION: Re-deploying this operator with customized images will cause
+_all_ instances owned by the operator to be updated.
+
+=== Metrics
 
 The application-monitoring stack provisioned by the
-https://github.com/integr8ly/application-monitoring-operator[application-monitoring-operator]
-can be used to gather metrics from the operator here.  Once you have
-provisioned that (or the ServiceMonitor CRD at a minimum), you can run
-the following commands to configure it:
+{application_monitoring_operator} can be used to gather metrics from
+the operator here.  Once you have provisioned that (or the
+ServiceMonitor CRD at a minimum), you can run the following commands
+to configure it:
 
-```
+....
 kubectl label namespace unifiedpush monitoring-key=middleware
 kubectl create -n unifiedpush -f deploy/service_monitor.yaml
-```
+....
+
+== Getting help
+
+All AeroGear projects use the same communication channels.
+
+*Issue tracker*
+
+Our main issue tracker is {aerogear_jira}. Issues may also be created
+here on GitHub for individual projects.
+
+*Chat*
+
+For synchronous real-time chat, we use Matrix/IRC. These are bridged
+together, so you can choose which is more convenient for you:
+{aerogear_matrix} or {aerogear_freenode}.
+
+*Discussion list*
+
+For important conversations, we discuss asynchronously on this
+{mailing_list}. This is great for discussions that should involve many
+people in different time zones, and allows us to easily link back to
+conversations in future.
+
+== Limitations
+
+// https://issues.jboss.org/browse/AEROGEAR-9162
+[NOTE]
+====
+This operator currently only works on OpenShift. This is because it
+provisions a Route, and also relies on the fact that OpenShift
+provides an OAuth server. In future we aim to make it work on vanilla
+Kubernetes also.
+====
 
 == Development
 
 === Prerequisites
 
-- Access to an OpenShift cluster with admin privileges to be able to create Roles.
-  https://github.com/minishift/minishift[Minishift] is suggested.
+- Access to an OpenShift cluster with admin privileges to be able to
+  create Roles.  {minishift} is suggested.
 
-- Go, Make, dep, operator-sdk, kubectl (kubectl can just be a symlink to oc)
+- Go, Make, dep, operator-sdk, kubectl (kubectl can just be a symlink
+  to oc)
 
 === Running the operator
 
 1. Prepare the operator project:
 
-```
+....
 make cluster/prepare
-```
+....
 
 2. Run the operator (locally, not in OpenShift):
 
-```
+....
 make code/run
-```
+....
 
 3. Create a UPS instance (in another terminal):
 
-```
+....
 kubectl apply -f deploy/crds/aerogear_v1alpha1_unifiedpushserver_cr.yaml
-```
+....
 
 4. Watch the status of your UPS instance provisioning (optional):
 
-```
+....
 watch -n1 "kubectl get po && echo '' && kubectl get ups -o yaml"
-```
+....
 
 5. When finished, clean up:
 
-```
+....
 make cluster/clean
-```
+....
+
+== Security Response
+
+If you've found a security issue that you'd like to disclose
+confidentially please contact the {rh_product_security}.
+
+== Legal
+
+The UnifiedPush Operator is licensed under the {apache_license}
+License, and is subject to the {export_policy}.
