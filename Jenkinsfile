@@ -33,14 +33,22 @@ pipeline {
                 enforceTrustedApproval('aerogear')
             }
             post{
-                success{
-                    echo "Approved"
-                }
                 failure{
                     echo "====++++'Trust' execution failed++++===="
                     echo "You are not authorized to run this job"
                 }
         
+            }
+        }
+
+        stage("Create an OpenShift project") {
+            steps {
+                script {
+                    openshift.withCluster('operators-test-cluster') {
+                        generateKubeConfig()
+                        openshift.newProject(env.OPENSHIFT_PROJECT_NAME)
+                    }
+                }
             }
         }
 
@@ -103,8 +111,6 @@ pipeline {
                             }
                             """
                             openshift.withCluster('operators-test-cluster') {
-                                generateKubeConfig()
-                                openshift.newProject(env.OPENSHIFT_PROJECT_NAME)
                                 openshift.withProject(env.OPENSHIFT_PROJECT_NAME) {
                                     openshift.create(
                                         "secret", "docker-registry", "quay-bot",
@@ -127,13 +133,6 @@ pipeline {
             post{
                 failure{
                     echo "====++++'Build & push container image' execution failed++++===="
-                    script {
-                        openshift.withCluster('operators-test-cluster') {
-                            openshift.withProject(env.OPENSHIFT_PROJECT_NAME) {
-                                openshift.delete("project", env.OPENSHIFT_PROJECT_NAME)
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -151,11 +150,6 @@ pipeline {
                 failure{
                     echo "====++++'Build test binary' execution failed++++===="
                     echo "Try to run 'make test/compile' locally and make sure it pass"
-                    script {
-                        openshift.withCluster('operators-test-cluster') {
-                            openshift.delete("project", env.OPENSHIFT_PROJECT_NAME)
-                        }
-                    }
                 }
             }
         }
@@ -187,11 +181,6 @@ pipeline {
             post{
                 failure{
                     echo "====++++Build operator-test image execution failed++++===="
-                    script {
-                        openshift.withCluster('operators-test-cluster') {
-                            openshift.delete("project", env.OPENSHIFT_PROJECT_NAME)
-                        }
-                    }
                 }
         
             }
@@ -212,15 +201,17 @@ pipeline {
                 }
             }
             post{
-                always{
-                    script {
-                        openshift.withCluster('operators-test-cluster') {
-                            openshift.delete("project", env.OPENSHIFT_PROJECT_NAME)
-                        }
-                    }
-                }
                 failure{
                     echo "====++++Test operator execution failed++++===="
+                }
+            }
+        }
+    }
+    post {
+        always{
+            script {
+                openshift.withCluster('operators-test-cluster') {
+                    openshift.delete("project", env.OPENSHIFT_PROJECT_NAME)
                 }
             }
         }
