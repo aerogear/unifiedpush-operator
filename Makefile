@@ -31,7 +31,7 @@ code/fix:
 .PHONY: test/unit
 test/unit:
 	@echo Running tests:
-	go test -v -race -cover ./pkg/...
+	CGO_ENABLED=1 go test -v -race -cover ./pkg/...
 
 .PHONY: test/compile
 test/compile:
