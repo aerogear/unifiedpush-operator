@@ -1,4 +1,6 @@
 NAMESPACE=unifiedpush
+CODE_COMPILE_OUTPUT = build/_output/bin/unifiedpush-operator
+TEST_COMPILE_OUTPUT = build/_output/bin/unifiedpush-operator-test
 
 .PHONY: setup/travis
 setup/travis:
@@ -8,6 +10,10 @@ setup/travis:
 	curl -Lo ${GOPATH}/bin/operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v0.7.0/operator-sdk-v0.7.0-x86_64-linux-gnu
 	chmod +x ${GOPATH}/bin/operator-sdk
 	@echo setup complete
+
+.PHONY: code/compile
+code/compile:
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o=$(CODE_COMPILE_OUTPUT) ./cmd/manager/main.go
 
 .PHONY: code/run
 code/run: code/gen
@@ -25,7 +31,11 @@ code/fix:
 .PHONY: test/unit
 test/unit:
 	@echo Running tests:
-	go test -v -race -cover ./pkg/...
+	CGO_ENABLED=1 go test -v -race -cover ./pkg/...
+
+.PHONY: test/compile
+test/compile:
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go test -c -o=$(TEST_COMPILE_OUTPUT) ./test/e2e/...
 
 .PHONY: cluster/prepare
 cluster/prepare:
@@ -34,7 +44,7 @@ cluster/prepare:
 	-kubectl create -n $(NAMESPACE) -f deploy/service_account.yaml
 	-kubectl create -n $(NAMESPACE) -f deploy/role.yaml
 	-kubectl create -n $(NAMESPACE) -f deploy/role_binding.yaml
-	-kubectl create -n $(NAMESPACE) -f deploy/crds/aerogear_v1alpha1_unifiedpushserver_crd.yaml
+	-kubectl apply -f deploy/crds/aerogear_v1alpha1_unifiedpushserver_crd.yaml
 
 .PHONY: cluster/clean
 cluster/clean:
