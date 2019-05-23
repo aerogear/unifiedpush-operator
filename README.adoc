@@ -158,6 +158,55 @@ watch -n1 "kubectl get po && echo '' && kubectl get ups -o yaml"
 make cluster/clean
 ....
 
+== Testing
+
+=== Run unit tests
+
+....
+make test/unit
+....
+
+=== Run e2e tests
+
+. Export env vars used in commands below
+
+....
+export NAMESPACE="<name-of-your-openshift-project-used-for-testing>"
+export IMAGE="quay.io/<your-account-name>/unifiedpush-operator"
+....
+
+. Login to OpenShift cluster as a user with cluster-admin role
+
+....
+oc login <url> --token <token>
+....
+
+. Prepare a new OpenShift project for testing
+
+....
+make NAMESPACE=$NAMESPACE cluster/prepare
+....
+
+. Modify the operator image name in manifest file
+
+....
+yq w -i deploy/operator.yaml spec.template.spec.containers[0].image $IMAGE
+....
+
+Note: If you do not have link:https://mikefarah.github.io/yq/[yq] installed, just simply edit the image name in link:deploy/operator.yaml[deploy/operator.yaml]
+
+. Build & push the operator container image to your Dockerhub/Quay image repository, e.g.
+
+....
+operator-sdk build $IMAGE --enable-tests && docker push $IMAGE
+....
+
+. Run the test
+
+....
+operator-sdk test cluster $IMAGE --namespace $NAMESPACE --service-account unifiedpush-operator
+....
+
 == Security Response
 
 If you've found a security issue that you'd like to disclose
