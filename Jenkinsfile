@@ -21,6 +21,7 @@ pipeline {
         CLONED_REPOSITORY_PATH = "src/github.com/aerogear/unifiedpush-operator"
         OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME = "quay.io/aerogear/${env.OPERATOR_NAME}:candidate-${env.BRANCH_NAME}"
         OPERATOR_CONTAINER_IMAGE_NAME = "quay.io/aerogear/${env.OPERATOR_NAME}:${env.BRANCH_NAME}"
+        OPERATOR_CONTAINER_IMAGE_NAME_LATEST = "quay.io/aerogear/${env.OPERATOR_NAME}:latest"
         OPERATOR_TEST_CONTAINER_IMAGE_NAME = "docker-registry.default.svc:5000/${env.OPENSHIFT_PROJECT_NAME}/${env.OPERATOR_TEST_NAME}:latest"
     }
     
@@ -224,6 +225,24 @@ pipeline {
                             skopeo delete \
                               --creds ${env.QUAY_CREDS} \
                               docker://${env.OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME} \
+                        """
+                    }
+                }
+            }
+        }
+        stage("Create a 'latest' tag from 'master'") {
+            when {
+                branch 'master'
+            }
+            steps{
+                withCredentials([usernameColonPassword(credentialsId: 'quay-aerogear-bot', variable: 'QUAY_CREDS')]) {
+                    retry(3) {
+                        sh """
+                            skopeo copy \
+                              --src-creds ${env.QUAY_CREDS} \
+                              --dest-creds ${env.QUAY_CREDS} \
+                              docker://${env.OPERATOR_CONTAINER_IMAGE_NAME} \
+                              docker://${env.OPERATOR_CONTAINER_IMAGE_NAME_LATEST}
                         """
                     }
                 }
