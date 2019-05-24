@@ -1,0 +1,9 @@
+apiVersion: push.aerogear.org/v1alpha1
+kind: IOSVariant
+metadata:
+  name: example-iosvariant
+spec:
+  description: 'My super iOS variant'
+  certificate: 'somekeyinbase64=='
+  passphrase: '123456'
+  production: false
