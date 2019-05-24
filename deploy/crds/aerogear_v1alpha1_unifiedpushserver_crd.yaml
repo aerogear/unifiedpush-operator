@@ -32,6 +32,11 @@ spec:
         spec:
           type: object
         status:
+          properties:
+            phase:
+              type: string
+          required:
+          - phase
           type: object
   version: v1alpha1
   versions:

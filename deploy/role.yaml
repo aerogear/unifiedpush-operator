@@ -59,3 +59,9 @@ rules:
   - '*'
   verbs:
   - '*'
+- apiGroups:
+  - push.aerogear.org
+  resources:
+  - '*'
+  verbs:
+  - '*'
