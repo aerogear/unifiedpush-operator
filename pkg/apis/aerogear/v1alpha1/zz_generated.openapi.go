@@ -79,7 +79,15 @@ func schema_pkg_apis_aerogear_v1alpha1_UnifiedPushServerStatus(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "UnifiedPushServerStatus defines the observed state of UnifiedPushServer",
-				Properties:  map[string]spec.Schema{},
+				Properties: map[string]spec.Schema{
+					"phase": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"phase"},
 			},
 		},
 		Dependencies: []string{},
