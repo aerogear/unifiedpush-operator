@@ -63,5 +63,6 @@ rules:
   - push.aerogear.org
   resources:
   - '*'
+  - pushapplications
   verbs:
   - '*'
