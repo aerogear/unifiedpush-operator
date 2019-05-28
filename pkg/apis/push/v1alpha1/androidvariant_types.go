@@ -10,13 +10,26 @@ import (
 // AndroidVariantSpec defines the desired state of AndroidVariant
 // +k8s:openapi-gen=true
 type AndroidVariantSpec struct {
-	// Description is human friendly description for the variant.
+
+	// Description is a human friendly description for the
+	// variant.
 	Description string `json:"description,omitempty"`
-	// ServerKey is key from the Firebase Console of a project which has been enabled for FCM.
+
+	// ServerKey is the key from the Firebase Console of a project
+	// which has been enabled for FCM.
 	ServerKey string `json:"serverKey"`
-	// SenderId is the "Google Project Number" from the API Console. It is *not* needed for sending push messages, but it is a convenience to "see" it on
-	// the Admin UI as well, since the Android applications require it (called Sender ID there). That way all information is stored on the same object.
+
+	// SenderId is the "Google Project Number" from the API
+	// Console. It is *not* needed for sending push messages, but
+	// it is a convenience to "see" it on the UnifiedPush Server
+	// Admin UI as well, since the Android applications require it
+	// (called Sender ID there). That way all information is
+	// stored on the same object.
 	SenderId string `json:"senderId"`
+
+	// PushApplicationId is the Id of the Application that this
+	// Variant corresponds to in the UnifiedPush Server admin UI.
+	PushApplicationId string `json:"pushApplicationId`
 }
 
 // AndroidVariantStatus defines the observed state of AndroidVariant
