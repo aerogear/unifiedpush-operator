@@ -5,4 +5,3 @@ metadata:
 spec:
   description: 'An example push application to demonstrate the
     unifiedpush-operator'
-  developer: Alice

@@ -37,11 +37,6 @@ spec:
               description: 'Description is a description of the app to
                 be displayed in the UnifiedPush Server admin UI'
               type: string
-            developer:
-              description: 'Developer is a string containing the name
-              of the developer that created the app. It is displayed
-              in the UnifiedPush Server admin UI'
-              type: string
         status:
           properties:
             pushApplicationId:

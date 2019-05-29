@@ -13,11 +13,6 @@ type PushApplicationSpec struct {
 	// Description is a description of the app to be displayed in
 	// the UnifiedPush Server admin UI
 	Description string `json:description`
-
-	// Developer is a string containing the name of the developer
-	// that created the app. It is displayed in the UnifiedPush
-	// Server admin UI
-	Developer string `json:developer`
 }
 
 // PushApplicationStatus defines the observed state of PushApplication
