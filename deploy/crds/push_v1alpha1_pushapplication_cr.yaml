@@ -1,0 +1,7 @@
+apiVersion: push.aerogear.org/v1alpha1
+kind: PushApplication
+metadata:
+  name: example-pushapplication
+spec:
+  description: 'An example push application to demonstrate the
+    unifiedpush-operator'

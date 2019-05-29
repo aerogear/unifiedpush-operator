@@ -10,17 +10,28 @@ import (
 // IOSVariantSpec defines the desired state of IOSVariant
 // +k8s:openapi-gen=true
 type IOSVariantSpec struct {
-	// Description is human friendly description for the variant.
+
+	// Description is a human friendly description for the variant.
 	Description string `json:"description,omitempty"`
-	// Certificate defines the base64 encoded APNs certificate that is needed to establish a
-	// connection to Apple's APNs Push Servers.
+
+	// Certificate defines the base64 encoded APNs certificate
+	// that is needed to establish a connection to Apple's APNs
+	// Push Servers.
 	Certificate string `json:"certificate"`
-	// Passphrase defines the APNs passphrase that is needed to establish a connection to any
-	// of Apple's APNs Push Servers.
+
+	// Passphrase defines the APNs passphrase that is needed to
+	// establish a connection to any of Apple's APNs Push Servers.
 	Passphrase string `json:"passphrase"`
-	// Production defines if a connection to production APNS server should be used. If false, a connection to
-	// Apple's Sandbox/Development APNs server will be established for this iOS variant.
+
+	// Production defines if a connection to production APNS
+	// server should be used. If false, a connection to Apple's
+	// Sandbox/Development APNs server will be established for
+	// this iOS variant.
 	Production bool `json:"production"`
+
+	// PushApplicationId is the Id of the Application that this
+	// Variant corresponds to in the UnifiedPush Server admin UI.
+	PushApplicationId string `json:"pushApplicationId`
 }
 
 // IOSVariantStatus defines the observed state of IOSVariant
