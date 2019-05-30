@@ -40,7 +40,7 @@ kubectl create namespace unifiedpush
 kubectl create -n unifiedpush -f deploy/service_account.yaml
 kubectl create -n unifiedpush -f deploy/role.yaml
 kubectl create -n unifiedpush -f deploy/role_binding.yaml
-kubectl create -n unifiedpush -f deploy/crds/aerogear_v1alpha1_unifiedpushserver_crd.yaml
+kubectl create -n unifiedpush -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
 kubectl create -n unifiedpush -f deploy/operator.yaml
 ....
 
@@ -143,7 +143,7 @@ make code/run
 3. Create a UPS instance (in another terminal):
 
 ....
-kubectl apply -f deploy/crds/aerogear_v1alpha1_unifiedpushserver_cr.yaml
+kubectl apply -f deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml
 ....
 
 4. Watch the status of your UPS instance provisioning (optional):

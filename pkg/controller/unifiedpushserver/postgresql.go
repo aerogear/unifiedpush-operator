@@ -3,7 +3,7 @@ package unifiedpushserver
 import (
 	"fmt"
 
-	aerogearv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/aerogear/v1alpha1"
+	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 
 	"github.com/pkg/errors"
 
@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func newPostgresqlPersistentVolumeClaim(cr *aerogearv1alpha1.UnifiedPushServer) (*corev1.PersistentVolumeClaim, error) {
+func newPostgresqlPersistentVolumeClaim(cr *pushv1alpha1.UnifiedPushServer) (*corev1.PersistentVolumeClaim, error) {
 	pvcSize, err := resource.ParseQuantity("1Gi")
 	if err != nil {
 		return nil, errors.Wrap(err, "error parsing PostgreSQL PVC storage size")
@@ -33,7 +33,7 @@ func newPostgresqlPersistentVolumeClaim(cr *aerogearv1alpha1.UnifiedPushServer) 
 	}, nil
 }
 
-func newPostgresqlSecret(cr *aerogearv1alpha1.UnifiedPushServer) (*corev1.Secret, error) {
+func newPostgresqlSecret(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Secret, error) {
 	databasePassword, err := generatePassword()
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func newPostgresqlSecret(cr *aerogearv1alpha1.UnifiedPushServer) (*corev1.Secret
 	}, nil
 }
 
-func newPostgresqlDeployment(cr *aerogearv1alpha1.UnifiedPushServer) (*appsv1.Deployment, error) {
+func newPostgresqlDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1.Deployment, error) {
 	memoryLimit, err := resource.ParseQuantity("512Mi")
 	if err != nil {
 		return nil, errors.Wrap(err, "error parsing PostgreSQL container memory limit size")
@@ -166,7 +166,7 @@ func newPostgresqlDeployment(cr *aerogearv1alpha1.UnifiedPushServer) (*appsv1.De
 	}, nil
 }
 
-func newPostgresqlService(cr *aerogearv1alpha1.UnifiedPushServer) (*corev1.Service, error) {
+func newPostgresqlService(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Service, error) {
 	return &corev1.Service{
 		ObjectMeta: objectMeta(cr, "postgresql"),
 		Spec: corev1.ServiceSpec{

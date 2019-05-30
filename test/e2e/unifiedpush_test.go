@@ -5,7 +5,7 @@ import (
 	"time"
 
 	apis "github.com/aerogear/unifiedpush-operator/pkg/apis"
-	aerogearv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/aerogear/v1alpha1"
+	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
 )
@@ -18,7 +18,7 @@ var (
 )
 
 func TestUnifiedpush(t *testing.T) {
-	unifiedpushList := &aerogearv1alpha1.UnifiedPushServerList{}
+	unifiedpushList := &pushv1alpha1.UnifiedPushServerList{}
 	if err := framework.AddToFrameworkScheme(apis.AddToScheme, unifiedpushList); err != nil {
 		t.Fatalf("failed to add custom resource scheme to framework: %v", err)
 	}

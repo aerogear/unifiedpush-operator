@@ -3,7 +3,7 @@ package unifiedpushserver
 import (
 	"context"
 
-	aerogearv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/aerogear/v1alpha1"
+	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -43,7 +43,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource UnifiedPushServer
-	err = c.Watch(&source.Kind{Type: &aerogearv1alpha1.UnifiedPushServer{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &pushv1alpha1.UnifiedPushServer{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource Deployment and requeue the owner UnifiedPushServer
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &aerogearv1alpha1.UnifiedPushServer{},
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
 	})
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource Secret and requeue the owner UnifiedPushServer
 	err = c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &aerogearv1alpha1.UnifiedPushServer{},
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
 	})
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource PersistentVolumeClaim and requeue the owner UnifiedPushServer
 	err = c.Watch(&source.Kind{Type: &corev1.PersistentVolumeClaim{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &aerogearv1alpha1.UnifiedPushServer{},
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
 	})
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource Service and requeue the owner UnifiedPushServer
 	err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &aerogearv1alpha1.UnifiedPushServer{},
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
 	})
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource ServiceAccount and requeue the owner UnifiedPushServer
 	err = c.Watch(&source.Kind{Type: &corev1.ServiceAccount{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &aerogearv1alpha1.UnifiedPushServer{},
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
 	})
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource Route and requeue the owner UnifiedPushServer
 	err = c.Watch(&source.Kind{Type: &routev1.Route{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &aerogearv1alpha1.UnifiedPushServer{},
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
 	})
 	if err != nil {
 		return err
@@ -125,7 +125,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	reqLogger.Info("Reconciling UnifiedPushServer")
 
 	// Fetch the UnifiedPushServer instance
-	instance := &aerogearv1alpha1.UnifiedPushServer{}
+	instance := &pushv1alpha1.UnifiedPushServer{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -138,8 +138,8 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, err
 	}
 
-	if instance.Status.Phase == aerogearv1alpha1.PhaseEmpty {
-		instance.Status.Phase = aerogearv1alpha1.PhaseProvision
+	if instance.Status.Phase == pushv1alpha1.PhaseEmpty {
+		instance.Status.Phase = pushv1alpha1.PhaseProvision
 		r.client.Status().Update(context.TODO(), instance)
 	}
 
@@ -383,8 +383,8 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 	}
 
-	if foundUnifiedpushDeployment.Status.ReadyReplicas > 0 && instance.Status.Phase != aerogearv1alpha1.PhaseComplete {
-		instance.Status.Phase = aerogearv1alpha1.PhaseComplete
+	if foundUnifiedpushDeployment.Status.ReadyReplicas > 0 && instance.Status.Phase != pushv1alpha1.PhaseComplete {
+		instance.Status.Phase = pushv1alpha1.PhaseComplete
 		r.client.Status().Update(context.TODO(), instance)
 	}
 

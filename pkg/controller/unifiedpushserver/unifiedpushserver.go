@@ -3,7 +3,7 @@ package unifiedpushserver
 import (
 	"fmt"
 
-	aerogearv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/aerogear/v1alpha1"
+	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func newUnifiedPushServiceAccount(cr *aerogearv1alpha1.UnifiedPushServer) (*corev1.ServiceAccount, error) {
+func newUnifiedPushServiceAccount(cr *pushv1alpha1.UnifiedPushServer) (*corev1.ServiceAccount, error) {
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
@@ -25,7 +25,7 @@ func newUnifiedPushServiceAccount(cr *aerogearv1alpha1.UnifiedPushServer) (*core
 	}, nil
 }
 
-func newOauthProxyService(cr *aerogearv1alpha1.UnifiedPushServer) (*corev1.Service, error) {
+func newOauthProxyService(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Service, error) {
 	return &corev1.Service{
 		ObjectMeta: objectMeta(cr, "unifiedpush-proxy"),
 		Spec: corev1.ServiceSpec{
@@ -48,7 +48,7 @@ func newOauthProxyService(cr *aerogearv1alpha1.UnifiedPushServer) (*corev1.Servi
 	}, nil
 }
 
-func newOauthProxyRoute(cr *aerogearv1alpha1.UnifiedPushServer) (*routev1.Route, error) {
+func newOauthProxyRoute(cr *pushv1alpha1.UnifiedPushServer) (*routev1.Route, error) {
 	return &routev1.Route{
 		ObjectMeta: objectMeta(cr, "unifiedpush-proxy"),
 		Spec: routev1.RouteSpec{
@@ -64,7 +64,7 @@ func newOauthProxyRoute(cr *aerogearv1alpha1.UnifiedPushServer) (*routev1.Route,
 	}, nil
 }
 
-func newUnifiedPushServerDeployment(cr *aerogearv1alpha1.UnifiedPushServer) (*appsv1.Deployment, error) {
+func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1.Deployment, error) {
 	labels := map[string]string{
 		"app":     cr.Name,
 		"service": "ups",
@@ -201,7 +201,7 @@ func newUnifiedPushServerDeployment(cr *aerogearv1alpha1.UnifiedPushServer) (*ap
 	}, nil
 }
 
-func newUnifiedPushServerService(cr *aerogearv1alpha1.UnifiedPushServer) (*corev1.Service, error) {
+func newUnifiedPushServerService(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Service, error) {
 	serviceObjectMeta := objectMeta(cr, "unifiedpush")
 	serviceObjectMeta.Annotations = map[string]string{
 		"org.aerogear.metrics/plain_endpoint": "/rest/prometheus/metrics",
