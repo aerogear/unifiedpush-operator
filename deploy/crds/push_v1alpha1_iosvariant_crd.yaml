@@ -39,10 +39,6 @@ spec:
           type: object
         spec:
           properties:
-            applicationId:
-              description: ApplicationId is the Id of the Application that this Variant
-                corresponds to in the UnifiedPush Server admin UI.
-              type: string
             certificate:
               description: Certificate defines the base64 encoded APNs certificate
                 that is needed to establish a connection to Apple's APNs Push Servers.
@@ -60,14 +56,14 @@ spec:
                 APNs server will be established for this iOS variant.
               type: boolean
             pushApplicationId:
-              description: PushApplicationId is the Id of the
-                Application that this Variant corresponds to in the
-                UnifiedPush Server admin UI.
+              description: PushApplicationId is the Id of the Application that this
+                Variant corresponds to in the UnifiedPush Server admin UI.
               type: string
           required:
           - certificate
           - passphrase
           - production
+          - pushApplicationId
           type: object
         status:
           properties:

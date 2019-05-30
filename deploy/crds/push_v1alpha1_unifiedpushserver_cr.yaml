@@ -1,4 +1,4 @@
-apiVersion: aerogear.org/v1alpha1
+apiVersion: push.aerogear.org/v1alpha1
 kind: UnifiedPushServer
 metadata:
   name: example-unifiedpushserver

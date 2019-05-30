@@ -29,7 +29,7 @@ type AndroidVariantSpec struct {
 
 	// PushApplicationId is the Id of the Application that this
 	// Variant corresponds to in the UnifiedPush Server admin UI.
-	PushApplicationId string `json:"pushApplicationId`
+	PushApplicationId string `json:"pushApplicationId"`
 }
 
 // AndroidVariantStatus defines the observed state of AndroidVariant
