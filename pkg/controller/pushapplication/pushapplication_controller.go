@@ -5,14 +5,12 @@ import (
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 
-	corev1 "k8s.io/api/core/v1"
+	"github.com/aerogear/unifiedpush-operator/pkg/unifiedpush"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -52,16 +50,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner PushApplication
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &pushv1alpha1.PushApplication{},
-	})
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -77,8 +65,6 @@ type ReconcilePushApplication struct {
 
 // Reconcile reads that state of the cluster for a PushApplication object and makes changes based on the state read
 // and what is in the PushApplication.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
@@ -100,54 +86,41 @@ func (r *ReconcilePushApplication) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
-	// Define a new Pod object
-	pod := newPodForCR(instance)
+	// TODO: aliok + grdryn
+	upsClient := unifiedpush.UnifiedpushClient{"http://example-unifiedpushserver-unifiedpush-unifiedpush.192.168.42.227.nip.io"}
 
-	// Set PushApplication instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
+	// TODO: aliok + grdryn
+	// Check if this push app already exists
+	pushAppName := instance.Name
+	foundApp, err := upsClient.GetApplication(pushAppName)
+
+	if err != nil {
+		// this doesn't denote a 404. it is a 500
+		reqLogger.Error(err, "Error getting the existing push application.", "PushApp.Name", pushAppName)
 		return reconcile.Result{}, err
 	}
 
-	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-
-		// Pod created successfully - don't requeue
+	if foundApp != nil {
+		// we don't do a full reconciliation (update push app on UPS server based on CR content) but we
+		// only do initial creation of push apps.
+		reqLogger.Info("Skip reconcile: Push app on UPS already exists", "PushApp.Name", pushAppName)
 		return reconcile.Result{}, nil
-	} else if err != nil {
+	}
+
+	pushApp := pushv1alpha1.PushApplication{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: pushAppName,
+		},
+		Spec: pushv1alpha1.PushApplicationSpec{
+			Description: instance.Spec.Description,
+		},
+	}
+
+	appId, secret, err := upsClient.CreateApplication(&pushApp)
+	if err != nil {
+		reqLogger.Error(err, "Error creating push application.", "PushApp.Name", pushAppName)
 		return reconcile.Result{}, err
 	}
-
-	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+	reqLogger.Info("Push app created", "PushApp.Name", pushAppName, "PushApp.Id", appId, "PushApp.MasterSecret", secret)
 	return reconcile.Result{}, nil
-}
-
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *pushv1alpha1.PushApplication) *corev1.Pod {
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
-				},
-			},
-		},
-	}
 }
