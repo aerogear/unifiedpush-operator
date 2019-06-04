@@ -7,7 +7,6 @@ import (
 
 	"github.com/aerogear/unifiedpush-operator/pkg/unifiedpush"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -89,38 +88,26 @@ func (r *ReconcilePushApplication) Reconcile(request reconcile.Request) (reconci
 	// TODO: aliok + grdryn
 	upsClient := unifiedpush.UnifiedpushClient{"http://example-unifiedpushserver-unifiedpush-unifiedpush.192.168.42.227.nip.io"}
 
-	// TODO: aliok + grdryn
-	// Check if this push app already exists
-	pushAppName := instance.Name
-	foundApp, err := upsClient.GetApplication(pushAppName)
+	foundApp, err := upsClient.GetApplication(instance)
 
 	if err != nil {
 		// this doesn't denote a 404. it is a 500
-		reqLogger.Error(err, "Error getting the existing push application.", "PushApp.Name", pushAppName)
+		reqLogger.Error(err, "Error getting the existing push application.", "PushApp.Name", instance.Name)
 		return reconcile.Result{}, err
 	}
 
-	if foundApp != nil {
+	if foundApp != "" {
 		// we don't do a full reconciliation (update push app on UPS server based on CR content) but we
 		// only do initial creation of push apps.
-		reqLogger.Info("Skip reconcile: Push app on UPS already exists", "PushApp.Name", pushAppName)
+		reqLogger.Info("Skip reconcile: Push app on UPS already exists", "PushApp.Name", instance.Name)
 		return reconcile.Result{}, nil
 	}
 
-	pushApp := pushv1alpha1.PushApplication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: pushAppName,
-		},
-		Spec: pushv1alpha1.PushApplicationSpec{
-			Description: instance.Spec.Description,
-		},
-	}
-
-	appId, secret, err := upsClient.CreateApplication(&pushApp)
+	appId, secret, err := upsClient.CreateApplication(instance)
 	if err != nil {
-		reqLogger.Error(err, "Error creating push application.", "PushApp.Name", pushAppName)
+		reqLogger.Error(err, "Error creating push application.", "PushApp.Name", instance.Name)
 		return reconcile.Result{}, err
 	}
-	reqLogger.Info("Push app created", "PushApp.Name", pushAppName, "PushApp.Id", appId, "PushApp.MasterSecret", secret)
+	reqLogger.Info("Push app created", "PushApp.Name", instance.Name, "PushApp.Id", appId, "PushApp.MasterSecret", secret)
 	return reconcile.Result{}, nil
 }

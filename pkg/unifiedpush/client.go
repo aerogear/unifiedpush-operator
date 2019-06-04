@@ -5,12 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"strconv"
+
+	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
+	"github.com/pkg/errors"
 )
 
 // variant is an internal base type with shared fields used in
@@ -50,6 +51,29 @@ type pushApplication struct {
 // server
 type UnifiedpushClient struct {
 	Url string
+}
+
+// GetApplication does a GET for a given PushApplication based on the PushApplicationId
+func (c UnifiedpushClient) GetApplication(p *pushv1alpha1.PushApplication) (string, error) {
+	if p.Status.PushApplicationId == "" {
+		// We haven't created it yet
+		return "", nil
+	}
+
+	url := fmt.Sprintf("%s/rest/applications/%s", c.Url, p.Status.PushApplicationId)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	resp, err := doUPSRequest(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var foundApplication pushApplication
+	b, _ := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(b, &foundApplication)
+	fmt.Printf("Found app: %v\n", foundApplication)
+
+	return foundApplication.PushApplicationId, nil
 }
 
 // CreateApplication creates an application in UPS
