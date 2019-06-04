@@ -45,6 +45,9 @@ cluster/prepare:
 	-kubectl create -n $(NAMESPACE) -f deploy/role.yaml
 	-kubectl create -n $(NAMESPACE) -f deploy/role_binding.yaml
 	-kubectl apply -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
+	-kubectl apply -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
+	-kubectl apply -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
+	-kubectl apply -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
 
 .PHONY: cluster/clean
 cluster/clean:
