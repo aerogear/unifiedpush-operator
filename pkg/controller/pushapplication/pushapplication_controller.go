@@ -2,11 +2,12 @@ package pushapplication
 
 import (
 	"context"
+	"time"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
+	"github.com/aerogear/unifiedpush-operator/pkg/controller/util"
 
-	"github.com/aerogear/unifiedpush-operator/pkg/unifiedpush"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -75,7 +76,7 @@ func (r *ReconcilePushApplication) Reconcile(request reconcile.Request) (reconci
 	instance := &pushv1alpha1.PushApplication{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if kerrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -85,10 +86,13 @@ func (r *ReconcilePushApplication) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
-	// TODO: aliok + grdryn
-	upsClient := unifiedpush.UnifiedpushClient{"http://example-unifiedpushserver-unifiedpush-unifiedpush.192.168.42.227.nip.io"}
+	unifiedpushClient, err := util.UnifiedpushClient(r.client, reqLogger)
+	if err != nil {
+		reqLogger.Error(err, "Error getting a UPS Client.", "PushApp.Name", instance.Name)
+		return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+	}
 
-	foundApp, err := upsClient.GetApplication(instance)
+	foundApp, err := unifiedpushClient.GetApplication(instance)
 
 	if err != nil {
 		// this doesn't denote a 404. it is a 500
@@ -103,11 +107,12 @@ func (r *ReconcilePushApplication) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, nil
 	}
 
-	appId, secret, err := upsClient.CreateApplication(instance)
+	appId, secret, err := unifiedpushClient.CreateApplication(instance)
 	if err != nil {
 		reqLogger.Error(err, "Error creating push application.", "PushApp.Name", instance.Name)
 		return reconcile.Result{}, err
 	}
+
 	reqLogger.Info("Push app created", "PushApp.Name", instance.Name, "PushApp.Id", appId, "PushApp.MasterSecret", secret)
 	return reconcile.Result{}, nil
 }

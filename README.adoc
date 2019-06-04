@@ -152,7 +152,24 @@ kubectl apply -f deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml -n unifiedp
 watch -n1 "kubectl get po -n unifiedpush && echo '' && kubectl get ups -o yaml -n unifiedpush"
 ....
 
-5. When finished, clean up:
+5. If you want to be able to work with resources that require the
+local instance of your operator to be able to talk to the UPS instance
+in the cluster, then you'll need to make a corresponding domain name
+available locally. Something like the following should work, by adding
+an entry to /etc/hosts for the example Service that's created, then
+forwarding the port from the relevant Pod in the cluster to the local
+machine. Run this in a separate terminal, and ctrl+c to clean it up
+when finished:
+
+// TODO: We could maybe use a non-privileged port instead of :80?
+....
+# su/sudo is needed to be able to:
+# - modify /etc/hosts
+# - bind to port :80
+KUBECONFIG=$HOME/.kube/config su -c "echo '127.0.0.1   example-unifiedpushserver-unifiedpush' >> /etc/hosts && kubectl port-forward $(kubectl get po -l service=ups -o name) 80:8080 && sed -i -e 's/^127.0.0.1   example-unifiedpushserver-unifiedpush$//g' -e '/^[[:space:]]*$/d' /etc/hosts"
+....
+
+6. When finished, clean up:
 
 ....
 make cluster/clean
