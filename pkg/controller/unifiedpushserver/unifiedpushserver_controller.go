@@ -298,6 +298,29 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, err
 	}
 
+	unifiedpushService, err := newUnifiedPushServerService(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Set UnifiedPushServer instance as the owner and controller
+	if err := controllerutil.SetControllerReference(instance, unifiedpushService, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this Service already exists
+	foundUnifiedpushService := &corev1.Service{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: unifiedpushService.Name, Namespace: unifiedpushService.Namespace}, foundUnifiedpushService)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a new Service", "Service.Namespace", unifiedpushService.Namespace, "Service.Name", unifiedpushService.Name)
+		err = r.client.Create(context.TODO(), unifiedpushService)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	oauthProxyRoute, err := newOauthProxyRoute(instance)
 	if err != nil {
 		return reconcile.Result{}, err
