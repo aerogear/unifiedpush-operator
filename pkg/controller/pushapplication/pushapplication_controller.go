@@ -86,6 +86,8 @@ func (r *ReconcilePushApplication) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
+	// TODO: check if we're actually supposed to be deleting here instead of creating...
+
 	unifiedpushClient, err := util.UnifiedpushClient(r.client, reqLogger)
 	if err != nil {
 		reqLogger.Error(err, "Error getting a UPS Client.", "PushApp.Name", instance.Name)
@@ -110,6 +112,10 @@ func (r *ReconcilePushApplication) Reconcile(request reconcile.Request) (reconci
 	appId, secret, err := unifiedpushClient.CreateApplication(instance)
 	if err != nil {
 		reqLogger.Error(err, "Error creating push application.", "PushApp.Name", instance.Name)
+		return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+	}
+
+	if err := util.AddFinalizer(r.client, reqLogger, instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
