@@ -91,6 +91,24 @@ func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: cr.Name,
+					InitContainers: []corev1.Container{
+						{
+							Name:            POSTGRES_CONTAINER_NAME,
+							Image:           postgresql.image(),
+							ImagePullPolicy: corev1.PullAlways,
+							Env: []corev1.EnvVar{
+								{
+									Name:  "POSTGRES_SERVICE_HOST",
+									Value: fmt.Sprintf("%s-postgresql", cr.Name),
+								},
+							},
+							Command: []string{
+								"/bin/sh",
+								"-c",
+								"source /opt/rh/rh-postgresql96/enable && until pg_isready -h $POSTGRES_SERVICE_HOST; do echo waiting for database; sleep 2; done;",
+							},
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Name:            UPS_CONTAINER_NAME,
