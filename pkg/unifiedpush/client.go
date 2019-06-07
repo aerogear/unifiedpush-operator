@@ -111,6 +111,28 @@ func (c UnifiedpushClient) CreateApplication(p *pushv1alpha1.PushApplication) (s
 	return createdApplication.PushApplicationId, createdApplication.MasterSecret, nil
 }
 
+// DeleteApplication deletes a PushApplication in UPS
+func (c UnifiedpushClient) DeleteApplication(p *pushv1alpha1.PushApplication) error {
+	if p.Status.PushApplicationId == "" {
+		return errors.New("No PushApplicationId set in the PushApplication status")
+	}
+
+	url := fmt.Sprintf("%s/rest/applications/%s", c.Url, p.Status.PushApplicationId)
+
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	resp, err := doUPSRequest(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 204 {
+		return errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 204", resp.StatusCode))
+	}
+
+	return nil
+}
+
 // CreateAndroidVariant creates a Variant on an Application in UPS
 func (c UnifiedpushClient) CreateAndroidVariant(av *pushv1alpha1.AndroidVariant) (string, error) {
 	url := fmt.Sprintf("%s/rest/applications/%s/android", c.Url, av.Spec.PushApplicationId)

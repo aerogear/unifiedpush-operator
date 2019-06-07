@@ -86,12 +86,28 @@ func (r *ReconcilePushApplication) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
-	// TODO: check if we're actually supposed to be deleting here instead of creating...
-
 	unifiedpushClient, err := util.UnifiedpushClient(r.client, reqLogger)
 	if err != nil {
 		reqLogger.Error(err, "Error getting a UPS Client.", "PushApp.Name", instance.Name)
 		return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+	}
+
+	// Check if the CR was marked to be deleted
+	if instance.GetDeletionTimestamp() != nil {
+		// First delete from UPS
+		err := unifiedpushClient.DeleteApplication(instance)
+		if err != nil {
+			reqLogger.Error(err, "Failed to delete PushApplication from UPS", "PushApp.Name", instance.Name)
+			return reconcile.Result{}, err
+		}
+
+		// Then unset finalizers
+		instance.SetFinalizers(nil)
+		err = r.client.Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
 	}
 
 	foundApp, err := unifiedpushClient.GetApplication(instance)
@@ -113,6 +129,15 @@ func (r *ReconcilePushApplication) Reconcile(request reconcile.Request) (reconci
 	if err != nil {
 		reqLogger.Error(err, "Error creating push application.", "PushApp.Name", instance.Name)
 		return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+	}
+
+	instance.Status.MasterSecret = secret
+	instance.Status.PushApplicationId = appId
+
+	err = r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		reqLogger.Error(err, "Error updating PushApplication status", "PushApp.Name", instance.Name)
+		return reconcile.Result{}, err
 	}
 
 	if err := util.AddFinalizer(r.client, reqLogger, instance); err != nil {

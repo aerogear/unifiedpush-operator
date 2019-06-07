@@ -13,6 +13,8 @@ import (
 // AddFinalizer will add a finalizer to the PushApplication CR so that
 // we can delete from UPS appropriately
 func AddFinalizer(client client.Client, reqLogger logr.Logger, o metav1.Object) error {
+	// This is based on the example code at:
+	// https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md#handle-cleanup-on-deletion
 	if len(o.GetFinalizers()) < 1 && o.GetDeletionTimestamp() == nil {
 		reqLogger.Info("Adding Finalizer to the PushApplication")
 		o.SetFinalizers([]string{"finalizer.push.aerogear.org"})
