@@ -133,15 +133,40 @@ func (c UnifiedpushClient) DeleteApplication(p *pushv1alpha1.PushApplication) er
 	return nil
 }
 
+// GetAndroidVariant does a GET for a given Variant based on the VariantId
+func (c UnifiedpushClient) GetAndroidVariant(v *pushv1alpha1.AndroidVariant) (string, error) {
+	if v.Status.VariantId == "" {
+		// We haven't created it yet
+		return "", nil
+	}
+
+	url := fmt.Sprintf("%s/rest/applications/%s/android/%s", c.Url, v.Spec.PushApplicationId, v.Status.VariantId)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	resp, err := doUPSRequest(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var foundVariant androidVariant
+	b, _ := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(b, &foundVariant)
+	fmt.Printf("Found app: %v\n", foundVariant)
+
+	// TODO: maybe now it's time to start using the "API types"
+	return foundVariant.VariantId, nil
+}
+
 // CreateAndroidVariant creates a Variant on an Application in UPS
-func (c UnifiedpushClient) CreateAndroidVariant(av *pushv1alpha1.AndroidVariant) (string, error) {
-	url := fmt.Sprintf("%s/rest/applications/%s/android", c.Url, av.Spec.PushApplicationId)
+func (c UnifiedpushClient) CreateAndroidVariant(v *pushv1alpha1.AndroidVariant) (string, error) {
+	url := fmt.Sprintf("%s/rest/applications/%s/android", c.Url, v.Spec.PushApplicationId)
 
 	params := map[string]string{
 		"projectNumber": "1",
-		"name":          av.Name,
-		"googleKey":     av.Spec.ServerKey,
-		"description":   av.Spec.Description,
+		"name":          v.Name,
+		"googleKey":     v.Spec.ServerKey,
+		"description":   v.Spec.Description,
 	}
 
 	payload, err := json.Marshal(params)
@@ -168,6 +193,53 @@ func (c UnifiedpushClient) CreateAndroidVariant(av *pushv1alpha1.AndroidVariant)
 	json.Unmarshal(b, &createdVariant)
 
 	return createdVariant.VariantId, nil
+}
+
+// DeleteAndroidVariant deletes an Android variant in UPS
+func (c UnifiedpushClient) DeleteAndroidVariant(v *pushv1alpha1.AndroidVariant) error {
+	if v.Status.VariantId == "" {
+		// We haven't created it yet
+		return nil
+	}
+
+	url := fmt.Sprintf("%s/rest/applications/%s/android/%s", c.Url, v.Spec.PushApplicationId, v.Status.VariantId)
+
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	resp, err := doUPSRequest(req)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != 204 {
+		return errors.New(fmt.Sprintf("Expected a status code of 204 for variant deletion in UPS, but got %s", resp.StatusCode))
+	}
+
+	return nil
+}
+
+// GetIOSVariant does a GET for a given iOS Variant based on the VariantId
+func (c UnifiedpushClient) GetIOSVariant(v *pushv1alpha1.IOSVariant) (string, error) {
+	if v.Status.VariantId == "" {
+		// We haven't created it yet
+		return "", nil
+	}
+
+	url := fmt.Sprintf("%s/rest/applications/%s/ios/%s", c.Url, v.Spec.PushApplicationId, v.Status.VariantId)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	resp, err := doUPSRequest(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var foundVariant iOSVariant
+	b, _ := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(b, &foundVariant)
+	fmt.Printf("Found app: %v\n", foundVariant)
+
+	// TODO: maybe now it's time to start using the "API types"
+	return foundVariant.VariantId, nil
 }
 
 // CreateIOSVariant creates a Variant on an Application in UPS
@@ -220,6 +292,28 @@ func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (string,
 	json.Unmarshal(b, &createdVariant)
 
 	return createdVariant.VariantId, nil
+}
+
+// DeleteIOSVariant deletes an IOS variant in UPS
+func (c UnifiedpushClient) DeleteIOSVariant(v *pushv1alpha1.IOSVariant) error {
+	if v.Status.VariantId == "" {
+		// We haven't created it yet
+		return nil
+	}
+
+	url := fmt.Sprintf("%s/rest/applications/%s/ios/%s", c.Url, v.Spec.PushApplicationId, v.Status.VariantId)
+
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	resp, err := doUPSRequest(req)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != 204 {
+		return errors.New(fmt.Sprintf("Expected a status code of 204 for variant deletion in UPS, but got %s", resp.StatusCode))
+	}
+
+	return nil
 }
 
 func doUPSRequest(req *http.Request) (*http.Response, error) {
