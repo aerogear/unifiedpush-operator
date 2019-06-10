@@ -2,17 +2,15 @@ package androidvariant
 
 import (
 	"context"
+	"time"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
+	"github.com/aerogear/unifiedpush-operator/pkg/controller/util"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -21,11 +19,6 @@ import (
 )
 
 var log = logf.Log.WithName("controller_androidvariant")
-
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
 
 // Add creates a new AndroidVariant Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -52,16 +45,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner AndroidVariant
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &pushv1alpha1.AndroidVariant{},
-	})
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -75,13 +58,13 @@ type ReconcileAndroidVariant struct {
 	scheme *runtime.Scheme
 }
 
-// Reconcile reads that state of the cluster for a AndroidVariant object and makes changes based on the state read
-// and what is in the AndroidVariant.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
+// Reconcile reads that state of the cluster for a AndroidVariant
+// object and makes changes based on the state read and what is in the
+// AndroidVariant.Spec
 // Note:
-// The Controller will requeue the Request to be processed again if the returned error is non-nil or
-// Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
+// The Controller will requeue the Request to be processed again if
+// the returned error is non-nil or Result.Requeue is true, otherwise
+// upon completion it will remove the work from the queue.
 func (r *ReconcileAndroidVariant) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling AndroidVariant")
@@ -100,54 +83,62 @@ func (r *ReconcileAndroidVariant) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	// Define a new Pod object
-	pod := newPodForCR(instance)
-
-	// Set AndroidVariant instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
-		return reconcile.Result{}, err
+	// Get a UPS Client for interactions with the UPS service
+	unifiedpushClient, err := util.UnifiedpushClient(r.client, reqLogger)
+	if err != nil {
+		reqLogger.Error(err, "Error getting a UPS Client.", "AndroidVariant.Name", instance.Name)
+		return reconcile.Result{RequeueAfter: time.Second * 5}, nil
 	}
 
-	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
+	// Check if the CR was marked to be deleted
+	if instance.GetDeletionTimestamp() != nil {
+		// First delete from UPS
+		err := unifiedpushClient.DeleteAndroidVariant(instance)
 		if err != nil {
+			reqLogger.Error(err, "Failed to delete AndroidVariant from UPS", "AndroidVaraint.Name", instance.Name)
 			return reconcile.Result{}, err
 		}
 
-		// Pod created successfully - don't requeue
+		// Then unset finalizers
+		instance.SetFinalizers(nil)
+		err = r.client.Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 		return reconcile.Result{}, nil
-	} else if err != nil {
+	}
+
+	foundVariant, err := unifiedpushClient.GetAndroidVariant(instance)
+	if err != nil {
+		// this doesn't denote a 404. it is a 500
+		reqLogger.Error(err, "Error getting the existing Android variant.", "AndroidVariant.Name", instance.Name)
 		return reconcile.Result{}, err
 	}
 
-	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
-	return reconcile.Result{}, nil
-}
+	if foundVariant != "" {
+		// we don't do a full reconciliation (update push app on UPS server based on CR content) but we
+		// only do initial creation of push apps.
+		reqLogger.Info("Skip reconcile: Android Variant already exists in UPS", "AndroidVaraint.Name", instance.Name)
+		return reconcile.Result{}, nil
+	}
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *pushv1alpha1.AndroidVariant) *corev1.Pod {
-	labels := map[string]string{
-		"app": cr.Name,
+	variantId, err := unifiedpushClient.CreateAndroidVariant(instance)
+	if err != nil {
+		reqLogger.Error(err, "Error creating Android variant in UPS.", "AndroidVaraint.Name", instance.Name)
+		return reconcile.Result{RequeueAfter: time.Second * 5}, nil
 	}
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
-				},
-			},
-		},
+
+	instance.Status.VariantId = variantId
+	err = r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		reqLogger.Error(err, "Error updating AndroidVariant status", "AndroidVariant.Name", instance.Name)
+		return reconcile.Result{}, err
 	}
+
+	if err := util.AddFinalizer(r.client, reqLogger, instance); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	reqLogger.Info("Android Variant created", "AndroidVariant.Name", instance.Name)
+	return reconcile.Result{}, nil
 }

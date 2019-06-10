@@ -211,7 +211,7 @@ func (c UnifiedpushClient) DeleteAndroidVariant(v *pushv1alpha1.AndroidVariant) 
 	}
 
 	if resp.StatusCode != 204 {
-		return errors.New(fmt.Sprintf("Expected a status code of 204 for variant deletion in UPS, but got %s", resp.StatusCode))
+		return errors.New(fmt.Sprintf("Expected a status code of 204 for variant deletion in UPS, but got %v", resp.StatusCode))
 	}
 
 	return nil
@@ -310,7 +310,7 @@ func (c UnifiedpushClient) DeleteIOSVariant(v *pushv1alpha1.IOSVariant) error {
 	}
 
 	if resp.StatusCode != 204 {
-		return errors.New(fmt.Sprintf("Expected a status code of 204 for variant deletion in UPS, but got %s", resp.StatusCode))
+		return errors.New(fmt.Sprintf("Expected a status code of 204 for variant deletion in UPS, but got %v", resp.StatusCode))
 	}
 
 	return nil

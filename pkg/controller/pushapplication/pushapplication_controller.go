@@ -20,11 +20,6 @@ import (
 
 var log = logf.Log.WithName("controller_pushapplication")
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
-
 // Add creates a new PushApplication Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -86,6 +81,7 @@ func (r *ReconcilePushApplication) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
+	// Get a UPS Client for interactions with the UPS service
 	unifiedpushClient, err := util.UnifiedpushClient(r.client, reqLogger)
 	if err != nil {
 		reqLogger.Error(err, "Error getting a UPS Client.", "PushApp.Name", instance.Name)
@@ -111,7 +107,6 @@ func (r *ReconcilePushApplication) Reconcile(request reconcile.Request) (reconci
 	}
 
 	foundApp, err := unifiedpushClient.GetApplication(instance)
-
 	if err != nil {
 		// this doesn't denote a 404. it is a 500
 		reqLogger.Error(err, "Error getting the existing push application.", "PushApp.Name", instance.Name)
