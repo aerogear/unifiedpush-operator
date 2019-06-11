@@ -143,13 +143,13 @@ make code/run
 3. Create a UPS instance (in another terminal):
 
 ....
-kubectl apply -f deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml
+kubectl apply -f deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml -n unifiedpush
 ....
 
 4. Watch the status of your UPS instance provisioning (optional):
 
 ....
-watch -n1 "kubectl get po && echo '' && kubectl get ups -o yaml"
+watch -n1 "kubectl get po -n unifiedpush && echo '' && kubectl get ups -o yaml -n unifiedpush"
 ....
 
 5. When finished, clean up:
