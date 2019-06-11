@@ -41,6 +41,9 @@ kubectl create -n unifiedpush -f deploy/service_account.yaml
 kubectl create -n unifiedpush -f deploy/role.yaml
 kubectl create -n unifiedpush -f deploy/role_binding.yaml
 kubectl create -n unifiedpush -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
+kubectl create -n unifiedpush -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
+kubectl create -n unifiedpush -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
+kubectl create -n unifiedpush -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
 kubectl create -n unifiedpush -f deploy/operator.yaml
 ....
 
@@ -81,6 +84,165 @@ to configure it:
 ....
 kubectl label namespace unifiedpush monitoring-key=middleware
 kubectl create -n unifiedpush -f deploy/service_monitor.yaml
+....
+
+== Custom Resources (aka How to get value from this operator)
+
+=== UnifiedPushServer
+
+This is the main installation resource kind. Creation of a valid
+UnifiedPushServer CR will result in a functional AeroGear
+UnifiedPushServer deployed to your namespace.
+
+[NOTE]
+====
+This operator currently only supports one UnifiedPushServer CR to be
+created.
+====
+
+There are currently no configurable fields in the UnifiedPushServer CR
+apart from the name, so the example in
+`./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml` is a good
+template:
+
+.push_v1alpha1_unifiedpushserver_cr.yaml
+[source,yaml]
+----
+apiVersion: push.aerogear.org/v1alpha1
+kind: UnifiedPushServer
+metadata:
+  name: example-unifiedpushserver
+----
+
+To create this, you can run:
+
+....
+kubectl apply -n unifiedpush -f ./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml
+....
+
+To see the created instance then, you can run:
+
+....
+kubectl get ups example-unifiedpushserver -n unifiedpush -o yaml
+....
+
+=== PushApplication
+
+Once you've got your `UnifiedPushServer` up and running, you can
+create a `PushApplication`.
+
+The only configurable fields in a `PushApplication` are the name and
+description, like the example in
+`./deploy/crds/push_v1alpha1_pushapplication_cr.yaml`:
+
+.push_v1alpha1_pushapplication_cr.yaml
+[source,yaml]
+----
+apiVersion: push.aerogear.org/v1alpha1
+kind: PushApplication
+metadata:
+  name: example-pushapplication
+spec:
+  description: 'An example push application to demonstrate the
+    unifiedpush-operator'
+----
+
+To create this, you can run:
+
+....
+kubectl apply -n unifiedpush -f ./deploy/crds/push_v1alpha1_pushapplication_cr.yaml
+....
+
+To see the created instance then, you can run:
+
+....
+kubectl get pushApplication example-pushapplication -n unifiedpush -o yaml
+....
+
+Shortly after it's created, you should be able to see it in the list
+of Applications in the UnifiedPush Admin UI, and you should also be
+able to see the `pushApplicationId` and `masterSecret` fields on the
+`status` object of your PushApplication instance in Kubernetes.
+
+=== AndroidVariant
+
+After creating the PushApplication above, you should be able to get
+the `pushApplicationId` from the status, this will be needed to be
+able to create Variants:
+
+....
+kubectl get PushApplication example-pushapplication -n unifiedpush -o jsonpath='{.status.pushApplicationId}'
+....
+
+Here are all of the configurable fields in an AndroidVariant:
+
+.AndroidVariant fields
+|===
+|Field Name |Description
+
+|pushApplicationId
+|ID of the PushApplication that this variant corresponds to
+
+|description
+|Human friendly description for the variant
+
+|senderId
+|The "Google Project Number from the API Console
+
+|serverKey
+|The key from the Firebase Console of a project which has been enabled for FCM
+|===
+
+There's an example at
+`./deploy/crds/push_v1alpha1_androidvariant_cr.yaml` that can be
+modified and created as follows:
+
+....
+kubectl apply -n unifiedpush -f ./deploy/crds/push_v1alpha1_androidvariant_cr.yaml
+....
+
+=== IOSVariant
+
+After creating the PushApplication above, you should be able to get
+the `pushApplicationId` from the status, this will be needed to be
+able to create Variants:
+
+....
+kubectl get PushApplication example-pushapplication -n unifiedpush -o jsonpath='{.status.pushApplicationId}'
+....
+
+Here are all of the configurable fields in an AndroidVariant:
+
+.IOSVariant fields
+|===
+|Field Name |Description
+
+|pushApplicationId
+|ID of the PushApplication that this variant corresponds to
+
+|description
+|Human friendly description for the variant
+
+|certificate
+|The base64 encoded APNs certificate that is needed to establish a
+ connection to Apple's APNs Push Servers
+
+|passphrase
+|The APNs passphrase that is needed to establish a connection to
+ Apple's APNs Push Servers
+
+|production
+|If `true`, indicates that a connection to production APNs server should
+ be used. If `false` a connection to the Sandbox/Development APNs server
+ will be used.
+|===
+
+There's an example at
+`./deploy/crds/push_v1alpha1_iosvariant_cr.yaml` that can be
+modified and created as follows:
+
+....
+kubectl apply -n unifiedpush -f ./deploy/crds/push_v1alpha1_iosvariant_cr.yaml
 ....
 
 == Getting help
