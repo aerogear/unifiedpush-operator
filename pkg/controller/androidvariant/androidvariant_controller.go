@@ -129,6 +129,7 @@ func (r *ReconcileAndroidVariant) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	instance.Status.VariantId = variantId
+	instance.Status.Ready = true
 	err = r.client.Status().Update(context.TODO(), instance)
 	if err != nil {
 		reqLogger.Error(err, "Error updating AndroidVariant status", "AndroidVariant.Name", instance.Name)

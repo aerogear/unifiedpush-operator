@@ -131,6 +131,7 @@ func (r *ReconcileIOSVariant) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	instance.Status.VariantId = variantId
+	instance.Status.Ready = true
 	err = r.client.Status().Update(context.TODO(), instance)
 	if err != nil {
 		reqLogger.Error(err, "Error updating IOSVariant status", "IOSVariant.Name", instance.Name)
