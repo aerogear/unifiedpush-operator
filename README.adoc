@@ -211,7 +211,7 @@ able to create Variants:
 kubectl get PushApplication example-pushapplication -n unifiedpush -o jsonpath='{.status.pushApplicationId}'
 ....
 
-Here are all of the configurable fields in an AndroidVariant:
+Here are all of the configurable fields in an IOSVariant:
 
 .IOSVariant fields
 |===
