@@ -15,21 +15,25 @@ import (
 func AddFinalizer(client client.Client, reqLogger logr.Logger, o metav1.Object) error {
 	// This is based on the example code at:
 	// https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md#handle-cleanup-on-deletion
-	if len(o.GetFinalizers()) < 1 && o.GetDeletionTimestamp() == nil {
-		reqLogger.Info("Adding Finalizer to the PushApplication")
-		o.SetFinalizers([]string{"finalizer.push.aerogear.org"})
 
-		// Update CR
-		switch typedObject := o.(type) {
-		case runtime.Object:
-			err := client.Update(context.TODO(), typedObject)
-			if err != nil {
-				reqLogger.Error(err, "Failed to update a CR with a finalizer")
-				return err
-			}
-		default:
-			reqLogger.Info("Can't determine the type of thing to add finalizer to")
-		}
+	if len(o.GetFinalizers()) > 0 || o.GetDeletionTimestamp() != nil {
+		return nil
 	}
+
+	reqLogger.Info("Adding Finalizer to the PushApplication")
+	o.SetFinalizers([]string{"finalizer.push.aerogear.org"})
+
+	runtimeObject, ok := o.(runtime.Object)
+	if !ok {
+		reqLogger.Info("Can't determine the type of thing to add finalizer to")
+		return nil
+	}
+
+	err := client.Update(context.TODO(), runtimeObject)
+	if err != nil {
+		reqLogger.Error(err, "Failed to update a CR with a finalizer")
+		return err
+	}
+
 	return nil
 }
