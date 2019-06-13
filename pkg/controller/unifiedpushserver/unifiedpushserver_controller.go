@@ -9,6 +9,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -138,9 +139,40 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, err
 	}
 
+	// look for other unifiedPush resources and don't provision a new one if there is another one with Phase=Complete
+	existingInstances := &pushv1alpha1.UnifiedPushServerList{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "UnifiedPushServer",
+			APIVersion: "push.aerogear.org/v1alpha1",
+		},
+	}
+	opts := &client.ListOptions{Namespace: instance.Namespace}
+	err = r.client.List(context.TODO(), opts, existingInstances)
+	if err != nil {
+		reqLogger.Error(err, "Failed to list UnifiedPush resources", "UnifiedPush.Namespace", instance.Namespace)
+		return reconcile.Result{}, err
+	} else if len(existingInstances.Items) > 1 { // check if > 1 since there's the current one already in that list.
+		for _, existingInstance := range existingInstances.Items {
+			if existingInstance.Name == instance.Name {
+				continue
+			}
+			if existingInstance.Status.Phase == pushv1alpha1.PhaseProvision || existingInstance.Status.Phase == pushv1alpha1.PhaseComplete {
+				reqLogger.Info("There is already a UnifiedPush resource in Complete phase. Doing nothing for this CR.", "UnifiedPush.Namespace", instance.Namespace, "UnifiedPush.Name", instance.Name)
+				return reconcile.Result{}, nil
+			}
+		}
+	}
+
 	if instance.Status.Phase == pushv1alpha1.PhaseEmpty {
 		instance.Status.Phase = pushv1alpha1.PhaseProvision
-		r.client.Status().Update(context.TODO(), instance)
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			reqLogger.Error(err, "Failed to update UnifiedPush resource status phase", "UnifiedPush.Namespace", instance.Namespace, "UnifiedPush.Name", instance.Name)
+			return reconcile.Result{}, err
+		}
+	} else if instance.Status.Phase == pushv1alpha1.PhaseComplete {
+		reqLogger.Info("UnifiedPush resource is already in Complete phase. Doing nothing.", "UnifiedPush.Namespace", instance.Namespace, "UnifiedPush.Name", instance.Name)
+		return reconcile.Result{}, nil
 	}
 
 	persistentVolumeClaim, err := newPostgresqlPersistentVolumeClaim(instance)

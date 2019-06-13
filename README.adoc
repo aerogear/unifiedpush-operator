@@ -171,7 +171,7 @@ the `pushApplicationId` from the status, this will be needed to be
 able to create Variants:
 
 ....
-kubectl get PushApplication example-pushapplication -n unifiedpush -o jsonpath='{.status.pushApplicationId}'
+kubectl get pushApplication example-pushapplication -n unifiedpush -o jsonpath='{.status.pushApplicationId}'
 ....
 
 Here are all of the configurable fields in an AndroidVariant:
