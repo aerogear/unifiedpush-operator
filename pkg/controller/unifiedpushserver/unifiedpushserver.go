@@ -225,11 +225,15 @@ func newUnifiedPushServerService(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Se
 		"org.aerogear.metrics/plain_endpoint": "/rest/prometheus/metrics",
 	}
 	serviceObjectMeta.Labels["mobile"] = "enabled"
+	serviceObjectMeta.Labels["internal"] = "unifiedpush"
 
 	return &corev1.Service{
 		ObjectMeta: serviceObjectMeta,
 		Spec: corev1.ServiceSpec{
-			Selector: labels(cr, "unifiedpush"),
+			Selector: map[string]string{
+				"app":     cr.Name,
+				"service": "ups",
+			},
 			Ports: []corev1.ServicePort{
 				corev1.ServicePort{
 					Name:     "web",

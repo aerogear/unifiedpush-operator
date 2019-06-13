@@ -44,12 +44,22 @@ cluster/prepare:
 	-kubectl create -n $(NAMESPACE) -f deploy/service_account.yaml
 	-kubectl create -n $(NAMESPACE) -f deploy/role.yaml
 	-kubectl create -n $(NAMESPACE) -f deploy/role_binding.yaml
-	-kubectl apply -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
+	-kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
+	-kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
+	-kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
+	-kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
 
 .PHONY: cluster/clean
 cluster/clean:
+	-kubectl delete -n $(NAMESPACE) iosVariant --all
+	-kubectl delete -n $(NAMESPACE) androidVariant --all
+	-kubectl delete -n $(NAMESPACE) pushApplication --all
+	-kubectl delete -n $(NAMESPACE) unifiedpushServer --all
 	-kubectl delete -f deploy/role.yaml
 	-kubectl delete -n $(NAMESPACE) -f deploy/role_binding.yaml
 	-kubectl delete -n $(NAMESPACE) -f deploy/service_account.yaml
 	-kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
+	-kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
+	-kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
+	-kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
 	-kubectl delete namespace $(NAMESPACE)

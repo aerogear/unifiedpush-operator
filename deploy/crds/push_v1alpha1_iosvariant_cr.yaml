@@ -7,3 +7,4 @@ spec:
   certificate: 'somekeyinbase64=='
   passphrase: '123456'
   production: false
+  pushApplicationId: '123456'
