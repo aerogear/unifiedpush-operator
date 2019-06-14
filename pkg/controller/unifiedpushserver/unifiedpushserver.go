@@ -9,6 +9,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/pkg/errors"
@@ -64,7 +65,6 @@ func newOauthProxyRoute(cr *pushv1alpha1.UnifiedPushServer) (*routev1.Route, err
 		},
 	}, nil
 }
-
 func newOauthProxyImageStream(cr *pushv1alpha1.UnifiedPushServer) (*imagev1.ImageStream, error) {
 	return &imagev1.ImageStream{
 		ObjectMeta: metav1.ObjectMeta{
@@ -89,7 +89,85 @@ func newOauthProxyImageStream(cr *pushv1alpha1.UnifiedPushServer) (*imagev1.Imag
 	}, nil
 }
 
-func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshiftappsv1.DeploymentConfig, error) {
+func buildEnv(cr *pushv1alpha1.UnifiedPushServer, addressSpaceURL string) []corev1.EnvVar {
+	var env = []corev1.EnvVar{
+		{
+			Name: "POSTGRES_SERVICE_HOST",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					Key: "POSTGRES_HOST",
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: fmt.Sprintf("%s-postgresql", cr.Name),
+					},
+				},
+			},
+		},
+		{
+			Name:  "POSTGRES_SERVICE_PORT",
+			Value: "5432",
+		},
+		{
+			Name: "POSTGRES_USER",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					Key: "POSTGRES_USERNAME",
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: fmt.Sprintf("%s-postgresql", cr.Name),
+					},
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_PASSWORD",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					Key: "POSTGRES_PASSWORD",
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: fmt.Sprintf("%s-postgresql", cr.Name),
+					},
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_DATABASE",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					Key: "POSTGRES_DATABASE",
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: fmt.Sprintf("%s-postgresql", cr.Name),
+					},
+				},
+			},
+		},
+	}
+
+	if cr.Spec.UseMessageBroker {
+		env = append(env,
+			corev1.EnvVar{
+				Name:  "ARTEMIS_USER",
+				Value: "upsuser",
+			},
+
+			corev1.EnvVar{
+				Name:  "ARTEMIS_PASSWORD",
+				Value: "password",
+			},
+			corev1.EnvVar{
+				Name:  "ARTEMIS_SERVICE_HOST",
+				Value: addressSpaceURL,
+			},
+			corev1.EnvVar{
+				Name:  "ARTEMIS_SERVICE_PORT",
+				Value: "5672",
+			})
+	}
+
+	return env
+
+}
+
+func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer, addressSpaceURL string) (*openshiftappsv1.DeploymentConfig, error) {
+
 	labels := map[string]string{
 		"app":     cr.Name,
 		"service": "ups",
@@ -177,49 +255,7 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 							Name:            cfg.UPSContainerName,
 							Image:           cfg.UPSImageStreamName + ":" + cfg.UPSImageStreamTag,
 							ImagePullPolicy: corev1.PullAlways,
-							Env: []corev1.EnvVar{
-								{
-									Name:  "POSTGRES_SERVICE_HOST",
-									Value: fmt.Sprintf("%s-postgresql", cr.Name),
-								},
-								{
-									Name:  "POSTGRES_SERVICE_PORT",
-									Value: "5432",
-								},
-								{
-									Name: "POSTGRES_USER",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											Key: "POSTGRES_USERNAME",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: fmt.Sprintf("%s-postgresql", cr.Name),
-											},
-										},
-									},
-								},
-								{
-									Name: "POSTGRES_PASSWORD",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											Key: "POSTGRES_PASSWORD",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: fmt.Sprintf("%s-postgresql", cr.Name),
-											},
-										},
-									},
-								},
-								{
-									Name: "POSTGRES_DATABASE",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											Key: "POSTGRES_DATABASE",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: fmt.Sprintf("%s-postgresql", cr.Name),
-											},
-										},
-									},
-								},
-							},
+							Env:             buildEnv(cr, addressSpaceURL),
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          cfg.UPSContainerName,
@@ -250,8 +286,8 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 										},
 									},
 								},
-								InitialDelaySeconds: 60,
-								TimeoutSeconds:      2,
+								InitialDelaySeconds: 120,
+								TimeoutSeconds:      10,
 							},
 						},
 						{

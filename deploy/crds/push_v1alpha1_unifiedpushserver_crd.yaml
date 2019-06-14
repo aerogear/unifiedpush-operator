@@ -8,8 +8,6 @@ spec:
     kind: UnifiedPushServer
     listKind: UnifiedPushServerList
     plural: unifiedpushservers
-    shortNames:
-    - ups
     singular: unifiedpushserver
   scope: Namespaced
   subresources:
@@ -69,6 +67,9 @@ spec:
                 - backendSecretName
                 type: object
               type: array
+            useMessageBroker:
+              description: 'Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html'
+              type: boolean
           type: object
         status:
           properties:

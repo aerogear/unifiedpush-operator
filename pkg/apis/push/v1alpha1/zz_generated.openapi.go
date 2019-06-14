@@ -437,6 +437,13 @@ func schema_pkg_apis_push_v1alpha1_UnifiedPushServerSpec(ref common.ReferenceCal
 							},
 						},
 					},
+					"useMessageBroker": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},

@@ -62,6 +62,11 @@ required = [
   branch = "master" #osdk_branch_annotation
   # version = "=v0.7.0" #osdk_version_annotation
 
+[[constraint]]
+  name = "github.com/enmasseproject/enmasse"
+  source = "https://github.com/secondsun/enmasse.git"
+  branch = "address_type_update"
+
 [prune]
   go-tests = true
   non-go = true
@@ -73,3 +78,7 @@ required = [
   [[prune.project]]
     name = "k8s.io/gengo"
     non-go = false
+  
+  [[prune.project]]
+    name = "github.com/enmasseproject/enmasse"
+    unused-packages = true

@@ -128,6 +128,20 @@
   version = "v2.9.3"
 
 [[projects]]
+  branch = "address_type_update"
+  digest = "1:75ae4342c9d77578b7b7b1c3e92746d231db961afc9b26498aace6ef1afda885"
+  name = "github.com/enmasseproject/enmasse"
+  packages = [
+    "pkg/apis/enmasse",
+    "pkg/apis/enmasse/v1beta1",
+    "pkg/apis/user",
+    "pkg/apis/user/v1beta1",
+  ]
+  pruneopts = "NT"
+  revision = "42e62d49462dbc812691997fcf01388a5d131bf2"
+  source = "https://github.com/secondsun/enmasse.git"
+
+[[projects]]
   digest = "1:448bf60e9dce6d5fd9dfa8fd9eb9a23163424ff4e4f142456405781e942e3998"
   name = "github.com/evanphx/json-patch"
   packages = ["."]
@@ -1157,6 +1171,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1",
+    "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1",
     "github.com/go-logr/logr",
     "github.com/go-openapi/spec",
     "github.com/google/uuid",

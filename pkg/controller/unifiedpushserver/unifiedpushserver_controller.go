@@ -6,11 +6,13 @@ import (
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/config"
+	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
 	routev1 "github.com/openshift/api/route/v1"
 
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	imagev1 "github.com/openshift/api/image/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -196,10 +198,134 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			return reconcile.Result{}, err
 		}
 	}
+	addressSpaceURL := ""
+	//Begin AMQ resource reconcile
+	if instance.Spec.UseMessageBroker {
+		//check that address space exists
+		addressSpace := newAddressSpace(instance)
+
+		// Set UnifiedPushServer instance as the owner and controller
+		if err := controllerutil.SetControllerReference(instance, addressSpace, r.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		foundAddressSpace := &enmassev1beta.AddressSpace{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: addressSpace.Name, Namespace: addressSpace.Namespace}, foundAddressSpace)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new Address Space", "AddressSpace.Namespace", addressSpace.Namespace, "AddressSpace.Name", addressSpace.Name)
+			err = r.client.Create(context.TODO(), addressSpace)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
+		} else if err != nil {
+			return reconcile.Result{}, err
+		} else if !foundAddressSpace.Status.IsReady {
+			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
+		} else {
+			reqLogger.Info("Found AddressSpace for UPS")
+		}
+
+		/*Address space exists and is ready*/
+
+		for _, status := range foundAddressSpace.Status.EndpointStatus {
+			if status.Name == "messaging" { //magic value
+				addressSpaceURL = status.ServiceHost
+			}
+		}
+
+		//check that user exists
+		foundUser := newMessagingUser(instance)
+
+		// Set UnifiedPushServer instance as the owner and controller
+		if err := controllerutil.SetControllerReference(instance, foundUser, r.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: foundUser.Name, Namespace: foundUser.Namespace}, foundUser)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new MessagingUser", "MessagingUser.Namespace", foundUser.Namespace, "MessagingUser.Name", foundUser.Name)
+			err = r.client.Create(context.TODO(), foundUser)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{Requeue: true}, nil
+		} else if err != nil {
+			return reconcile.Result{}, err
+		} /*User exists and is ready*/
+
+		/*User exists and is ready*/
+		//check that addresses exist
+		//queues
+		queues := []string{"APNsPushMessageQueue", "APNsTokenBatchQueue", "GCMPushMessageQueue", "GCMTokenBatchQueue", "WNSPushMessageQueue", "WNSTokenBatchQueue", "MetricsQueue", "TriggerMetricCollectionQueue", "TriggerVariantMetricCollectionQueue", "BatchLoadedQueue", "AllBatchesLoadedQueue", "FreeServiceSlotQueue"}
+		requeueCreate := false
+		for _, address := range queues {
+			foundQueue := newQueue(instance, address)
+
+			// Set UnifiedPushServer instance as the owner and controller
+			if err := controllerutil.SetControllerReference(instance, foundQueue, r.scheme); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: foundQueue.Name, Namespace: foundQueue.Namespace}, foundQueue)
+			if err != nil && errors.IsNotFound(err) {
+				reqLogger.Info("Creating a new Queue", "Queue.Namespace", foundQueue.Namespace, "Queue.Name", foundQueue.Name)
+				err = r.client.Create(context.TODO(), foundQueue)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+				requeueCreate = true
+			} else if err != nil {
+				reqLogger.Info("Queue Error")
+				return reconcile.Result{}, err
+			} else if !foundQueue.Status.IsReady {
+				reqLogger.Info("Queue Not ready", "Queue.Name", foundQueue.Name)
+				requeueCreate = true
+			}
+		}
+
+		if requeueCreate {
+			return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+		} else {
+			reqLogger.Info("Found All queues  for UPS")
+		}
+
+		//topics
+		topics := []string{"MetricsProcessingStartedTopic", "topic/APNSClient"}
+		for _, address := range topics {
+			foundTopic := newTopic(instance, address)
+
+			// Set UnifiedPushServer instance as the owner and controller
+			if err := controllerutil.SetControllerReference(instance, foundTopic, r.scheme); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: foundTopic.Name, Namespace: foundTopic.Namespace}, foundTopic)
+			if err != nil && errors.IsNotFound(err) {
+				reqLogger.Info("Creating a new Topic", "Topic.Namespace", foundTopic.Namespace, "Topic.Name", foundTopic.Name)
+				err = r.client.Create(context.TODO(), foundTopic)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+				requeueCreate = true
+			} else if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+
+		if requeueCreate {
+			return reconcile.Result{Requeue: true}, nil
+		} else {
+			reqLogger.Info("Found All queues and topics for UPS")
+		}
+
+	}
+	//If AMQ is used, it is ready
 
 	//#region Postgres PVC
 	persistentVolumeClaim, err := newPostgresqlPersistentVolumeClaim(instance)
 	if err != nil {
+		reqLogger.Info("Error making PVC")
 		return reconcile.Result{}, err
 	}
 
@@ -221,7 +347,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, err
 	}
 	//#endregion
-
 	//#region Postgres DeploymentConfig
 	postgresqlDeploymentConfig, err := newPostgresqlDeploymentConfig(instance)
 	if err != nil {
@@ -445,7 +570,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	//#endregion
 
 	//#region UPS DeploymentConfig
-	unifiedpushDeploymentConfig, err := newUnifiedPushServerDeploymentConfig(instance)
+	unifiedpushDeploymentConfig, err := newUnifiedPushServerDeployment(instance, addressSpaceURL)
 
 	if err := controllerutil.SetControllerReference(instance, unifiedpushDeploymentConfig, r.scheme); err != nil {
 		return reconcile.Result{}, err
