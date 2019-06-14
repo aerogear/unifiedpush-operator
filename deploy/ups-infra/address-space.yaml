@@ -1,0 +1,8 @@
+apiVersion: enmasse.io/v1beta1
+kind: AddressSpace
+metadata:
+  name: ups
+spec:
+  type: brokered
+  plan: brokered-single-broker
+
