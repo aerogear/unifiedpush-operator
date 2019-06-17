@@ -11,7 +11,7 @@ pipeline {
     
     environment {
         GOPATH = "${env.WORKSPACE}/"
-        PATH = "${env.PATH}:${env.WORKSPACE}/bin"
+        PATH = "${env.PATH}:${env.WORKSPACE}/bin:/usr/local/go/bin"
         GOOS = "linux"
         GOARCH = "amd64"
         CGO_ENABLED = 0
