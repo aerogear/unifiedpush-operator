@@ -125,6 +125,7 @@ pipeline {
                 dir("${env.CLONED_REPOSITORY_PATH}") {
                     script {
                         sh """
+                        sh "yq w -i deploy/operator.yaml spec.template.spec.containers[0].image ${env.OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME}"
                         operator-sdk test local ./test/e2e --namespace ${env.OPENSHIFT_PROJECT_NAME}
                         """
                     }
@@ -153,6 +154,7 @@ pipeline {
                             skopeo delete \
                               --creds ${env.QUAY_CREDS} \
                               docker://${env.OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME} \
+                            || sleep 10
                         """
                     }
                 }
