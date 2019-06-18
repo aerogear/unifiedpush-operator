@@ -1,11 +1,12 @@
-kind: RoleBinding
+kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: unifiedpush-operator
 subjects:
 - kind: ServiceAccount
   name: unifiedpush-operator
+  namespace: unifiedpush
 roleRef:
-  kind: Role
+  kind: ClusterRole
   name: unifiedpush-operator
   apiGroup: rbac.authorization.k8s.io

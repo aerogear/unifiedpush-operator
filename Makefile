@@ -17,7 +17,7 @@ code/compile:
 
 .PHONY: code/run
 code/run: code/gen
-	operator-sdk up local --namespace=$(NAMESPACE)
+	operator-sdk up local
 
 .PHONY: code/gen
 code/gen: code/fix
