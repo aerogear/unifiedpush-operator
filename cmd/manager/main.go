@@ -14,6 +14,7 @@ import (
 	"github.com/aerogear/unifiedpush-operator/pkg/apis"
 	"github.com/aerogear/unifiedpush-operator/pkg/controller"
 
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
@@ -104,6 +105,12 @@ func main() {
 
 	// Setup Scheme for OpenShift Route
 	if err := routev1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	// Setup Scheme for OpenShift Apis
+	if err := openshiftappsv1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}

@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 
 	"github.com/pkg/errors"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,19 +49,18 @@ func newPostgresqlSecret(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Secret, er
 	}, nil
 }
 
-func newPostgresqlDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1.Deployment, error) {
+func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshiftappsv1.DeploymentConfig, error) {
 	memoryLimit, err := resource.ParseQuantity("512Mi")
 	if err != nil {
 		return nil, errors.Wrap(err, "error parsing PostgreSQL container memory limit size")
 	}
 
-	return &appsv1.Deployment{
+	return &openshiftappsv1.DeploymentConfig{
 		ObjectMeta: objectMeta(cr, "postgresql"),
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: labels(cr, "postgresql"),
-			},
-			Template: corev1.PodTemplateSpec{
+		Spec: openshiftappsv1.DeploymentConfigSpec{
+			Replicas: 1,
+			Selector: labels(cr, "postgresql"),
+			Template: &corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels(cr, "postgresql"),
 				},
