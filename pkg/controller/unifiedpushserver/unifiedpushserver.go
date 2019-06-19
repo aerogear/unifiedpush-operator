@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	routev1 "github.com/openshift/api/route/v1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -64,7 +64,7 @@ func newOauthProxyRoute(cr *pushv1alpha1.UnifiedPushServer) (*routev1.Route, err
 	}, nil
 }
 
-func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1.Deployment, error) {
+func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshiftappsv1.DeploymentConfig, error) {
 	labels := map[string]string{
 		"app":     cr.Name,
 		"service": "ups",
@@ -75,17 +75,16 @@ func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1
 		return nil, errors.Wrap(err, "error generating cookie secret")
 	}
 
-	return &appsv1.Deployment{
+	return &openshiftappsv1.DeploymentConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
 			Namespace: cr.Namespace,
 			Labels:    labels,
 		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			Template: corev1.PodTemplateSpec{
+		Spec: openshiftappsv1.DeploymentConfigSpec{
+			Replicas: 1,
+			Selector: labels,
+			Template: &corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,
 				},
