@@ -67,8 +67,8 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:            POSTGRES_CONTAINER_NAME,
-							Image:           postgresql.image(),
+							Name:            cfg.PostgresContainerName,
+							Image:           cfg.PostgresImageStreamInitialImage, // TODO: use image streams
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
 								{
@@ -107,7 +107,7 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 							},
 							Ports: []corev1.ContainerPort{
 								{
-									Name:          POSTGRES_CONTAINER_NAME,
+									Name:          cfg.PostgresContainerName,
 									Protocol:      corev1.ProtocolTCP,
 									ContainerPort: 5432,
 								},
