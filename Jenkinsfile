@@ -19,7 +19,7 @@ pipeline {
         OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME = "quay.io/aerogear/${env.OPERATOR_NAME}:candidate-${env.BRANCH_NAME}"
         OPERATOR_CONTAINER_IMAGE_NAME = "quay.io/aerogear/${env.OPERATOR_NAME}:${env.BRANCH_NAME}"
         OPERATOR_CONTAINER_IMAGE_NAME_LATEST = "quay.io/aerogear/${env.OPERATOR_NAME}:latest"
-        OPENSHIFT_PROJECT_NAME = "test-${env.OPERATOR_NAME}-${currentBuild.number}-${currentBuild.startTimeInMillis}"
+        OPENSHIFT_PROJECT_NAME = "unifiedpush"
         CLONED_REPOSITORY_PATH = "src/github.com/aerogear/unifiedpush-operator"
     }
 
