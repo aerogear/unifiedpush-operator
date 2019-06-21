@@ -200,6 +200,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, nil
 	}
 
+	//#region Postgres PVC
 	persistentVolumeClaim, err := newPostgresqlPersistentVolumeClaim(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -222,7 +223,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
+	//#endregion
 
+	//#region Postgres DeploymentConfig
 	postgresqlDeploymentConfig, err := newPostgresqlDeploymentConfig(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -244,28 +247,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 	} else if err != nil {
 		return reconcile.Result{}, err
-	} else {
-		//desiredImage := postgresql.image()
-		//
-		//containerSpec := findContainerSpec(foundPostgresqlDeploymentConfig, POSTGRES_CONTAINER_NAME)
-		//if containerSpec == nil {
-		//	reqLogger.Info("Skipping image reconcile: Unable to find container spec in deployment", "Deployment.Namespace", foundPostgresqlDeploymentConfig.Namespace, "Deployment.Name", foundPostgresqlDeploymentConfig.Name, "ContainerSpec", POSTGRES_CONTAINER_NAME)
-		//} else if containerSpec.Image != desiredImage {
-		//	reqLogger.Info("Container spec in deployment is using a different image. Going to update it now.", "Deployment.Namespace", foundPostgresqlDeploymentConfig.Namespace, "Deployment.Name", foundPostgresqlDeploymentConfig.Name, "ContainerSpec", POSTGRES_CONTAINER_NAME, "ExistingImage", containerSpec.Image, "DesiredImage", desiredImage)
-		//
-		//	// update
-		//	updateContainerSpecImage(foundPostgresqlDeploymentConfig, POSTGRES_CONTAINER_NAME, desiredImage)
-		//
-		//	// enqueue
-		//	err = r.client.Update(context.TODO(), foundPostgresqlDeploymentConfig)
-		//	if err != nil {
-		//		reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundPostgresqlDeploymentConfig.Namespace, "Deployment.Name", foundPostgresqlDeploymentConfig.Name)
-		//		return reconcile.Result{}, err
-		//	}
-		//	return reconcile.Result{Requeue: true}, nil
-		//}
 	}
+	//#endregion
 
+	//#region Postgres Service
 	postgresqlService, err := newPostgresqlService(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -288,7 +273,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
+	//#endregion
 
+	//#region ServiceAccount
 	serviceAccount, err := newUnifiedPushServiceAccount(instance)
 
 	// Set UnifiedPushServer instance as the owner and controller
@@ -308,7 +295,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
+	//#endregion
 
+	//#region Postgres Secret
 	postgresqlSecret, err := newPostgresqlSecret(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -331,7 +320,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
+	//#endregion
 
+	//#region OauthProxy Service
 	oauthProxyService, err := newOauthProxyService(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -354,7 +345,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
+	//#endregion
 
+	//#region UPS Service
 	unifiedpushService, err := newUnifiedPushServerService(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -377,7 +370,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
+	//#endregion
 
+	//#region OauthProxy Route
 	oauthProxyRoute, err := newOauthProxyRoute(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -400,8 +395,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
+	//#endregion
 
-	// Define a new ImageStream
+	//#region UPS ImageStream
 	unifiedPushImageStream, err := newUnifiedPushImageStream(instance)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -424,8 +420,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
+	//#endregion
 
-	// Define a new DeploymentConfig object
+	//#region UPS DeploymentConfig
 	unifiedpushDeploymentConfig, err := newUnifiedPushServerDeploymentConfig(instance)
 
 	if err := controllerutil.SetControllerReference(instance, unifiedpushDeploymentConfig, r.scheme); err != nil {
@@ -446,48 +443,8 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
-	} else {
-		//fou
-
-		//desiredUnifiedPushImage := unifiedpush.image()
-		//desiredProxyImage := proxy.image()
-		//
-		//unifiedPushContainerSpec := findContainerSpec(foundUnifiedpushDeploymentConfig, UPS_CONTAINER_NAME)
-		//if unifiedPushContainerSpec == nil {
-		//	reqLogger.Info("Skipping image reconcile: Unable to find container spec in deployment", "Deployment.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "Deployment.Name", foundUnifiedpushDeploymentConfig.Name, "ContainerSpec", UPS_CONTAINER_NAME)
-		//} else if unifiedPushContainerSpec.Image != desiredUnifiedPushImage {
-		//	reqLogger.Info("Container spec in deployment is using a different image. Going to update it now.", "Deployment.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "Deployment.Name", foundUnifiedpushDeploymentConfig.Name, "ContainerSpec", UPS_CONTAINER_NAME, "ExistingImage", unifiedPushContainerSpec.Image, "DesiredImage", desiredUnifiedPushImage)
-		//
-		//	// update
-		//	updateContainerSpecImage(foundUnifiedpushDeploymentConfig, UPS_CONTAINER_NAME, desiredUnifiedPushImage)
-		//
-		//	// enqueue
-		//	err = r.client.Update(context.TODO(), foundUnifiedpushDeploymentConfig)
-		//	if err != nil {
-		//		reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "Deployment.Name", foundUnifiedpushDeploymentConfig.Name)
-		//		return reconcile.Result{}, err
-		//	}
-		//	return reconcile.Result{Requeue: true}, nil
-		//}
-		//
-		//proxyContainerSpec := findContainerSpec(foundUnifiedpushDeploymentConfig, OAUTH_PROXY_CONTAINER_NAME)
-		//if proxyContainerSpec == nil {
-		//	reqLogger.Info("Skipping image reconcile: Unable to find container spec in deployment", "Deployment.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "Deployment.Name", foundUnifiedpushDeploymentConfig.Name, "ContainerSpec", OAUTH_PROXY_CONTAINER_NAME)
-		//} else if proxyContainerSpec.Image != desiredProxyImage {
-		//	reqLogger.Info("Container spec in deployment is using a different image. Going to update it now.", "Deployment.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "Deployment.Name", foundUnifiedpushDeploymentConfig.Name, "ContainerSpec", OAUTH_PROXY_CONTAINER_NAME, "ExistingImage", proxyContainerSpec.Image, "DesiredImage", desiredProxyImage)
-		//
-		//	// update
-		//	updateContainerSpecImage(foundUnifiedpushDeploymentConfig, OAUTH_PROXY_CONTAINER_NAME, desiredProxyImage)
-		//
-		//	// enqueue
-		//	err = r.client.Update(context.TODO(), foundUnifiedpushDeploymentConfig)
-		//	if err != nil {
-		//		reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "Deployment.Name", foundUnifiedpushDeploymentConfig.Name)
-		//		return reconcile.Result{}, err
-		//	}
-		//	return reconcile.Result{Requeue: true}, nil
-		//}
 	}
+	//#endregion
 
 	if foundUnifiedpushDeploymentConfig.Status.ReadyReplicas > 0 && instance.Status.Phase != pushv1alpha1.PhaseComplete {
 		instance.Status.Phase = pushv1alpha1.PhaseComplete
