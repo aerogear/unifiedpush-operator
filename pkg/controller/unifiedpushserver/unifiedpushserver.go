@@ -65,6 +65,30 @@ func newOauthProxyRoute(cr *pushv1alpha1.UnifiedPushServer) (*routev1.Route, err
 	}, nil
 }
 
+func newOauthProxyImageStream(cr *pushv1alpha1.UnifiedPushServer) (*imagev1.ImageStream, error) {
+	return &imagev1.ImageStream{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: cr.Namespace,
+			Name:      cfg.OauthProxyImageStreamName,
+			Labels:    labels(cr, cfg.OauthProxyImageStreamName),
+		},
+		Spec: imagev1.ImageStreamSpec{
+			Tags: []imagev1.TagReference{
+				{
+					Name: cfg.OauthProxyImageStreamTag,
+					From: &corev1.ObjectReference{
+						Kind: "DockerImage",
+						Name: cfg.OauthProxyImageStreamInitialImage,
+					},
+					ImportPolicy: imagev1.TagImportPolicy{
+						Scheduled: true,
+					},
+				},
+			},
+		},
+	}, nil
+}
+
 func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshiftappsv1.DeploymentConfig, error) {
 	labels := map[string]string{
 		"app":     cr.Name,
@@ -96,7 +120,29 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 						ContainerNames: []string{cfg.UPSContainerName},
 						From: corev1.ObjectReference{
 							Kind: "ImageStreamTag",
-							Name: "ups-imagestream:latest", // TODO: this shouldn't  be hardcoded
+							Name: cfg.UPSImageStreamName + ":" + cfg.UPSImageStreamTag,
+						},
+					},
+				},
+				openshiftappsv1.DeploymentTriggerPolicy{
+					Type: openshiftappsv1.DeploymentTriggerOnImageChange,
+					ImageChangeParams: &openshiftappsv1.DeploymentTriggerImageChangeParams{
+						Automatic:      true,
+						ContainerNames: []string{cfg.PostgresContainerName},
+						From: corev1.ObjectReference{
+							Kind: "ImageStreamTag",
+							Name: cfg.PostgresImageStreamName + ":" + cfg.PostgresImageStreamTag,
+						},
+					},
+				},
+				openshiftappsv1.DeploymentTriggerPolicy{
+					Type: openshiftappsv1.DeploymentTriggerOnImageChange,
+					ImageChangeParams: &openshiftappsv1.DeploymentTriggerImageChangeParams{
+						Automatic:      true,
+						ContainerNames: []string{cfg.OauthProxyContainerName},
+						From: corev1.ObjectReference{
+							Kind: "ImageStreamTag",
+							Name: cfg.OauthProxyImageStreamName + ":" + cfg.OauthProxyImageStreamTag,
 						},
 					},
 				},
@@ -110,7 +156,7 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 					InitContainers: []corev1.Container{
 						{
 							Name:            cfg.PostgresContainerName,
-							Image:           cfg.PostgresImageStreamInitialImage, // TODO: migrate to imagestream
+							Image:           cfg.PostgresImageStreamName + ":" + cfg.PostgresImageStreamTag,
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
 								{
@@ -209,7 +255,7 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 						},
 						{
 							Name:            cfg.OauthProxyContainerName,
-							Image:           cfg.OauthProxyImageStreamInitialImage, // TODO: use imagestreams
+							Image:           cfg.OauthProxyImageStreamName + ":" + cfg.OauthProxyImageStreamTag,
 							ImagePullPolicy: corev1.PullAlways,
 							Ports: []corev1.ContainerPort{
 								{
