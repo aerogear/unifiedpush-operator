@@ -5,6 +5,7 @@ import (
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
+	imagev1 "github.com/openshift/api/image/v1"
 
 	"github.com/pkg/errors"
 
@@ -175,6 +176,30 @@ func newPostgresqlService(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Service, 
 					Name:     "postgresql",
 					Protocol: corev1.ProtocolTCP,
 					Port:     5432,
+				},
+			},
+		},
+	}, nil
+}
+
+func newPostgresImageStream(cr *pushv1alpha1.UnifiedPushServer) (*imagev1.ImageStream, error) {
+	return &imagev1.ImageStream{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: cr.Namespace,
+			Name:      cfg.PostgresImageStreamName,
+			Labels:    labels(cr, cfg.PostgresImageStreamName),
+		},
+		Spec: imagev1.ImageStreamSpec{
+			Tags: []imagev1.TagReference{
+				{
+					Name: cfg.PostgresImageStreamTag,
+					From: &corev1.ObjectReference{
+						Kind: "DockerImage",
+						Name: cfg.PostgresImageStreamInitialImage,
+					},
+					ImportPolicy: imagev1.TagImportPolicy{
+						Scheduled: true,
+					},
 				},
 			},
 		},
