@@ -5,6 +5,7 @@ import (
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
+	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -257,6 +258,30 @@ func newUnifiedPushServerService(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Se
 					TargetPort: intstr.IntOrString{
 						Type:   intstr.Int,
 						IntVal: 8080,
+					},
+				},
+			},
+		},
+	}, nil
+}
+
+func newUnifiedPushImageStream(cr *pushv1alpha1.UnifiedPushServer) (*imagev1.ImageStream, error) {
+	return &imagev1.ImageStream{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: cr.Namespace,
+			Name:      cfg.UPSImageStreamName,
+			Labels:    labels(cr, cfg.UPSImageStreamName),
+		},
+		Spec: imagev1.ImageStreamSpec{
+			Tags: []imagev1.TagReference{
+				{
+					Name: cfg.UPSImageStreamTag,
+					From: &corev1.ObjectReference{
+						Kind: "DockerImage",
+						Name: cfg.UPSImageStreamInitialImage,
+					},
+					ImportPolicy: imagev1.TagImportPolicy{
+						Scheduled: true,
 					},
 				},
 			},

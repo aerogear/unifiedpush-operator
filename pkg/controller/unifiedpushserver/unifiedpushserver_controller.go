@@ -7,6 +7,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
+	imagev1 "github.com/openshift/api/image/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -54,7 +55,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO: still need following?
+	// TODO: still need following? probably not!
 	// Watch for changes to secondary resource Deployment and requeue the owner UnifiedPushServer
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
@@ -66,6 +67,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// Watch for changes to secondary resource DeploymentConfig and requeue the owner UnifiedPushServer
 	err = c.Watch(&source.Kind{Type: &openshiftappsv1.DeploymentConfig{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to secondary resource ImageStream and requeue the owner UnifiedPushServer
+	err = c.Watch(&source.Kind{Type: &imagev1.ImageStream{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
 	})
@@ -384,6 +394,30 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Route", "Route.Namespace", oauthProxyRoute.Namespace, "Route.Name", oauthProxyRoute.Name)
 		err = r.client.Create(context.TODO(), oauthProxyRoute)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Define a new ImageStream
+	unifiedPushImageStream, err := newUnifiedPushImageStream(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Set UnifiedPushServer instance as the owner and controller
+	if err := controllerutil.SetControllerReference(instance, unifiedPushImageStream, r.scheme); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Check if this ImageStream already exists
+	foundUnifiedPushImageStream := &imagev1.ImageStream{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: unifiedPushImageStream.Name, Namespace: unifiedPushImageStream.Namespace}, foundUnifiedPushImageStream)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a new ImageStream", "ImageStream.Namespace", unifiedPushImageStream.Namespace, "ImageStream.Name", unifiedPushImageStream.Name)
+		err = r.client.Create(context.TODO(), unifiedPushImageStream)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
