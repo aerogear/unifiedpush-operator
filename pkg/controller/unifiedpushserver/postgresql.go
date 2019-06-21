@@ -69,7 +69,7 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 					Containers: []corev1.Container{
 						{
 							Name:            cfg.PostgresContainerName,
-							Image:           cfg.PostgresImageStreamInitialImage, // TODO: use image streams
+							Image:           cfg.PostgresImageStreamName + ":" + cfg.PostgresImageStreamTag,
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
 								{
