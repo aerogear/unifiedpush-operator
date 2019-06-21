@@ -84,6 +84,22 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 		Spec: openshiftappsv1.DeploymentConfigSpec{
 			Replicas: 1,
 			Selector: labels,
+			Triggers: openshiftappsv1.DeploymentTriggerPolicies{
+				openshiftappsv1.DeploymentTriggerPolicy{
+					Type: openshiftappsv1.DeploymentTriggerOnConfigChange,
+				},
+				openshiftappsv1.DeploymentTriggerPolicy{
+					Type: openshiftappsv1.DeploymentTriggerOnImageChange,
+					ImageChangeParams: &openshiftappsv1.DeploymentTriggerImageChangeParams{
+						Automatic:      true,
+						ContainerNames: []string{cfg.UPSContainerName},
+						From: corev1.ObjectReference{
+							Kind: "ImageStreamTag",
+							Name: "ups-imagestream:latest", // TODO: this shouldn't  be hardcoded
+						},
+					},
+				},
+			},
 			Template: &corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,
@@ -92,8 +108,8 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 					ServiceAccountName: cr.Name,
 					InitContainers: []corev1.Container{
 						{
-							Name:            POSTGRES_CONTAINER_NAME,
-							Image:           postgresql.image(),
+							Name:            cfg.PostgresContainerName,
+							Image:           cfg.PostgresImageStreamInitialImage, // TODO: migrate to imagestream
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
 								{
@@ -110,8 +126,8 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 					},
 					Containers: []corev1.Container{
 						{
-							Name:            UPS_CONTAINER_NAME,
-							Image:           unifiedpush.image(),
+							Name:            cfg.UPSContainerName,
+							Image:           cfg.UPSImageStreamName + ":" + cfg.UPSImageStreamTag,
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
 								{
@@ -158,7 +174,7 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 							},
 							Ports: []corev1.ContainerPort{
 								{
-									Name:          UPS_CONTAINER_NAME,
+									Name:          cfg.UPSContainerName,
 									Protocol:      corev1.ProtocolTCP,
 									ContainerPort: 8080,
 								},
@@ -191,8 +207,8 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 							},
 						},
 						{
-							Name:            OAUTH_PROXY_CONTAINER_NAME,
-							Image:           proxy.image(),
+							Name:            cfg.OauthProxyContainerName,
+							Image:           cfg.OauthProxyImageStreamInitialImage, // TODO: use imagestreams
 							ImagePullPolicy: corev1.PullAlways,
 							Ports: []corev1.ContainerPort{
 								{

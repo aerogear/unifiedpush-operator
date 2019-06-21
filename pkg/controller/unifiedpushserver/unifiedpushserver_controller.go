@@ -2,8 +2,8 @@ package unifiedpushserver
 
 import (
 	"context"
-
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
+	"github.com/aerogear/unifiedpush-operator/pkg/config"
 	routev1 "github.com/openshift/api/route/v1"
 
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
@@ -24,6 +24,10 @@ import (
 )
 
 var log = logf.Log.WithName("controller_unifiedpushserver")
+
+var (
+	cfg = config.New()
+)
 
 // Add creates a new UnifiedPushServer Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
