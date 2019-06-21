@@ -8,7 +8,6 @@ import (
 
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	imagev1 "github.com/openshift/api/image/v1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,16 +50,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// Watch for changes to primary resource UnifiedPushServer
 	err = c.Watch(&source.Kind{Type: &pushv1alpha1.UnifiedPushServer{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-
-	// TODO: still need following? probably not!
-	// Watch for changes to secondary resource Deployment and requeue the owner UnifiedPushServer
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
-	})
 	if err != nil {
 		return err
 	}
@@ -261,7 +250,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, err
 	}
 
-	// Check if this Deployment already exists
+	// Check if this DeploymentConfig already exists
 	foundPostgresqlDeploymentConfig := &openshiftappsv1.DeploymentConfig{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlDeploymentConfig.Name, Namespace: postgresqlDeploymentConfig.Namespace}, foundPostgresqlDeploymentConfig)
 	if err != nil && errors.IsNotFound(err) {
