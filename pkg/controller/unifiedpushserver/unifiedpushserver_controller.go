@@ -213,31 +213,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	}
 	//#endregion
 
-	//#region Postgres ImageStream
-	postgresImageStream, err := newPostgresImageStream(instance)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Set UnifiedPushServer instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, postgresImageStream, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Check if this ImageStream already exists
-	foundPostgresImageStream := &imagev1.ImageStream{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresImageStream.Name, Namespace: postgresImageStream.Namespace}, foundPostgresImageStream)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new ImageStream", "ImageStream.Namespace", postgresImageStream.Namespace, "ImageStream.Name", postgresImageStream.Name)
-		err = r.client.Create(context.TODO(), postgresImageStream)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	} else if err != nil {
-		return reconcile.Result{}, err
-	}
-	//#endregion
-
 	//#region Postgres DeploymentConfig
 	postgresqlDeploymentConfig, err := newPostgresqlDeploymentConfig(instance)
 	if err != nil {
