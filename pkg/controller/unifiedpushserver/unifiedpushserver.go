@@ -81,7 +81,7 @@ func newOauthProxyImageStream(cr *pushv1alpha1.UnifiedPushServer) (*imagev1.Imag
 						Name: cfg.OauthProxyImageStreamInitialImage,
 					},
 					ImportPolicy: imagev1.TagImportPolicy{
-						Scheduled: true,
+						Scheduled: false,
 					},
 				},
 			},
@@ -328,7 +328,7 @@ func newUnifiedPushImageStream(cr *pushv1alpha1.UnifiedPushServer) (*imagev1.Ima
 						Name: cfg.UPSImageStreamInitialImage,
 					},
 					ImportPolicy: imagev1.TagImportPolicy{
-						Scheduled: true,
+						Scheduled: false,
 					},
 				},
 			},
