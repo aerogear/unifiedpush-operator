@@ -135,6 +135,18 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 						},
 					},
 				},
+				openshiftappsv1.DeploymentTriggerPolicy{
+					Type: openshiftappsv1.DeploymentTriggerOnImageChange,
+					ImageChangeParams: &openshiftappsv1.DeploymentTriggerImageChangeParams{
+						Automatic:      true,
+						ContainerNames: []string{cfg.PostgresContainerName},
+						From: corev1.ObjectReference{
+							Kind:      "ImageStreamTag",
+							Namespace: cfg.PostgresImageStreamNamespace,
+							Name:      cfg.PostgresImageStreamName + ":" + cfg.PostgresImageStreamTag,
+						},
+					},
+				},
 			},
 			Template: &corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
