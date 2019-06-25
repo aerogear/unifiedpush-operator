@@ -61,6 +61,19 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 		Spec: openshiftappsv1.DeploymentConfigSpec{
 			Replicas: 1,
 			Selector: labels(cr, "postgresql"),
+			Triggers: openshiftappsv1.DeploymentTriggerPolicies{
+				openshiftappsv1.DeploymentTriggerPolicy{
+					Type: openshiftappsv1.DeploymentTriggerOnImageChange,
+					ImageChangeParams: &openshiftappsv1.DeploymentTriggerImageChangeParams{
+						Automatic:      true,
+						ContainerNames: []string{cfg.PostgresContainerName},
+						From: corev1.ObjectReference{
+							Kind: "ImageStreamTag",
+							Name: cfg.PostgresImageStreamName + ":" + cfg.PostgresImageStreamTag,
+						},
+					},
+				},
+			},
 			Template: &corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels(cr, "postgresql"),
