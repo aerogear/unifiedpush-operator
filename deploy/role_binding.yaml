@@ -10,16 +10,3 @@ roleRef:
   kind: ClusterRole
   name: unifiedpush-operator
   apiGroup: rbac.authorization.k8s.io
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: unifiedpush-operator-image-import
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: system:openshift:controller:image-import-controller
-subjects:
-  - apiGroup: rbac.authorization.k8s.io
-    kind: Group
-    name: system:masters
