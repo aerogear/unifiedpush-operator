@@ -23,10 +23,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-var log = logf.Log.WithName("controller_unifiedpushserver")
-
 var (
 	cfg = config.New()
+	log = logf.Log.WithName("controller_unifiedpushserver")
 )
 
 // Add creates a new UnifiedPushServer Controller and adds it to the Manager. The Manager will set fields on the Controller
