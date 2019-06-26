@@ -7,6 +7,7 @@ pipeline {
 
     libraries {
         lib('fh-pipeline-library')
+        lib('qe-pipeline-library')
     }
     
     environment {
@@ -21,6 +22,7 @@ pipeline {
         OPERATOR_CONTAINER_IMAGE_NAME_LATEST = "quay.io/aerogear/${env.OPERATOR_NAME}:latest"
         OPENSHIFT_PROJECT_NAME = "unifiedpush"
         CLONED_REPOSITORY_PATH = "src/github.com/aerogear/unifiedpush-operator"
+        CREDENTIALS_ID = "quay-aerogear-bot"
     }
 
     options {
@@ -44,8 +46,8 @@ pipeline {
         
         stage("Run oc-cluster-up"){
             steps{
-                // TODO: Will be replaced with a step from pipeline-library which will be created later
-                build job: 'oc-cluster-up', parameters: [[$class: 'StringParameterValue', name: 'buildNode', value: "${env.NODE_NAME}"]], propagate: true, wait: true
+                // qe-pipeline-library step
+                ocClusterUp()
             }
             post{
                 failure{
@@ -58,20 +60,15 @@ pipeline {
 
         stage("Create an OpenShift project") {
             steps {
-                script {
-                    sh "oc new-project ${env.OPENSHIFT_PROJECT_NAME}"
-                }
+                // qe-pipeline-library step
+                newOpenshiftProject "${env.OPENSHIFT_PROJECT_NAME}"
             }
         }
 
         stage("Build code binary"){
             steps{
                 dir("${env.CLONED_REPOSITORY_PATH}") {
-                    script {
-                        sh """
-                        make code/compile
-                        """
-                    }
+                    sh "make code/compile"
                 }
             }
             post{
@@ -85,15 +82,13 @@ pipeline {
         stage("Build & push container image") {
             steps{
                 dir("${env.CLONED_REPOSITORY_PATH}") {
-                    script {
-                        withCredentials([usernamePassword(credentialsId: 'quay-aerogear-bot', usernameVariable: 'quayUsername', passwordVariable: "quayPassword")]) {
-                            sh """
-                            docker login -u ${quayUsername} -p ${quayPassword} quay.io
-                            operator-sdk build ${env.OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME}
-                            docker push ${env.OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME}
-                            """
-                        }
-                    }
+                    // qe-pipeline-library step
+                    dockerBuildAndPush(
+                        credentialsId: "${env.CREDENTIALS_ID}",
+                        containerRegistryServerName: "quay.io",
+                        containerImageName: "${env.OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME}",
+                        pathToDockerfile: "build/Dockerfile"
+                    )
                 }
             }
             post{
@@ -107,9 +102,7 @@ pipeline {
             steps{
                 dir("${env.CLONED_REPOSITORY_PATH}") {
                     script {
-                        sh """
-                        make test/compile
-                        """
+                        sh "make test/compile"
                     }
                 }
             }
@@ -123,12 +116,11 @@ pipeline {
         stage("Test operator") {
             steps{
                 dir("${env.CLONED_REPOSITORY_PATH}") {
-                    script {
-                        sh """
-                        yq w -i deploy/operator.yaml spec.template.spec.containers[0].image ${env.OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME}
-                        operator-sdk test local ./test/e2e --namespace ${env.OPENSHIFT_PROJECT_NAME}
-                        """
-                    }
+                    // qe-pipeline-library step
+                    runOperatorTestWithImage (
+                        containerImageName: "${env.OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME}",
+                        namespace: "${env.OPENSHIFT_PROJECT_NAME}"
+                    )
                 }
             }
             post{
@@ -139,25 +131,13 @@ pipeline {
         }
         stage("Retag the image if the test passed and delete an old tag") {
             steps{
-                withCredentials([usernameColonPassword(credentialsId: 'quay-aerogear-bot', variable: 'QUAY_CREDS')]) {
-                    retry(3) {
-                        sh """
-                            skopeo copy \
-                              --src-creds ${env.QUAY_CREDS} \
-                              --dest-creds ${env.QUAY_CREDS} \
-                              docker://${env.OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME} \
-                              docker://${env.OPERATOR_CONTAINER_IMAGE_NAME}
-                        """
-                    }
-                    retry(3) {
-                        sh """
-                            skopeo delete \
-                              --creds ${env.QUAY_CREDS} \
-                              docker://${env.OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME} \
-                            || sleep 10
-                        """
-                    }
-                }
+                // qe-pipeline-library step
+                tagRemoteContainerImage(
+                    credentialsId: "${env.CREDENTIALS_ID}",
+                    sourceImage: "${env.OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME}",
+                    targetImage: "${env.OPERATOR_CONTAINER_IMAGE_NAME}",
+                    deleteOriginalImage: true
+                )
             }
         }
         stage("Create a 'latest' tag from 'master'") {
@@ -165,29 +145,17 @@ pipeline {
                 branch 'master'
             }
             steps{
-                withCredentials([usernameColonPassword(credentialsId: 'quay-aerogear-bot', variable: 'QUAY_CREDS')]) {
-                    retry(3) {
-                        sh """
-                            skopeo copy \
-                              --src-creds ${env.QUAY_CREDS} \
-                              --dest-creds ${env.QUAY_CREDS} \
-                              docker://${env.OPERATOR_CONTAINER_IMAGE_NAME} \
-                              docker://${env.OPERATOR_CONTAINER_IMAGE_NAME_LATEST}
-                        """
-                    }
-                }
+                // qe-pipeline-library step
+                tagRemoteContainerImage(
+                    credentialsId: "${env.CREDENTIALS_ID}",
+                    sourceImage: "${env.OPERATOR_CONTAINER_IMAGE_NAME}",
+                    targetImage: "${env.OPERATOR_CONTAINER_IMAGE_NAME_latest}",
+                    deleteOriginalImage: false
+                )
             }
         }
     }
     post {
-        always{
-            script {
-                sh """
-                oc delete project ${env.OPENSHIFT_PROJECT_NAME}
-                rm -rf ${env.CLONED_REPOSITORY_PATH}
-                """
-            }
-        }
         failure {
             mail(
                 to: 'psturc@redhat.com',
