@@ -4,15 +4,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // UnifiedPushServerSpec defines the desired state of UnifiedPushServer
 // +k8s:openapi-gen=true
 type UnifiedPushServerSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
+	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+	Backups []UnifiedPushServerBackup `json:"backups,omitempty"`
 }
 
 // UnifiedPushServerStatus defines the observed state of UnifiedPushServer
@@ -40,6 +39,17 @@ type UnifiedPushServerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []UnifiedPushServer `json:"items"`
+}
+
+// Backup contains the info needed to configure a CronJob for backups
+type UnifiedPushServerBackup struct {
+	Name                         string            `json:"name"`
+	Labels                       map[string]string `json:"labels"`
+	Schedule                     string            `json:"schedule"`
+	EncryptionKeySecretName      string            `json:"encryptionKeySecretName"`
+	EncryptionKeySecretNamespace string            `json:"encryptionKeySecretNamespace"`
+	BackendSecretName            string            `json:"backendSecretName"`
+	BackendSecretNamespace       string            `json:"backendSecretNamespace"`
 }
 
 type StatusPhase string

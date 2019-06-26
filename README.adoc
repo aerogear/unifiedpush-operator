@@ -100,8 +100,24 @@ This operator currently only supports one UnifiedPushServer CR to be
 created.
 ====
 
-There are currently no configurable fields in the UnifiedPushServer CR
-apart from the name, so the example in
+Here are all of the configurable fields in a UnifiedPushServer:
+
+.UnifiedPushServer fields
+|===
+|Field Name |Description
+
+|backups
+|A list of backup entries that CronJobs will be created from. See
+ `./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup.yaml`
+ for an annotated example. Note that a ServiceAccount called
+ "backupjob" must already exist before the operator will create any
+ backup CronJobs. See
+ https://github.com/integr8ly/backup-container-image/tree/master/templates/openshift/rbac
+ for an example.
+|===
+
+The most basic UnifiedPushServer CR doesn't specify anything in the
+Spec section, so the example in
 `./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml` is a good
 template:
 

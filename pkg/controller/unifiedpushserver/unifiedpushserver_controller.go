@@ -2,6 +2,7 @@ package unifiedpushserver
 
 import (
 	"context"
+	"time"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/config"
@@ -9,6 +10,7 @@ import (
 
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	imagev1 "github.com/openshift/api/image/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -110,6 +112,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// Watch for changes to secondary resource Route and requeue the owner UnifiedPushServer
 	err = c.Watch(&source.Kind{Type: &routev1.Route{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to secondary resource CronJob and requeue the owner UnifiedPushServer
+	err = c.Watch(&source.Kind{Type: &batchv1beta1.CronJob{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
 	})
@@ -457,6 +468,41 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
+	}
+	//#endregion
+
+	//#region Backups
+	if len(instance.Spec.Backups) > 0 {
+		backupjobSA := &corev1.ServiceAccount{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "backupjob", Namespace: instance.Namespace}, backupjobSA)
+		if err != nil {
+			reqLogger.Error(err, "A 'backupjob' ServiceAccount is required for the requested backup CronJob(s). Will check again in 10 seconds")
+			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
+		}
+	}
+
+	cronJobs, err := backups(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	for _, cronJob := range cronJobs {
+		if err := controllerutil.SetControllerReference(instance, &cronJob, r.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		// Check if this CronJob already exists
+		foundCronJob := &batchv1beta1.CronJob{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: cronJob.Name, Namespace: cronJob.Namespace}, foundCronJob)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new CronJob", "CronJob.Namespace", cronJob.Namespace, "CronJob.Name", cronJob.Name)
+			err = r.client.Create(context.TODO(), &cronJob)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		} else if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 	//#endregion
 

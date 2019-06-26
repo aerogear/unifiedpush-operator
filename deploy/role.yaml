@@ -70,3 +70,9 @@ rules:
   - deploymentconfigs
   verbs:
   - '*'
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - '*'
