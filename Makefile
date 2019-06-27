@@ -12,7 +12,7 @@ setup/travis:
 	@echo setup complete
 
 .PHONY: code/compile
-code/compile:
+code/compile: code/gen
 	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o=$(CODE_COMPILE_OUTPUT) ./cmd/manager/main.go
 
 .PHONY: code/run
@@ -22,6 +22,7 @@ code/run: code/gen
 .PHONY: code/gen
 code/gen: code/fix
 	operator-sdk generate k8s
+	operator-sdk generate openapi
 	go generate ./...
 
 .PHONY: code/fix
