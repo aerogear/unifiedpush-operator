@@ -2,6 +2,7 @@ package unifiedpushserver
 
 import (
 	"context"
+
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/config"
 	routev1 "github.com/openshift/api/route/v1"
@@ -398,7 +399,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	// Check if this ImageStream already exists
 	foundOauthProxyImageStream := &imagev1.ImageStream{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: foundOauthProxyImageStream.Name, Namespace: oauthProxyImageStream.Namespace}, foundOauthProxyImageStream)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: oauthProxyImageStream.Name, Namespace: oauthProxyImageStream.Namespace}, foundOauthProxyImageStream)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new ImageStream", "ImageStream.Namespace", foundOauthProxyImageStream.Namespace, "ImageStream.Name", oauthProxyImageStream.Name)
 		err = r.client.Create(context.TODO(), oauthProxyImageStream)
