@@ -38,7 +38,8 @@ func New() Config {
 
 		PostgresImageStreamNamespace: getEnv("POSTGRES_IMAGE_STREAM_NAMESPACE", "openshift"),
 		PostgresImageStreamName:      getEnv("POSTGRES_IMAGE_STREAM_NAME", "postgresql"),
-		PostgresImageStreamTag:       getEnv("POSTGRES_IMAGE_STREAM_TAG", "9.6"),
+		// Used both to set the tag, and also for the "POSTGRES_VERSION" in the Secret
+		PostgresImageStreamTag: getEnv("POSTGRES_IMAGE_STREAM_TAG", "10"),
 
 		// these are used when the image stream does not exist and created for the first time by the operator
 		UPSImageStreamInitialImage:        getEnv("UPS_IMAGE_STREAM_INITIAL_IMAGE", "docker.io/aerogear/unifiedpush-wildfly-plain:2.2.1.Final"),

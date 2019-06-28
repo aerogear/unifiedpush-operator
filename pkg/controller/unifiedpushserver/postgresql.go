@@ -46,6 +46,7 @@ func newPostgresqlSecret(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Secret, er
 			"POSTGRES_PASSWORD":  databasePassword,
 			"POSTGRES_HOST":      fmt.Sprintf("%s-postgresql.%s.svc", cr.Name, cr.Namespace),
 			"POSTGRES_SUPERUSER": "false",
+			"POSTGRES_VERSION":   cfg.PostgresImageStreamTag,
 		},
 	}, nil
 }
