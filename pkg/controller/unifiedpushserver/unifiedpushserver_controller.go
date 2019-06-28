@@ -195,9 +195,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			reqLogger.Error(err, "Failed to update UnifiedPush resource status phase", "UnifiedPush.Namespace", instance.Namespace, "UnifiedPush.Name", instance.Name)
 			return reconcile.Result{}, err
 		}
-	} else if instance.Status.Phase == pushv1alpha1.PhaseComplete {
-		reqLogger.Info("UnifiedPush resource is already in Complete phase. Doing nothing.", "UnifiedPush.Namespace", instance.Namespace, "UnifiedPush.Name", instance.Name)
-		return reconcile.Result{}, nil
 	}
 
 	//#region Postgres PVC
