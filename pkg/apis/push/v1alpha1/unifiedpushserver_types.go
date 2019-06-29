@@ -52,9 +52,6 @@ type UnifiedPushServerBackup struct {
 	// CronJob
 	Name string `json:"name"`
 
-	// Labels to be added to the resulting CronJob
-	Labels map[string]string `json:"labels"`
-
 	// Schedule is the schedule that the job will be run at, in
 	// cron format
 	Schedule string `json:"schedule"`

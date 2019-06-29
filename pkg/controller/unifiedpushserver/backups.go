@@ -14,14 +14,8 @@ func backups(ups *pushv1alpha1.UnifiedPushServer) ([]batchv1beta1.CronJob, error
 	cronjobs := []batchv1beta1.CronJob{}
 	for _, upsBackup := range ups.Spec.Backups {
 		cronJobLabels := labels(ups, "backup")
-		for k, v := range upsBackup.Labels {
-			cronJobLabels[k] = v
-		}
-
-		jobLabels := map[string]string{"cronjob-name": upsBackup.Name}
-		for k, v := range cronJobLabels {
-			jobLabels[k] = v
-		}
+		jobLabels := cronJobLabels
+		jobLabels["cronjob-name"] = upsBackup.Name
 
 		cronjobs = append(cronjobs, batchv1beta1.CronJob{
 			ObjectMeta: metav1.ObjectMeta{
