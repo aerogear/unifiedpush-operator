@@ -478,27 +478,46 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 	}
 
-	cronJobs, err := backups(instance)
+	existingCronJobs := &batchv1beta1.CronJobList{}
+	opts = client.InNamespace(instance.Namespace).MatchingLabels(labels(instance, "backup"))
+	err = r.client.List(context.TODO(), opts, existingCronJobs)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	for _, cronJob := range cronJobs {
-		if err := controllerutil.SetControllerReference(instance, &cronJob, r.scheme); err != nil {
+	desiredCronJobs, err := backups(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	for _, desiredCronJob := range desiredCronJobs {
+		if err := controllerutil.SetControllerReference(instance, &desiredCronJob, r.scheme); err != nil {
 			return reconcile.Result{}, err
 		}
 
-		// Check if this CronJob already exists
-		foundCronJob := &batchv1beta1.CronJob{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: cronJob.Name, Namespace: cronJob.Namespace}, foundCronJob)
-		if err != nil && errors.IsNotFound(err) {
-			reqLogger.Info("Creating a new CronJob", "CronJob.Namespace", cronJob.Namespace, "CronJob.Name", cronJob.Name)
-			err = r.client.Create(context.TODO(), &cronJob)
+		if exists := containsCronJob(existingCronJobs.Items, &desiredCronJob); exists {
+			err = r.client.Update(context.TODO(), &desiredCronJob)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-		} else if err != nil {
-			return reconcile.Result{}, err
+		} else {
+			reqLogger.Info("Creating a new CronJob", "CronJob.Namespace", desiredCronJob.Namespace, "CronJob.Name", desiredCronJob.Name)
+			err = r.client.Create(context.TODO(), &desiredCronJob)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{}, nil
+		}
+	}
+
+	for _, existingCronJob := range existingCronJobs.Items {
+		desired := containsCronJob(desiredCronJobs, &existingCronJob)
+		if !desired {
+			reqLogger.Info("Deleting backup CronJob since it was removed from CR", "CronJob.Namespace", existingCronJob.Namespace, "CronJob.Name", existingCronJob.Name)
+			err = r.client.Delete(context.TODO(), &existingCronJob)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 		}
 	}
 	//#endregion
@@ -511,4 +530,13 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	// Resources already exist - don't requeue
 	reqLogger.Info("Skip reconcile: Resources already exist")
 	return reconcile.Result{}, nil
+}
+
+func containsCronJob(cronJobs []batchv1beta1.CronJob, candidate *batchv1beta1.CronJob) bool {
+	for _, cronJob := range cronJobs {
+		if candidate.Name == cronJob.Name {
+			return true
+		}
+	}
+	return false
 }
