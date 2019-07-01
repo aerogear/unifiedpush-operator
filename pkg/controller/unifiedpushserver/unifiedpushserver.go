@@ -190,7 +190,7 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 									Name: "POSTGRES_USER",
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
-											Key: "database-user",
+											Key: "POSTGRES_USERNAME",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: fmt.Sprintf("%s-postgresql", cr.Name),
 											},
@@ -201,7 +201,7 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 									Name: "POSTGRES_PASSWORD",
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
-											Key: "database-password",
+											Key: "POSTGRES_PASSWORD",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: fmt.Sprintf("%s-postgresql", cr.Name),
 											},
@@ -212,7 +212,7 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 									Name: "POSTGRES_DATABASE",
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
-											Key: "database-name",
+											Key: "POSTGRES_DATABASE",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: fmt.Sprintf("%s-postgresql", cr.Name),
 											},

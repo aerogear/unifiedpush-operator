@@ -41,9 +41,12 @@ func newPostgresqlSecret(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Secret, er
 	return &corev1.Secret{
 		ObjectMeta: objectMeta(cr, "postgresql"),
 		StringData: map[string]string{
-			"database-name":     "unifiedpush",
-			"database-user":     "unifiedpush",
-			"database-password": databasePassword,
+			"POSTGRES_DATABASE":  "unifiedpush",
+			"POSTGRES_USERNAME":  "unifiedpush",
+			"POSTGRES_PASSWORD":  databasePassword,
+			"POSTGRES_HOST":      fmt.Sprintf("%s-postgresql.%s.svc", cr.Name, cr.Namespace),
+			"POSTGRES_SUPERUSER": "false",
+			"POSTGRES_VERSION":   cfg.PostgresImageStreamTag,
 		},
 	}, nil
 }
@@ -88,7 +91,7 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 									Name: "POSTGRESQL_USER",
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
-											Key: "database-user",
+											Key: "POSTGRES_USERNAME",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: fmt.Sprintf("%s-postgresql", cr.Name),
 											},
@@ -99,7 +102,7 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 									Name: "POSTGRESQL_PASSWORD",
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
-											Key: "database-password",
+											Key: "POSTGRES_PASSWORD",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: fmt.Sprintf("%s-postgresql", cr.Name),
 											},
@@ -110,7 +113,7 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 									Name: "POSTGRESQL_DATABASE",
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
-											Key: "database-name",
+											Key: "POSTGRES_DATABASE",
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: fmt.Sprintf("%s-postgresql", cr.Name),
 											},

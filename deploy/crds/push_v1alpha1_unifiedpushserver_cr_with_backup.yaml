@@ -1,0 +1,50 @@
+apiVersion: push.aerogear.org/v1alpha1
+kind: UnifiedPushServer
+metadata:
+  name: example-ups-with-backups
+spec:
+  backups:
+    # Note that backups here is a list, you can specify more than one
+    -
+      # REQUIRED: The name of a backup here will be the name of the
+      # generated CronJob
+      name: ups-daily-at-midnight
+
+      # REQUIRED: The schedule string is in standard cron syntax, and
+      # is passed directly to the CronJob
+      schedule: 0 0 * * *
+
+      # These two properties point to a Secret (in this namespace or
+      # somewhere else), that contains data that the scripts in the
+      # backup container can use to upload to a storage location.  The
+      # backup-container-image repo can be found at
+      # https://github.com/integr8ly/backup-container-image and it
+      # currently only supports AWS S3 as a storage backend.
+      #
+      # The Secret here must contain the following keys:
+      # AWS_S3_BUCKET_NAME
+      # AWS_ACCESS_KEY_ID
+      # AWS_SECRET_ACCESS_KEY
+      #
+      # REQUIRED: Job will fail if not provided
+      backendSecretName: example-aws-key
+      # OPTIONAL: This defaults to the namespace where this CR exists
+      backendSecretNamespace: unifiedpush
+
+      # These two properties point to a Secret (in this namespace or
+      # somewhere else), that contains data that the scripts in the
+      # backup container can use to PGP/GPG encrypt the backups before
+      # sending them to the storage location. The
+      # backup-container-image repo can be found at
+      # https://github.com/integr8ly/backup-container-image.
+      #
+      # The Secret here must contain the following keys:
+      # GPG_PUBLIC_KEY
+      # GPG_TRUST_MODEL
+      # GPG_RECIPIENT
+      #
+      # OPTIONAL: If no encryptionKeySecretName is specified, no
+      # encryption attempt will be performed
+      encryptionKeySecretName: example-encryption-key
+      # OPTIONAL: This defaults to the namespace where this CR exists
+      encryptionKeySecretNamespace: unifiedpush

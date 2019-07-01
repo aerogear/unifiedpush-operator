@@ -36,6 +36,7 @@ type PushApplicationStatus struct {
 
 // PushApplication is the Schema for the pushapplications API
 // +k8s:openapi-gen=true
+// +kubebuilder:subresource:status
 type PushApplication struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -45,6 +45,10 @@ type IOSVariantStatus struct {
 
 // IOSVariant is the Schema for the iosvariants API
 // +k8s:openapi-gen=true
+// +kubebuilder:printcolumn:name="Production",type="boolean",JSONPath=".spec.production"
+// +kubebuilder:printcolumn:name="VariantId",type="string",JSONPath=".status.variantId"
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.ready"
+// +kubebuilder:subresource:status
 type IOSVariant struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
