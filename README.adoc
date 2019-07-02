@@ -49,29 +49,88 @@ kubectl create -n unifiedpush -f deploy/operator.yaml
 
 == Configuration
 
-=== Deploying custom images
+=== Image Streams
 
-There are default images that this operator will use for the
-containers in the deployed pods. These can be configured with the use
-of environment variables. The following table shows the available
+The operator uses 3 image streams and what image streams to use are configurable
+with environment variables.
+
+Unified Push Server and Oauth proxy image stream are created within the same namespace by the operator.
+However, for Postgres the image stream in `openshift` namespace is used.
+
+The following table shows the available
 environment variable names, along with their default values:
 
 .Environment Variables
 |===
-|Name |Default Value
+|Name |Default |Purpose
 
-|UNIFIEDPUSH_IMAGE
-|docker.io/aerogear/unifiedpush-wildfly-plain:2.2.1.Final
+|`UPS_IMAGE_STREAM_NAME`
+|`ups-imagestream`
+| Name of the Unified Push image stream that will be created by the operator.
 
-|POSTGRESQL_IMAGE
-|docker.io/centos/postgresql-96-centos7:9.6
+|`UPS_IMAGE_STREAM_TAG`
+|`latest`
+| Tag of the Unified Push image stream that will be created by the operator.
 
-|OAUTH_PROXY_IMAGE
-|docker.io/openshift/oauth-proxy:v1.1.0
+|`UPS_IMAGE_STREAM_INITIAL_IMAGE`
+|`docker.io/aerogear/unifiedpush-wildfly-plain:2.2.1.Final`
+| Initial image for the Unified Push image stream that will be created by the operator.
+
+|`OAUTH_PROXY_IMAGE_STREAM_NAME`
+|`ups-oauth-proxy-imagestream`
+| Name of the Oauth proxy image stream that will be created by the operator.
+
+|`OAUTH_PROXY_IMAGE_STREAM_TAG`
+|`latest`
+| Tag of the Oauth proxy image stream that will be created by the operator.
+
+|`OAUTH_PROXY_IMAGE_STREAM_INITIAL_IMAGE`
+|`docker.io/openshift/oauth-proxy:v1.1.0`
+| Initial image for the Oauth proxy image stream that will be created by the operator.
+
+|`POSTGRES_IMAGE_STREAM_NAMESPACE`
+|`openshift`
+| Namespace to look for the Postgres image stream.
+
+|`POSTGRES_IMAGE_STREAM_NAME`
+|`postgresql`
+| Name of the Postgres image stream to look for.
+
+|`OAUTH_PROXY_IMAGE_STREAM_TAG`
+|`10`
+| Tag of the Postgres image stream.
+
 |===
 
 CAUTION: Re-deploying this operator with customized images will cause
 _all_ instances owned by the operator to be updated.
+
+
+=== Container Names
+
+If you would like to modify the container names, you can use the following environment variables.
+
+.Environment Variables
+|===
+|Name |Default
+
+|`UPS_CONTAINER_NAME`
+|`ups`
+
+|`OAUTH_PROXY_CONTAINER_NAME`
+|`ups-oauth-proxy`
+
+|`POSTGRES_CONTAINER_NAME`
+|`postgresql`
+
+|===
+
+
+=== Backups
+
+The `BACKUP_IMAGE` environment variable configures what image to use for backing up
+the custom resources created by this operator. Default value is `quay.io/integreatly/backup-container:1.0.8`.
+
 
 === Metrics
 
