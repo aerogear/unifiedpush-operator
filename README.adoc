@@ -30,6 +30,17 @@ install and manage an AeroGear UnifiedPush Server on Kubernetes.
 
 toc::[]
 
+== Limitations
+
+// https://issues.jboss.org/browse/AEROGEAR-9162
+[NOTE]
+====
+This operator currently only works on OpenShift. This is because it
+provisions `Route`s and `ImageStream`s, and also relies on the fact that OpenShift
+provides an OAuth server. In future we aim to make it work on vanilla
+Kubernetes also.
+====
+
 == Installation
 
 As a user with admin permissions, you can easily install the
@@ -341,17 +352,6 @@ For important conversations, we discuss asynchronously on this
 {mailing_list}. This is great for discussions that should involve many
 people in different time zones, and allows us to easily link back to
 conversations in future.
-
-== Limitations
-
-// https://issues.jboss.org/browse/AEROGEAR-9162
-[NOTE]
-====
-This operator currently only works on OpenShift. This is because it
-provisions a Route, and also relies on the fact that OpenShift
-provides an OAuth server. In future we aim to make it work on vanilla
-Kubernetes also.
-====
 
 == Development
 
