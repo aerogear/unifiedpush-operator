@@ -1,19 +1,15 @@
+APP_NAME = unifiedpush-operator
+ORG_NAME = aerogear
+PKG = github.com/$(ORG_NAME)/$(APP_NAME)
+TOP_SRC_DIRS = pkg
+PACKAGES ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
+              -exec dirname {} \\; | sort | uniq")
+TEST_PKGS = $(addprefix $(PKG)/,$(PACKAGES))
+APP_FILE=./cmd/manager/main.go
+
 NAMESPACE=unifiedpush
 CODE_COMPILE_OUTPUT = build/_output/bin/unifiedpush-operator
 TEST_COMPILE_OUTPUT = build/_output/bin/unifiedpush-operator-test
-
-.PHONY: setup/travis
-setup/travis:
-	@echo Installing dep
-	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-	@echo Installing Operator SDK
-	curl -Lo ${GOPATH}/bin/operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v0.7.0/operator-sdk-v0.7.0-x86_64-linux-gnu
-	chmod +x ${GOPATH}/bin/operator-sdk
-	@echo setup complete
-
-.PHONY: code/compile
-code/compile: code/gen
-	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o=$(CODE_COMPILE_OUTPUT) ./cmd/manager/main.go
 
 .PHONY: code/run
 code/run: code/gen
@@ -28,15 +24,6 @@ code/gen: code/fix
 .PHONY: code/fix
 code/fix:
 	gofmt -w `find . -type f -name '*.go' -not -path "./vendor/*"`
-
-.PHONY: test/unit
-test/unit:
-	@echo Running tests:
-	CGO_ENABLED=1 go test -v -race -cover ./pkg/...
-
-.PHONY: test/compile
-test/compile:
-	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go test -c -o=$(TEST_COMPILE_OUTPUT) ./test/e2e/...
 
 .PHONY: cluster/prepare
 cluster/prepare:
@@ -64,3 +51,36 @@ cluster/clean:
 	-kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
 	-kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
 	-kubectl delete namespace $(NAMESPACE)
+
+##############################
+# Jenkins                    #
+##############################
+
+.PHONY: test/compile
+test/compile:
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go test -c -o=$(TEST_COMPILE_OUTPUT) ./test/e2e/...
+
+
+.PHONY: code/compile
+code/compile: code/gen
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o=$(CODE_COMPILE_OUTPUT) ./cmd/manager/main.go
+
+##############################
+# Tests / CI                 #
+##############################
+
+.PHONY: test/integration-cover
+test/integration-cover:
+	echo "mode: count" > coverage-all.out
+	GOCACHE=off $(foreach pkg,$(PACKAGES),\
+		go test -failfast -tags=integration -coverprofile=coverage.out -covermode=count $(addprefix $(PKG)/,$(pkg)) || exit 1;\
+		tail -n +2 coverage.out >> coverage-all.out;)
+
+.PHONY: test/unit
+test/unit:
+	@echo Running tests:
+	CGO_ENABLED=1 go test -v -race -cover $(TEST_PKGS)
+
+.PHONY: code/build/linux
+code/build/linux:
+	env GOOS=linux GOARCH=amd64 go build $(APP_FILE)

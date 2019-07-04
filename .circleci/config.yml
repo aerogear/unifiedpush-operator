@@ -1,0 +1,21 @@
+# Golang CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-go/ for more details
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/aerogear/unifiedpush-operator
+
+    docker:
+      - image: circleci/golang:1.10
+
+    steps:
+      - checkout
+      - run: go get github.com/mattn/goveralls
+      - run:
+          name: Install dep
+          command: curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+      - run: make code/build/linux
+      - run: make test/unit
+      - run: make test/integration-cover
+      - run: /go/bin/goveralls -coverprofile=coverage-all.out -service=circle-ci -repotoken=VoWSBlP6VDlpGCHefdkM3Kh0nWKUBYw8W
