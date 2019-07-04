@@ -71,12 +71,14 @@ install:
 	@echo ....... Install .......
 	- make cluster/prepare
 	@echo ....... Applying the Operator .......
-	- kubectl create -n unifiedpush -f deploy/operator.yaml
+	- kubectl apply -n $(NAMESPACE) -f deploy/operator.yaml
+	@echo ....... Applying UnifiedPush Server .......
+	- kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml
 
 .PHONY: monitoring/install
 monitoring/install:
 	@echo Installing service monitor in ${NAMESPACE} :
-	- kubectl create namespace ${NAMESPACE}
+	- oc project ${NAMESPACE}
 	- kubectl label namespace ${NAMESPACE} monitoring-key=middleware
 	- kubectl create -n $(NAMESPACE) -f deploy/monitor/service_monitor.yaml
 	- kubectl create -n $(NAMESPACE) -f deploy/monitor/operator_service.yaml
@@ -126,5 +128,6 @@ cluster/clean:
 	- kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
 	- kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
 	- kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
-    - kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
+	- kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
+	- make monitoring/uninstall
 	- kubectl delete namespace $(NAMESPACE)

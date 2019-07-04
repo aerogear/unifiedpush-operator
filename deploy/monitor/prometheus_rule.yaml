@@ -1,0 +1,35 @@
+# Monitor Service (Metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    monitoring-key: middleware
+    prometheus: application-monitoring
+    role: alert-rules
+  name: application-monitoring
+spec:
+  selector:
+    matchLabels:
+      name: unifiedpush-operator
+  groups:
+    - name: general.rules
+      rules:
+      - alert: UnifiedpushOperatorDown
+        expr: absent(up{job="unifiedpush-operator"} == 1)
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          description: "The unifiedpush-operator has been down for more than 5 minutes. "
+          summary: "The unifiedpush-operator is down. For more information see on the UnifiedPush Operator https://github.com/aerogear/unifiedpush-operator"
+          sop_url: "https://github.com/aerogear/unifiedpush-operator/blob/0.2.0/SOP/SOP-operator.adoc" #todo
+      - alert: UnifiedpushPodcount
+        annotations:
+          description: The Pod count for the unifiedpush has changed in the last 5 minutes.
+          summary: Pod count for namespace unifiedpush is {{ printf "%.0f" $value }}. Expected 3 pods. For more information see on the UnifiedPush Operator https://github.com/aerogear/unifiedpush-operator"
+          sop_url: "https://github.com/aerogear/unifiedpush-operator/blob/0.2.0/SOP/SOP-operator.adoc" #todo
+        expr: |
+          (1-absent(kube_pod_status_ready{condition="true", namespace="unifiedpush"})) or sum(kube_pod_status_ready{condition="true", namespace="unifiedpush"}) != 3
+        for: 5m
+        labels:
+          severity: warning
