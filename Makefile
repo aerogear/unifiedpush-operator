@@ -29,32 +29,6 @@ code/gen: code/fix
 code/fix:
 	gofmt -w `find . -type f -name '*.go' -not -path "./vendor/*"`
 
-.PHONY: cluster/prepare
-cluster/prepare:
-	-kubectl create namespace $(NAMESPACE)
-	-kubectl label namespace $(NAMESPACE) monitoring-key=middleware
-	-kubectl create -n $(NAMESPACE) -f deploy/service_account.yaml
-	-kubectl create -n $(NAMESPACE) -f deploy/role.yaml
-	-kubectl create -n $(NAMESPACE) -f deploy/role_binding.yaml
-	-kubectl apply -n $(NAMESPACE) -f deploy/crds/examples/push_v1alpha1_pushapplication_crd.yaml
-	-kubectl apply -n $(NAMESPACE) -f deploy/crds/examples/push_v1alpha1_androidvariant_crd.yaml
-	-kubectl apply -n $(NAMESPACE) -f deploy/crds/examples/push_v1alpha1_iosvariant_crd.yaml
-
-.PHONY: cluster/clean
-cluster/clean:
-	-kubectl delete -n $(NAMESPACE) iosVariant --all
-	-kubectl delete -n $(NAMESPACE) androidVariant --all
-	-kubectl delete -n $(NAMESPACE) pushApplication --all
-	-kubectl delete -n $(NAMESPACE) unifiedpushServer --all
-	-kubectl delete -f deploy/role.yaml
-	-kubectl delete -n $(NAMESPACE) -f deploy/role_binding.yaml
-	-kubectl delete -n $(NAMESPACE) -f deploy/service_account.yaml
-	-kubectl delete -n $(NAMESPACE) -f deploy/crds/examples/push_v1alpha1_pushapplication_crd.yaml
-	-kubectl delete -n $(NAMESPACE) -f deploy/crds/examples/push_v1alpha1_androidvariant_crd.yaml
-	-kubectl delete -n $(NAMESPACE) -f deploy/crds/examples/push_v1alpha1_iosvariant_crd.yaml
-	-kubectl delete namespace $(NAMESPACE)
-
-
 ##############################
 # Jenkins                    #
 ##############################
@@ -94,39 +68,10 @@ code/build/linux:
 
 .PHONY: install
 install:
-	@echo ....... Creating namespace .......
-	- kubectl create namespace ${NAMESPACE}
-	@echo ....... Applying roles .......
-	- kubectl apply -n ${NAMESPACE} -f deploy/service_account.yaml
-	- kubectl apply -n ${NAMESPACE} -f deploy/role.yaml
-	- kubectl apply -n ${NAMESPACE} -f deploy/role_binding.yaml
-	@echo ....... Applying CR/CRD .......
-	- kubectl apply -n ${NAMESPACE} -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
-	- kubectl apply -n ${NAMESPACE} -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
-	- kubectl apply -n ${NAMESPACE} -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
-	- kubectl apply -n ${NAMESPACE} -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
-	@echo ....... Applying Operator .......
-	- kubectl apply -n ${NAMESPACE} -f deploy/operator.yaml
-	@echo ....... Applying UnifiedPushServer .......
-	- kubectl apply -n ${NAMESPACE} -f ./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml
-
-.PHONY: uninstall
-uninstall:
-	@echo ....... Deleting CR/CRD .......
-	- kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
-	- kubectl delete -n ${NAMESPACE} -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
-	- kubectl delete -n ${NAMESPACE} -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
-	- kubectl delete -n ${NAMESPACE} -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
-	- kubectl delete -n ${NAMESPACE} -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
-	@echo ....... Deleting roles .......
-	- kubectl delete -n ${NAMESPACE} -f deploy/service_account.yaml
-	- kubectl delete -n ${NAMESPACE} -f deploy/role.yaml
-	- kubectl delete -n ${NAMESPACE} -f deploy/role_binding.yaml
-	@echo ....... Deleting Operator .......
-	- kubectl delete -n ${NAMESPACE} -f deploy/operator.yaml
-	@echo ....... Deleting namespace .......
-	- kubectl delete namespace ${NAMESPACE}
-	
+	@echo ....... Install .......
+	- make cluster/prepare
+	@echo ....... Applying the Operator .......
+	- kubectl create -n unifiedpush -f deploy/operator.yaml
 
 .PHONY: monitoring/install
 monitoring/install:
@@ -156,3 +101,30 @@ example-pushapplication/apply:
 example-pushapplication/delete:
 	@echo ....... Deleting the PushApplication example in the current namespace  ......
 	- kubectl delete -f deploy/crds/examples/push_v1alpha1_pushapplication_cr.yaml
+
+.PHONY: cluster/prepare
+cluster/prepare:
+	- kubectl create namespace $(NAMESPACE)
+	- kubectl label namespace $(NAMESPACE) monitoring-key=middleware
+	- kubectl create -n $(NAMESPACE) -f deploy/service_account.yaml
+	- kubectl create -n $(NAMESPACE) -f deploy/role.yaml
+	- kubectl create -n $(NAMESPACE) -f deploy/role_binding.yaml
+	- kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
+	- kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
+	- kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
+	- kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
+
+.PHONY: cluster/clean
+cluster/clean:
+	- kubectl delete -n $(NAMESPACE) iosVariant --all
+	- kubectl delete -n $(NAMESPACE) androidVariant --all
+	- kubectl delete -n $(NAMESPACE) pushApplication --all
+	- kubectl delete -n $(NAMESPACE) unifiedpushServer --all
+	- kubectl delete -f deploy/role.yaml
+	- kubectl delete -n $(NAMESPACE) -f deploy/role_binding.yaml
+	- kubectl delete -n $(NAMESPACE) -f deploy/service_account.yaml
+	- kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
+	- kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
+	- kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
+    - kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
+	- kubectl delete namespace $(NAMESPACE)

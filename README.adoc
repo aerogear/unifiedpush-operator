@@ -94,7 +94,7 @@ $ make install
 
 NOTE: To install you need be logged in as a user with cluster privileges like the `system:admin` user. E.g. By using: `oc login -u system:admin`.
 
-=== Creating/Binding an app
+=== Creating PushApplication
 
 * Create a link:./deploy/crds/examples/push_v1alpha1_pushapplication_cr.yaml[PushApplication CR] as this example.
 +
@@ -111,7 +111,7 @@ spec:
     unifiedpush-operator'
 ----
 +
-* Run the following command to bind the app to the Push Service
+* Run the following command to create the PushApplication into the Service
 +
 [source,shell]
 ----
@@ -203,12 +203,66 @@ Use the following command to delete all related configuration applied by the `ma
 
 [source,shell]
 ----
-$ make uninstall
+$ make cluster/clean
 ----
 
 NOTE: To uninstall you need be logged in as a user with cluster privileges like the `system:admin` user. E.g. By using: `oc login -u system:admin`.
 
 == Configuration
+
+=== UnifiedPushServer
+
+This is the main installation resource kind. Creation of a valid
+UnifiedPushServer CR will result in a functional AeroGear
+UnifiedPushServer deployed to your namespace.
+
+[NOTE]
+====
+This operator currently only supports one UnifiedPushServer CR to be
+created.
+====
+
+Here are all of the configurable fields in a UnifiedPushServer:
+
+.UnifiedPushServer fields
+|===
+|Field Name |Description
+
+|backups
+|A list of backup entries that CronJobs will be created from. See
+ `./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup.yaml`
+ for an annotated example. Note that a ServiceAccount called
+ "backupjob" must already exist before the operator will create any
+ backup CronJobs. See
+ https://github.com/integr8ly/backup-container-image/tree/master/templates/openshift/rbac
+ for an example.
+|===
+
+The most basic UnifiedPushServer CR doesn't specify anything in the
+Spec section, so the example in
+`./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml` is a good
+template:
+
+.push_v1alpha1_unifiedpushserver_cr.yaml
+[source,yaml]
+----
+apiVersion: push.aerogear.org/v1alpha1
+kind: UnifiedPushServer
+metadata:
+  name: example-unifiedpushserver
+----
+
+To create this, you can run:
+
+....
+kubectl apply -n unifiedpush -f ./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml
+....
+
+To see the created instance then, you can run:
+
+....
+kubectl get ups example-unifiedpushserver -n unifiedpush -o yaml
+....
 
 === Image Streams
 
@@ -477,19 +531,18 @@ NOTE: See the link:./Jenkinsfile[Jenkinsfile].
 |===
 | *Command*                        | *Description*
 | `make install`                   | Creates the `{namespace}` namespace, application CRDS, cluster role and service account.
-| `make uninstall`                 | Uninstalls the operator and the Service and DB. Deletes the `{namespace}` namespace, application CRDS, cluster role and service account and the app namespace. i.e. all configuration applied by `make install`
+| `make cluster/clean`                  | It will delete what was performed in the `make cluster/prepare` .
 | `make monitoring/install`        | Installs Monitoring Service in order to provide metrics
 | `make monitoring/uninstall`      | Uninstalls Monitoring Service in order to provide metrics, i.e. all configuration applied by `make monitoring/install`
 | `make example-pushapplication/apply`  | Applies the Example PushApplication CR `
 | `make example-pushapplication/delete`  | Delete the Example PushApplication CR `
+| `make cluster/prepare`                | It will apply all less the operator.yaml.
 |===
 
 
 === Local Development
 
 |===
-| `make cluster/prepare`                | It will apply all default examples.
-| `make cluster/clean`                  | It will delete what was performed in the `make cluster/prepare` .
 | `make code/run`                       | Runs the operator locally for development purposes.
 | `make code/gen`                       | Sets up environment for debugging proposes.
 | `make code/vet`                       | Examines source code and reports suspicious constructs using https://golang.org/cmd/vet/[vet].
