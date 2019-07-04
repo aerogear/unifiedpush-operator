@@ -9,8 +9,8 @@ ifdef::env-github[]
 :note-caption: :information_source:
 :important-caption: :heavy_exclamation_mark:
 :caution-caption: :fire:
-:warning-caption: :warning:
 :table-caption!:
+:warning-caption: :warning:
 endif::[]
 
 // Links (alphabetical order)
@@ -35,38 +35,178 @@ image:https://coveralls.io/repos/github/aerogear/unifiedpush-operator/badge.svg?
 image:https://goreportcard.com/badge/github.com/aerogear/unifiedpush-operator[Go Report Card (Go Report Card), link=https://goreportcard.com/report/github.com/aerogear/unifiedpush-operator]
 endif::[]
 
-The UnifiedPush Operator for Kubernetes provides an easy way to
-install and manage an AeroGear UnifiedPush Server on Kubernetes.
-
 toc::[]
 
-== Limitations
+== Overview
 
-// https://issues.jboss.org/browse/AEROGEAR-9162
-[NOTE]
-====
-This operator currently only works on OpenShift. This is because it
-provisions `Route`s and `ImageStream`s, and also relies on the fact that OpenShift
-provides an OAuth server. In future we aim to make it work on vanilla
-Kubernetes also.
-====
+The UnifiedPush Operator for Kubernetes provides an easy way to install and manage an https://aerogear.org/docs/unifiedpush/[AeroGear UnifiedPush] Server on OpenShift.
 
-== Installation
+== Prerequisites
 
-As a user with admin permissions, you can easily install the
-unifiedpush-operator in your OpenShift cluster as follows:
+|===
+|https://golang.org/doc/install[Install Go]
+|https://github.com/golang/go/wiki/SettingGOPATH[Ensure the $GOPATH environment variable is set]
+|https://golang.github.io/dep/docs/installation.html[Install the dep package manager]
+|https://github.com/operator-framework/operator-sdk#quick-start[Install Operator-SDK]
+|https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl[Install kubectl]
+|===
 
-....
-kubectl create namespace unifiedpush
-kubectl create -n unifiedpush -f deploy/service_account.yaml
-kubectl create -n unifiedpush -f deploy/role.yaml
-kubectl create -n unifiedpush -f deploy/role_binding.yaml
-kubectl create -n unifiedpush -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
-kubectl create -n unifiedpush -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
-kubectl create -n unifiedpush -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
-kubectl create -n unifiedpush -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
-kubectl create -n unifiedpush -f deploy/operator.yaml
-....
+== Getting Started
+
+=== Cloning the repository
+
+By the following commands you will create a local directory and clone this project.
+
+[source,shell]
+----
+$ git clone git@github.com:aerogear/unifiedpush-operator.git $GOPATH/src/github.com/aerogear/unifiedpush-operator
+----
+
+=== Minishift installation and setup
+
+https://docs.okd.io/latest/minishift/getting-started/installing.html[Install Minishift] then install Operators on it by running the following commands.
+
+[source,shell]
+----
+# create a new profile to test the operator
+$ minishift profile set unifiedpush-operator
+
+# enable the admin-user add-on
+$ minishift addon enable admin-user
+
+# add insecure registry to download the images from docker
+$ minishift config set insecure-registry 172.30.0.0/16
+
+# start the instance
+$ minishift start
+----
+
+NOTE: The above steps are not required in OCP > 4 since the OLM and Operators came installed by default.
+
+=== Installing
+
+Use the following command to install the UnifiedPush Operator and Service in your OpenShift cluster as follows:
+
+[source,shell]
+----
+$ make install
+----
+
+NOTE: To install you need be logged in as a user with cluster privileges like the `system:admin` user. E.g. By using: `oc login -u system:admin`.
+
+=== Creating/Binding an app
+
+* Create a link:./deploy/crds/examples/push_v1alpha1_pushapplication_cr.yaml[PushApplication CR] as this example.
++
+The app name and description need to be specified into the link:./deploy/crds/examples/push_v1alpha1_pushapplication_cr.yaml[PushApplication CR] as follows.
++
+[source,yaml]
+----
+apiVersion: push.aerogear.org/v1alpha1
+kind: PushApplication
+metadata:
+  name: example-pushapplication
+spec:
+  description: 'An example push application to demonstrate the
+    unifiedpush-operator'
+----
++
+* Run the following command to bind the app to the Push Service
++
+[source,shell]
+----
+$ make example-pushapplication/apply
+----
++
+NOTE: You can delete it by running `make example-pushapplication/delete`
+
+=== Creating an AndroidVariant for your App
+
+After creating the PushApplication above, you should be able to get
+the `pushApplicationId` from the status, this will be needed to be
+able to create Variants:
++
+[source,shell]
+----
+kubectl get pushApplication example-pushapplication -n unifiedpush -o jsonpath='{.status.pushApplicationId}'
+----
++
+Here are all of the configurable fields in an AndroidVariant:
++
+|===
+|Field Name |Description
+
+|pushApplicationId
+|ID of the PushApplication that this variant corresponds to
+
+|description
+|Human friendly description for the variant
+
+|senderId
+|The "Google Project Number from the API Console
+
+|serverKey
+|The key from the Firebase Console of a project which has been enabled for FCM
+|===
+
+* Apply an AndroidVariantCR based on the example a link:./deploy/crds/examples/push_v1alpha1_androidvariant_cr.yaml[AndroidVariant CR]  as follows:
++
+[source,shell]
+----
+kubectl apply -f ./deploy/crds/examples/push_v1alpha1_androidvariant_cr.yaml
+----
+
+=== Creating an IOSVariant for your App
+
+After creating the PushApplication above, you should be able to get the `pushApplicationId` from the status, this will be needed to be able to create Variants:
+
+[source,shell]
+----
+kubectl get PushApplication example-pushapplication -n unifiedpush -o jsonpath='{.status.pushApplicationId}'
+----
+
+Here are all of the configurable fields in an IOSVariant:
+
+|===
+|Field Name |Description
+
+|pushApplicationId
+|ID of the PushApplication that this variant corresponds to
+
+|description
+|Human friendly description for the variant
+
+|certificate
+|The base64 encoded APNs certificate that is needed to establish a
+ connection to Apple's APNs Push Servers
+
+|passphrase
+|The APNs passphrase that is needed to establish a connection to
+ Apple's APNs Push Servers
+
+|production
+|If `true`, indicates that a connection to production APNs server should
+ be used. If `false` a connection to the Sandbox/Development APNs server
+ will be used.
+|===
+
+* Apply an AndroidVariantCR based on the example a link:./deploy/crds/examples/push_v1alpha1_iosvariant_cr.yaml[IOSVariant CR]  as follows:
++
+[source,shell]
+----
+kubectl apply -n unifiedpush -f ./deploy/crds/push_v1alpha1_iosvariant_cr.yaml
+----
+
+=== Uninstalling
+
+Use the following command to delete all related configuration applied by the `make install` of this project.
+
+[source,shell]
+----
+$ make uninstall
+----
+
+NOTE: To uninstall you need be logged in as a user with cluster privileges like the `system:admin` user. E.g. By using: `oc login -u system:admin`.
 
 == Configuration
 
@@ -126,7 +266,6 @@ environment variable names, along with their default values:
 CAUTION: Re-deploying this operator with customized images will cause
 _all_ instances owned by the operator to be updated.
 
-
 === Container Names
 
 If you would like to modify the container names, you can use the following environment variables.
@@ -146,232 +285,39 @@ If you would like to modify the container names, you can use the following envir
 
 |===
 
-
 === Backups
 
 The `BACKUP_IMAGE` environment variable configures what image to use for backing up
 the custom resources created by this operator. Default value is `quay.io/integreatly/backup-container:1.0.8`.
 
-
-=== Metrics
+=== Monitoring Service (Metrics)
 
 The application-monitoring stack provisioned by the
-{application_monitoring_operator} can be used to gather metrics from
-the operator here.  Once you have provisioned that (or the
-ServiceMonitor CRD at a minimum), you can run the following commands
-to configure it:
+{application_monitoring_operator} on https://github.com/integr8ly[Integr8ly]
+can be used to gather metrics from this operator and the UnifiedPush Server. These metrics can be used by Integr8ly's application monitoring to generate Prometheus metrics, AlertManager alerts and a Grafana dashboard.
 
-....
-kubectl label namespace unifiedpush monitoring-key=middleware
-kubectl create -n unifiedpush -f deploy/service_monitor.yaml
-....
+It is required that the https://github.com/integr8ly/grafana-operator[integr8ly/Grafana] and https://github.com/coreos/prometheus-operator[Prometheus] operators are installed. For further detail see https://github.com/integr8ly/application-monitoring-operator[integr8ly/application-monitoring-operator].
 
-== Custom Resources (aka How to get value from this operator)
+The following command enables the monitoring service in the operator namespace:
 
-=== UnifiedPushServer
+[source,shell]
+----
+make monitoring/install
+----
 
-This is the main installation resource kind. Creation of a valid
-UnifiedPushServer CR will result in a functional AeroGear
-UnifiedPushServer deployed to your namespace.
+IMPORTANT: The namespaces are setup manually in the files link:./deploy/monitor/service_monitor.yaml[ServiceMonitor], link:./deploy/monitor/prometheus_rule.yaml[Prometheus Rules], link:./deploy/monitor/operator-service.yaml[Operator Service], and link:./deploy/monitor/grafana-dashboard[Grafana Dashboard]. Following an example from the link:./deploy/monitor/prometheus_rule.yaml[Prometheus Rules]. You should replace them if the operator is not installed in the default namespace.
 
-[NOTE]
-====
-This operator currently only supports one UnifiedPushServer CR to be
-created.
-====
-
-Here are all of the configurable fields in a UnifiedPushServer:
-
-.UnifiedPushServer fields
-|===
-|Field Name |Description
-
-|backups
-|A list of backup entries that CronJobs will be created from. See
- `./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup.yaml`
- for an annotated example. Note that a ServiceAccount called
- "backupjob" must already exist before the operator will create any
- backup CronJobs. See
- https://github.com/integr8ly/backup-container-image/tree/master/templates/openshift/rbac
- for an example.
-|===
-
-The most basic UnifiedPushServer CR doesn't specify anything in the
-Spec section, so the example in
-`./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml` is a good
-template:
-
-.push_v1alpha1_unifiedpushserver_cr.yaml
 [source,yaml]
 ----
-apiVersion: push.aerogear.org/v1alpha1
-kind: UnifiedPushServer
-metadata:
-  name: example-unifiedpushserver
+  expr: |
+          (1-absent(kube_pod_status_ready{condition="true", namespace="mobile-security-service"})) or sum(kube_pod_status_ready{condition="true", namespace="mobile-security-service"}) != 3
+
+[source,shell]
 ----
 
-To create this, you can run:
-
-....
-kubectl apply -n unifiedpush -f ./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml
-....
-
-To see the created instance then, you can run:
-
-....
-kubectl get ups example-unifiedpushserver -n unifiedpush -o yaml
-....
-
-=== PushApplication
-
-Once you've got your `UnifiedPushServer` up and running, you can
-create a `PushApplication`.
-
-The only configurable fields in a `PushApplication` are the name and
-description, like the example in
-`./deploy/crds/push_v1alpha1_pushapplication_cr.yaml`:
-
-.push_v1alpha1_pushapplication_cr.yaml
-[source,yaml]
-----
-apiVersion: push.aerogear.org/v1alpha1
-kind: PushApplication
-metadata:
-  name: example-pushapplication
-spec:
-  description: 'An example push application to demonstrate the
-    unifiedpush-operator'
-----
-
-To create this, you can run:
-
-....
-kubectl apply -n unifiedpush -f ./deploy/crds/push_v1alpha1_pushapplication_cr.yaml
-....
-
-To see the created instance then, you can run:
-
-....
-kubectl get pushApplication example-pushapplication -n unifiedpush -o yaml
-....
-
-Shortly after it's created, you should be able to see it in the list
-of Applications in the UnifiedPush Admin UI, and you should also be
-able to see the `pushApplicationId` and `masterSecret` fields on the
-`status` object of your PushApplication instance in Kubernetes.
-
-=== AndroidVariant
-
-After creating the PushApplication above, you should be able to get
-the `pushApplicationId` from the status, this will be needed to be
-able to create Variants:
-
-....
-kubectl get pushApplication example-pushapplication -n unifiedpush -o jsonpath='{.status.pushApplicationId}'
-....
-
-Here are all of the configurable fields in an AndroidVariant:
-
-.AndroidVariant fields
-|===
-|Field Name |Description
-
-|pushApplicationId
-|ID of the PushApplication that this variant corresponds to
-
-|description
-|Human friendly description for the variant
-
-|senderId
-|The "Google Project Number from the API Console
-
-|serverKey
-|The key from the Firebase Console of a project which has been enabled for FCM
-|===
-
-There's an example at
-`./deploy/crds/push_v1alpha1_androidvariant_cr.yaml` that can be
-modified and created as follows:
-
-....
-kubectl apply -n unifiedpush -f ./deploy/crds/push_v1alpha1_androidvariant_cr.yaml
-....
-
-=== IOSVariant
-
-After creating the PushApplication above, you should be able to get
-the `pushApplicationId` from the status, this will be needed to be
-able to create Variants:
-
-....
-kubectl get PushApplication example-pushapplication -n unifiedpush -o jsonpath='{.status.pushApplicationId}'
-....
-
-Here are all of the configurable fields in an IOSVariant:
-
-.IOSVariant fields
-|===
-|Field Name |Description
-
-|pushApplicationId
-|ID of the PushApplication that this variant corresponds to
-
-|description
-|Human friendly description for the variant
-
-|certificate
-|The base64 encoded APNs certificate that is needed to establish a
- connection to Apple's APNs Push Servers
-
-|passphrase
-|The APNs passphrase that is needed to establish a connection to
- Apple's APNs Push Servers
-
-|production
-|If `true`, indicates that a connection to production APNs server should
- be used. If `false` a connection to the Sandbox/Development APNs server
- will be used.
-|===
-
-There's an example at
-`./deploy/crds/push_v1alpha1_iosvariant_cr.yaml` that can be
-modified and created as follows:
-
-....
-kubectl apply -n unifiedpush -f ./deploy/crds/push_v1alpha1_iosvariant_cr.yaml
-....
-
-== Getting help
-
-All AeroGear projects use the same communication channels.
-
-*Issue tracker*
-
-Our main issue tracker is {aerogear_jira}. Issues may also be created
-here on GitHub for individual projects.
-
-*Chat*
-
-For synchronous real-time chat, we use Matrix/IRC. These are bridged
-together, so you can choose which is more convenient for you:
-{aerogear_matrix} or {aerogear_freenode}.
-
-*Discussion list*
-
-For important conversations, we discuss asynchronously on this
-{mailing_list}. This is great for discussions that should involve many
-people in different time zones, and allows us to easily link back to
-conversations in future.
+NOTE: The command `make monitoring/uninstall` will uninstall the Monitor Service.
 
 == Development
-
-=== Prerequisites
-
-- Access to an OpenShift cluster with admin privileges to be able to
-  create Roles.  {minishift} is suggested.
-
-- Go, Make, dep, operator-sdk, kubectl (kubectl can just be a symlink
-  to oc)
 
 === Running the operator
 
@@ -524,12 +470,69 @@ NOTE: See the link:./circleci/config.yml[config.yml].
 
 NOTE: See the link:./Jenkinsfile[Jenkinsfile].
 
+== Makefile command reference
+
+=== Application
+
+|===
+| *Command*                        | *Description*
+| `make install`                   | Creates the `{namespace}` namespace, application CRDS, cluster role and service account.
+| `make uninstall`                 | Uninstalls the operator and the Service and DB. Deletes the `{namespace}` namespace, application CRDS, cluster role and service account and the app namespace. i.e. all configuration applied by `make install`
+| `make monitoring/install`        | Installs Monitoring Service in order to provide metrics
+| `make monitoring/uninstall`      | Uninstalls Monitoring Service in order to provide metrics, i.e. all configuration applied by `make monitoring/install`
+| `make example-pushapplication/apply`  | Applies the Example PushApplication CR `
+| `make example-pushapplication/delete`  | Delete the Example PushApplication CR `
+|===
+
+
+=== Local Development
+
+|===
+| `make cluster/prepare`                | It will apply all default examples.
+| `make cluster/clean`                  | It will delete what was performed in the `make cluster/prepare` .
+| `make code/run`                       | Runs the operator locally for development purposes.
+| `make code/gen`                       | Sets up environment for debugging proposes.
+| `make code/vet`                       | Examines source code and reports suspicious constructs using https://golang.org/cmd/vet/[vet].
+| `make code/fix`                       | Formats code using https://golang.org/cmd/gofmt/[gofmt].
+|===
+
+=== Jenkins
+
+|===
+| `make test/compile`                      | Compile image to be used in the e2e tests
+| `make code/compile`                      | Compile image to be used by Jenkins
+|===
+
+===  Tests / CI
+
+|===
+| `make test/integration-cover`          | It will run the coveralls.
+| `make test/unit`                       | Runs unit tests
+| `make code/build/linux`                | Build image with the parameters required for CircleCI
+|===
+
+NOTE: The link:./Makefile[Makefile] is implemented with tasks which you should use to work with.
+
+== Supportability
+
+This operator was developed using the Kubernetes and Openshift APIs.
+
+Currently this project requires the usage of the https://docs.openshift.com/container-platform/3.11/rest_api/apis-route.openshift.io/v1.Route.html[v1.Route] to expose the service and https://github.com/openshift/oauth-proxy[OAuth-proxy] for authentication which make it unsupportable for Kubernetes.
+Also, it is using https://docs.openshift.com/enterprise/3.0/architecture/core_concepts/builds_and_image_streams.html[ImageStream] which is from the OpenShift API specifically. In this way, this project is not compatible with Kubernetes, however, in future we aim to make it work on vanilla Kubernetes also.
+
 == Security Response
 
-If you've found a security issue that you'd like to disclose
-confidentially please contact the {rh_product_security}.
+If you've found a security issue that you'd like to disclose confidentially please contact the {rh_product_security}.
 
 == Legal
 
 The UnifiedPush Operator is licensed under the {apache_license}
 License, and is subject to the {export_policy}.
+
+== Contributing
+
+All contributions are hugely appreciated. Please see our https://aerogear.org/community/#guides[Contributing Guide] for guidelines on how to open issues and pull requests. Please check out our link:./.github/CODE_OF_CONDUCT.md[Code of Conduct] too.
+
+== Questions
+
+There are a number of ways you can get in in touch with us, please see the https://aerogear.org/community/#contact[AeroGear community].
