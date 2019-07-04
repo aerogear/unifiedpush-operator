@@ -1,0 +1,9 @@
+apiVersion: push.aerogear.org/v1alpha1
+kind: AndroidVariant
+metadata:
+  name: example-androidvariant
+spec:
+  description: 'My super Android variant'
+  serverKey: 'somekeyinbase64=='
+  senderId: '123456'
+  pushApplicationId: '123456'
