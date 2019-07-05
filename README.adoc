@@ -92,6 +92,8 @@ Use the following command to install the UnifiedPush Operator and Service in you
 $ make install
 ----
 
+IMPORTANT: It will install an example configuration setup for your Push Server. To know how to configure it see <<UnifiedPushServer Options>>
+
 NOTE: To install you need be logged in as a user with cluster privileges like the `system:admin` user. E.g. By using: `oc login -u system:admin`.
 
 === Creating PushApplication
@@ -210,7 +212,7 @@ NOTE: To uninstall you need be logged in as a user with cluster privileges like 
 
 == Configuration
 
-=== UnifiedPushServer
+=== UnifiedPushServer Options
 
 This is the main installation resource kind. Creation of a valid
 UnifiedPushServer CR will result in a functional AeroGear
