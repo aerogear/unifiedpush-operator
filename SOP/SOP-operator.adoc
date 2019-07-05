@@ -1,0 +1,69 @@
+ifdef::env-github[]
+:status:
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+:table-caption!:
+endif::[]
+
+:toc:
+:toc-placement!:
+
+= UnifiedPush Operator - Standard Operating Procedures
+
+:toc:
+toc::[]
+
+== UnifiedpushOperatorDown
+
+Troubleshoot using the following steps via either the console or the cli:
+
+=== Console:
+
+. Log into the OpenShift console
+. Switch to the UnifiedPush namespace
+. Go to `Deployments -> unifiedpush-operator >> Events` and check if was possible pull the image
+. Check the logs of the pod for any errors
+.. Navigate to `Applications -> Pods -> unifiedpush-operator-<xyz123> -> Logs`
+.. Check for any errors in the logs
+. Try to scale up the pod if it is not present
+.. Navigate to `Overview -> Click Dropdown for Deployment unifiedpush-operator -> Click on up arrow to scale the pod to 1`
+
+=== CLI:
+
+. Login
+.. Run `oc login <openshift-url>:8443 -u <username> -p <password>`
+. Switch to the UnifiedPush namespace
+.. Run `oc project unifiedpush-operator`
+. If the operator pod is present check the logs of the pod for any errors
+. Get the operator pod name -> `oc get pods | grep operator`
+. `oc logs <operator-podname>`
+. Save the logs by running `oc logs <operator-podname> > <filename>.log`
+. If the operator pod is not present scale up the pod
+.. `oc scale deployments unifiedpush-operator --replicas=1`
+
+
+== UnifiedpushPodcount
+
+Troubleshoot using the following steps via either the console or the cli:
+
+=== Console:
+. Log into the OpenShift cluster
+. Switch to the UnifiedPush namespace
+. Navigate to the Overview using the side navigation
+. Check the following
+.. There is one UnifiedPush pod running under the Other Resources
+
+=== CLI:
+
+. Login
+.. Run `oc login <openshift-url>:8443 -u <username> -p <password>`
+. Switch to the UnifiedPush namespace
+.. Run `oc project unifiedpush`
+. Check the following
+. Run `oc get pods`
+.. There is one pod running under READY for pod unifiedpush-operator
+. The operator should  maintain the number of pods running for the mobilesecurity service, please resolve the operator pod numbers first by scaling it up or down as necessary.
+.. `oc scale deployments unifiedpush-operator --replicas=1`
