@@ -1,0 +1,17 @@
+# Monitor Service (Metrics)
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: unifiedpush-operator
+  name: unifiedpush-operator
+spec:
+  ports:
+    - name: metrics
+      port: 8383
+      protocol: TCP
+      targetPort: 8383
+  selector:
+    name: unifiedpush-operator
+  sessionAffinity: None
+  type: ClusterIP
