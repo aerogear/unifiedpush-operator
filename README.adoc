@@ -125,14 +125,14 @@ NOTE: You can delete it by running `make example-pushapplication/delete`
 After creating the PushApplication above, you should be able to get
 the `pushApplicationId` from the status, this will be needed to be
 able to create Variants:
-+
+
 [source,shell]
 ----
 kubectl get pushApplication example-pushapplication -n unifiedpush -o jsonpath='{.status.pushApplicationId}'
 ----
-+
+
 Here are all of the configurable fields in an AndroidVariant:
-+
+
 |===
 |Field Name |Description
 
@@ -150,7 +150,7 @@ Here are all of the configurable fields in an AndroidVariant:
 |===
 
 * Apply an AndroidVariantCR based on the example a link:./deploy/crds/examples/push_v1alpha1_androidvariant_cr.yaml[AndroidVariant CR]  as follows:
-+
+
 [source,shell]
 ----
 kubectl apply -f ./deploy/crds/examples/push_v1alpha1_androidvariant_cr.yaml
