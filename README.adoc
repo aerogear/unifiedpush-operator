@@ -92,6 +92,8 @@ Use the following command to install the UnifiedPush Operator and Service in you
 $ make install
 ----
 
+IMPORTANT: It will install an example configuration setup for your Push Server. To know how to configure it see <<UnifiedPushServer Options>>
+
 NOTE: To install you need be logged in as a user with cluster privileges like the `system:admin` user. E.g. By using: `oc login -u system:admin`.
 
 === Creating PushApplication
@@ -125,14 +127,14 @@ NOTE: You can delete it by running `make example-pushapplication/delete`
 After creating the PushApplication above, you should be able to get
 the `pushApplicationId` from the status, this will be needed to be
 able to create Variants:
-+
+
 [source,shell]
 ----
 kubectl get pushApplication example-pushapplication -n unifiedpush -o jsonpath='{.status.pushApplicationId}'
 ----
-+
+
 Here are all of the configurable fields in an AndroidVariant:
-+
+
 |===
 |Field Name |Description
 
@@ -150,7 +152,7 @@ Here are all of the configurable fields in an AndroidVariant:
 |===
 
 * Apply an AndroidVariantCR based on the example a link:./deploy/crds/examples/push_v1alpha1_androidvariant_cr.yaml[AndroidVariant CR]  as follows:
-+
+
 [source,shell]
 ----
 kubectl apply -f ./deploy/crds/examples/push_v1alpha1_androidvariant_cr.yaml
@@ -210,7 +212,7 @@ NOTE: To uninstall you need be logged in as a user with cluster privileges like 
 
 == Configuration
 
-=== UnifiedPushServer
+=== UnifiedPushServer Options
 
 This is the main installation resource kind. Creation of a valid
 UnifiedPushServer CR will result in a functional AeroGear
