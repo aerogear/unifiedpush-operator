@@ -14,9 +14,9 @@ var (
 			Namespace: "unifiedpush",
 		},
 		Spec: pushv1alpha1.AndroidVariantSpec{
-			Description: "My super Android variant",
-			ServerKey: "somekeyinbase64==",
-			SenderId: "123456",
+			Description:       "My super Android variant",
+			ServerKey:         "somekeyinbase64==",
+			SenderId:          "123456",
 			PushApplicationId: "123456",
 		},
 	}

@@ -122,13 +122,14 @@ func (r *ReconcileAndroidVariant) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, nil
 	}
 
-	variantId, err := unifiedpushClient.CreateAndroidVariant(instance)
+	variantId, secret, err := unifiedpushClient.CreateAndroidVariant(instance)
 	if err != nil {
 		reqLogger.Error(err, "Error creating Android variant in UPS.", "AndroidVaraint.Name", instance.Name)
 		return reconcile.Result{RequeueAfter: time.Second * 5}, nil
 	}
 
 	instance.Status.VariantId = variantId
+	instance.Status.Secret = secret
 	instance.Status.Ready = true
 	err = r.client.Status().Update(context.TODO(), instance)
 	if err != nil {
