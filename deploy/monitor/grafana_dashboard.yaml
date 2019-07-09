@@ -60,7 +60,7 @@ spec:
             }
           ]
         },
-        "description": "Application metrics",
+        "description": "Operator metrics",
         "editable": true,
         "gnetId": null,
         "graphTooltip": 0,
@@ -402,7 +402,7 @@ spec:
                 "format": "time_series",
                 "interval": "",
                 "intervalFactor": 2,
-                "legendFormat": "UPS Operator- CPU Usage in Millicores",
+                "legendFormat": "UnifiedPush Operator- CPU Usage in Millicores",
                 "refId": "A",
                 "step": 2
               }
@@ -487,8 +487,8 @@ spec:
           ]
         },
         "timezone": "browser",
-        "title": "UPS Operator",
+        "title": "UnifiedPush Operator",
         "uid": "null",
         "version": 2
       }
-  name: unifiedpush.json
+  name: unifiedpushoperator.json

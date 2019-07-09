@@ -20,13 +20,13 @@ spec:
         labels:
           severity: critical
         annotations:
-          description: "The unifiedpush-operator has been down for more than 5 minutes. "
-          summary: "The unifiedpush-operator is down. For more information see on the UnifiedPush Operator https://github.com/aerogear/unifiedpush-operator"
+          description: "The UnifiedPush Operator has been down for more than 5 minutes. "
+          summary: "The UnifiedPush Operator is down. For more information see on the UnifiedPush Operator https://github.com/aerogear/unifiedpush-operator"
           sop_url: "https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc"
       - alert: UnifiedpushPodcount
         annotations:
-          description: The Pod count for the unifiedpush has changed in the last 5 minutes.
-          summary: Pod count for namespace unifiedpush is {{ printf "%.0f" $value }}. Expected 3 pods. For more information see on the UnifiedPush Operator https://github.com/aerogear/unifiedpush-operator"
+          description: "The Pod count for the UnifiedPush has changed in the last 5 minutes."
+          summary: "Pod count for namespace UnifiedPush is {{ printf '%.0f' $value }}. Expected 3 pods. For more information see on the UnifiedPush Operator https://github.com/aerogear/unifiedpush-operator"
           sop_url: "https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc"
         expr: |
           (1-absent(kube_pod_status_ready{condition="true", namespace="unifiedpush"})) or sum(kube_pod_status_ready{condition="true", namespace="unifiedpush"}) != 3

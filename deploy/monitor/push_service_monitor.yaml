@@ -1,0 +1,14 @@
+# Monitor Service (Metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    monitoring-key: middleware
+  name: unifiedpush
+spec:
+  endpoints:
+    - path: /api/metrics
+      port: server
+  selector:
+    matchLabels:
+      app: unifiedpush
