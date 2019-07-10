@@ -22,9 +22,10 @@ spec:
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+              value: ""
+            - name: APP_NAMESPACES
+              # Replace this with a comma (e.g. namespace,othernamespace) separated list of namespaces which the operator will action app crs
+              value: "unifiedpush-apps"
             - name: POD_NAME
               valueFrom:
                 fieldRef:

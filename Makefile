@@ -8,6 +8,7 @@ TEST_PKGS = $(addprefix $(PKG)/,$(PACKAGES))
 APP_FILE=./cmd/manager/main.go
 
 NAMESPACE=unifiedpush
+APP_NAMESPACES=unifiedpush-apps
 CODE_COMPILE_OUTPUT = build/_output/bin/unifiedpush-operator
 TEST_COMPILE_OUTPUT = build/_output/bin/unifiedpush-operator-test
 
@@ -101,24 +102,48 @@ monitoring/uninstall:
 .PHONY: example-pushapplication/apply
 example-pushapplication/apply:
 	@echo ....... Applying the PushApplication example in the current namespace  ......
-	- kubectl apply -f deploy/crds/examples/push_v1alpha1_pushapplication_cr.yaml
+	- kubectl apply -n $(APP_NAMESPACES) -f deploy/crds/examples/push_v1alpha1_pushapplication_cr.yaml
 
 .PHONY: example-pushapplication/delete
 example-pushapplication/delete:
 	@echo ....... Deleting the PushApplication example in the current namespace  ......
-	- kubectl delete -f deploy/crds/examples/push_v1alpha1_pushapplication_cr.yaml
+	- kubectl delete -n $(APP_NAMESPACES) -f deploy/crds/examples/push_v1alpha1_pushapplication_cr.yaml
+
+.PHONY: android-variant/apply
+android-variant/apply:
+	make example-pushapplication/apply
+	@echo ....... Applying the Android Variant example in the current namespace  ......
+	- kubectl apply -n $(APP_NAMESPACES) -f deploy/crds/examples/push_v1alpha1_androidvariant_cr.yaml
+
+.PHONY: android-variant/delete
+android-variant/delete:
+	@echo ....... Applying the Android Variant example in the current namespace  ......
+	- kubectl delete -n $(APP_NAMESPACES) -f deploy/crds/examples/push_v1alpha1_androidvariant_cr.yaml
+
+
+.PHONY: ios-variant/apply
+ios-variant/apply:
+	make example-pushapplication/apply
+	@echo ....... Applying the Android Variant example in the current namespace  ......
+	- kubectl apply -n $(APP_NAMESPACES) -f deploy/crds/examples/push_v1alpha1_iosvariant_cr.yaml
+
+.PHONY: ios-variant/delete
+ios-variant/delete:
+	@echo ....... Applying the Android Variant example in the current namespace  ......
+	- kubectl delete -n $(APP_NAMESPACES) -f deploy/crds/examples/push_v1alpha1_iosvariant_cr.yaml
 
 .PHONY: cluster/prepare
 cluster/prepare:
 	- kubectl create namespace $(NAMESPACE)
 	- kubectl label namespace $(NAMESPACE) monitoring-key=middleware
+	- kubectl create namespace $(APP_NAMESPACES)
 	- kubectl create -n $(NAMESPACE) -f deploy/service_account.yaml
 	- kubectl create -n $(NAMESPACE) -f deploy/role.yaml
 	- kubectl create -n $(NAMESPACE) -f deploy/role_binding.yaml
-	- kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
-	- kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
-	- kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
-	- kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
+	- kubectl apply -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
+	- kubectl apply -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
+	- kubectl apply -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
+	- kubectl apply -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
 
 .PHONY: cluster/clean
 cluster/clean:
@@ -129,9 +154,29 @@ cluster/clean:
 	- kubectl delete -f deploy/role.yaml
 	- kubectl delete -n $(NAMESPACE) -f deploy/role_binding.yaml
 	- kubectl delete -n $(NAMESPACE) -f deploy/service_account.yaml
-	- kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
-	- kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
-	- kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
-	- kubectl delete -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
+	- kubectl delete -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
+	- kubectl delete -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
+	- kubectl delete -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
+	- kubectl delete -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
 	- make monitoring/uninstall
 	- kubectl delete namespace $(NAMESPACE)
+	- kubectl delete namespace ${APP_NAMESPACES}
+
+
+.PHONY: image/build/master
+image/build/master:
+	operator-sdk build quay.io/${ORG_NAME}/${APP_NAME}:master
+
+ .PHONY: image/push/master
+image/push/master:
+	docker push quay.io/${ORG_NAME}/${APP_NAME}:master
+
+
+
+ .PHONY: image/build/dev
+image/build/dev:
+	operator-sdk build quay.io/${ORG_NAME}/${APP_NAME}:${DEV_TAG}
+
+ .PHONY: image/push/dev
+image/push/dev:
+	docker push quay.io/${ORG_NAME}/${APP_NAME}:${DEV_TAG}

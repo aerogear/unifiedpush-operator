@@ -7,6 +7,7 @@ import (
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/controller/util"
 
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,6 +83,16 @@ func (r *ReconcileIOSVariant) Reconcile(request reconcile.Request) (reconcile.Re
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
+		return reconcile.Result{}, err
+	}
+
+	// Check if the namespace of the cr is in the APP_NAMESPACES environment variable provided to the operator or if it's in the operator namespace
+	operatorNamespace, err := k8sutil.GetOperatorNamespace()
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	err = util.IsValidAppNamespace(instance.Namespace, operatorNamespace, instance.Name)
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
