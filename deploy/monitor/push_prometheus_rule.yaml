@@ -145,7 +145,7 @@ spec:
           sop_url: "https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-push.adoc" #todo
       - alert: UnifiedPushMessagesFailures # todo expose metric
         expr: >
-          rate(ups_failed_msg_attempts{namespace="unifiedpush"}[5m])
+          rate(ups_msg_fails_total{namespace="unifiedpush"}[5m])
           * 300 > 50
         for: 5m
         labels:
