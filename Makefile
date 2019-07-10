@@ -12,6 +12,8 @@ APP_NAMESPACES=unifiedpush-apps
 CODE_COMPILE_OUTPUT = build/_output/bin/unifiedpush-operator
 TEST_COMPILE_OUTPUT = build/_output/bin/unifiedpush-operator-test
 
+DEV_TAG ?= $(shell sh -c "git rev-parse --short HEAD")
+
 ##############################
 # Local Development          #
 ##############################
@@ -163,20 +165,10 @@ cluster/clean:
 	- kubectl delete namespace ${APP_NAMESPACES}
 
 
-.PHONY: image/build/master
-image/build/master:
-	operator-sdk build quay.io/${ORG_NAME}/${APP_NAME}:master
-
- .PHONY: image/push/master
-image/push/master:
-	docker push quay.io/${ORG_NAME}/${APP_NAME}:master
-
-
-
- .PHONY: image/build/dev
-image/build/dev:
+.PHONY: image/build
+image/build:
 	operator-sdk build quay.io/${ORG_NAME}/${APP_NAME}:${DEV_TAG}
 
- .PHONY: image/push/dev
-image/push/dev:
+.PHONY: image/push
+image/push:
 	docker push quay.io/${ORG_NAME}/${APP_NAME}:${DEV_TAG}
