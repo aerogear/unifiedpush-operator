@@ -89,9 +89,10 @@ func (r *ReconcileAndroidVariant) Reconcile(request reconcile.Request) (reconcil
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = util.IsValidAppNamespace(instance.Namespace, operatorNamespace, instance.Name)
-	if err != nil {
-		return reconcile.Result{}, err
+	is := util.IsValidAppNamespace(instance.Namespace, operatorNamespace, instance.Name)
+	if !is {
+		reqLogger.Info("The app cr %s was created in a namespace which is not present in the APP_NAMESPACES environment variable provided to the operator or is not the in the operator namespace", instance.Name)
+		return reconcile.Result{}, nil
 	}
 
 	// Get a UPS Client for interactions with the UPS service
