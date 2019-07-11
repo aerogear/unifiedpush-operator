@@ -1,0 +1,119 @@
+ifdef::env-github[]
+:status:
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+:table-caption!:
+endif::[]
+
+:toc:
+:toc-placement!:
+
+= UnifiedPush Operator - Standard Operating Procedures
+
+:toc:
+toc::[]
+
+== Critical
+
+=== UnifiedpushDown or UnifiedPushConsoleDown
+
+. Check that the UnifiedPushServer CR is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`
+. Check the environment variables of the Server
+.. Run `oc describe pods -l service=ups`
+.. For further information see https://github.com/aerogear/aerogear-unifiedpush-server#container-configuration.
++
+Note: It will use the values mapped in the Secret created by the operator with the database pod name.
++
+. Check the environment variables of the Database
+.. Run `oc get pods` and check the database pod name
+.. Run `oc describe pods <databasepodname>`
+.. Check if the database image was pulled successfully.
+. Check the logs of the UPS OAuth Proxy Container
+.. Get the service pod name -> `oc describe pods -l service=ups`
+.. Run `oc logs <service-podname> -c ups-oauth-proxy`
+.. Save the logs by running `oc logs <service-podname> -c ups-oauth-proxy > <filename>.log`
+.. Check if the oauth-proxy image was pulled successfully
+. Check the logs of the UPS Container
+.. Get the service pod name -> `oc describe pods -l service=ups`
+.. Save the logs by running `oc logs <service-podname> -c ups > <filename>.log`
+.. See the `pod/example-unifiedpushserver-<xyz123>` logs.
+.. Check if the UnifiedPush Server image was pulled successfully
+. Check if the secret was created
+.. Run `oc get secrets` in the namespace where the operator is installed
+. Check if the values in the secret are correct.
+.. Run `for field in POSTGRES_{DATABASE,HOST,USERNAME,PASSWORD,SUPERUSER,VERSION}; do printf "${field}: " && oc get secret <CR Name>-postgresql -o jsonpath="{.data.$field}" | base64 -d && echo; done`
+. Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
+
+=== UnifiedPushDatabaseDown
+
+. Check that the UnifiedPushServer CR is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`
+. Check that the Database Pod is deployed in the same namespace as the operator by running `oc get pods | grep postgresql`
++
+NOTE: It will use the values mapped in the Secret created by the operator with the database pod name.
++
+. Check the pod logs
+.. Run `oc logs <database-podname>`
++
+NOTE: You can save the logs by running `oc logs <database-podname> > <filename>.log`
++
+.. Check if the Database image was pulled successfully
+. Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
+
+=== UnifiedPushApiHighRequestFailure
+
+- Check <<General procedure>>
+
+=== UnifiedPushPodCPUHigh
+
+- Check <<General procedure>>
+
+=== UnifiedPushJavaHeapThresholdExceeded
+
+- Check <<General procedure>>
+
+=== UnifiedPushJavaNonHeapThresholdExceeded
+
+- Check <<General procedure>>
+
+=== UnifiedPushJavaGCTimePerMinuteScavenge
+
+- Check <<General procedure>>
+
+== Warning
+
+=== UnifiedPushMessagesFailures
+
+- Check <<General procedure>>
+
+=== UnifiedPushPodMemoryHigh
+
+- Check <<General procedure>>
+
+=== UnifiedPushApiHighRequestDuration
+
+- Check <<General procedure>>
+
+=== UnifiedPushApiHighConcurrentRequests
+
+- Check <<General procedure>>
+
+=== UnifiedPushJavaDeadlockedThreads,
+
+- Check <<General procedure>>
+
+== General procedure
+
+. Capture a snapshot of the 'UnifiedPush Server' Grafana dashboard and track it over time. The metrics can be useful for identifying performance issues over time.
+
+. Capture application logs for analysis.
+.. Get the pod names by running `oc get pods`
+.. Save the logs by running `oc logs <database-podname> > <filename>.log` for each pod
+
+NOTE: You are able to the the logs by the Console (OCP UI) as well.
+
+. If necessary, recreate the service pod to restore service.
+. Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
+
