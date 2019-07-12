@@ -159,7 +159,7 @@ func (c UnifiedpushClient) GetAndroidVariant(v *pushv1alpha1.AndroidVariant) (st
 }
 
 // CreateAndroidVariant creates a Variant on an Application in UPS
-func (c UnifiedpushClient) CreateAndroidVariant(v *pushv1alpha1.AndroidVariant) (string, error) {
+func (c UnifiedpushClient) CreateAndroidVariant(v *pushv1alpha1.AndroidVariant) (string, string, error) {
 	url := fmt.Sprintf("%s/rest/applications/%s/android", c.Url, v.Spec.PushApplicationId)
 
 	params := map[string]string{
@@ -171,7 +171,7 @@ func (c UnifiedpushClient) CreateAndroidVariant(v *pushv1alpha1.AndroidVariant) 
 
 	payload, err := json.Marshal(params)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to marshal android variant params to json")
+		return "", "", errors.Wrap(err, "Failed to marshal android variant params to json")
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
@@ -180,19 +180,19 @@ func (c UnifiedpushClient) CreateAndroidVariant(v *pushv1alpha1.AndroidVariant) 
 
 	resp, err := doUPSRequest(req)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 201 {
-		return "", errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
+		return "", "", errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
 	}
 
 	var createdVariant androidVariant
 	b, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(b, &createdVariant)
 
-	return createdVariant.VariantId, nil
+	return createdVariant.VariantId, createdVariant.Secret, nil
 }
 
 // DeleteAndroidVariant deletes an Android variant in UPS
@@ -243,7 +243,7 @@ func (c UnifiedpushClient) GetIOSVariant(v *pushv1alpha1.IOSVariant) (string, er
 }
 
 // CreateIOSVariant creates a Variant on an Application in UPS
-func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (string, error) {
+func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (string, string, error) {
 	url := fmt.Sprintf("%s/rest/applications/%s/ios", c.Url, v.Spec.PushApplicationId)
 
 	params := map[string]string{
@@ -256,7 +256,7 @@ func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (string,
 	// We need to decode it before sending
 	decodedString, err := base64.StdEncoding.DecodeString(string(v.Spec.Certificate))
 	if err != nil {
-		return "", errors.Wrap(err, "Invalid cert - Please check this cert is in base64 encoded format: ")
+		return "", "", errors.Wrap(err, "Invalid cert - Please check this cert is in base64 encoded format: ")
 	}
 
 	body := new(bytes.Buffer)
@@ -265,7 +265,7 @@ func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (string,
 
 	part, err := writer.CreateFormFile("certificate", "certificate")
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to create form for UPS iOS variant request")
+		return "", "", errors.Wrap(err, "Failed to create form for UPS iOS variant request")
 	}
 	part.Write(decodedString)
 
@@ -279,19 +279,19 @@ func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (string,
 
 	resp, err := doUPSRequest(req)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 201 {
-		return "", errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
+		return "", "", errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
 	}
 
 	var createdVariant iOSVariant
 	b, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(b, &createdVariant)
 
-	return createdVariant.VariantId, nil
+	return createdVariant.VariantId, createdVariant.Secret, nil
 }
 
 // DeleteIOSVariant deletes an IOS variant in UPS

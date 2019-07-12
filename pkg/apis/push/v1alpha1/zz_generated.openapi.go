@@ -131,6 +131,12 @@ func schema_pkg_apis_push_v1alpha1_AndroidVariantStatus(ref common.ReferenceCall
 							Format: "",
 						},
 					},
+					"secret": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 				Required: []string{"ready"},
 			},
@@ -244,6 +250,12 @@ func schema_pkg_apis_push_v1alpha1_IOSVariantStatus(ref common.ReferenceCallback
 						},
 					},
 					"variantId": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"secret": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",

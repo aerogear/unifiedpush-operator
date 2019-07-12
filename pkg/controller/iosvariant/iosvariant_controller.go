@@ -124,13 +124,14 @@ func (r *ReconcileIOSVariant) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, nil
 	}
 
-	variantId, err := unifiedpushClient.CreateIOSVariant(instance)
+	variantId, secret, err := unifiedpushClient.CreateIOSVariant(instance)
 	if err != nil {
 		reqLogger.Error(err, "Error creating iOS variant in UPS.", "IOSVaraint.Name", instance.Name)
 		return reconcile.Result{RequeueAfter: time.Second * 5}, nil
 	}
 
 	instance.Status.VariantId = variantId
+	instance.Status.Secret = secret
 	instance.Status.Ready = true
 	err = r.client.Status().Update(context.TODO(), instance)
 	if err != nil {
