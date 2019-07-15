@@ -7,6 +7,7 @@ import (
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/config"
 	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
+	messaginguserv1beta "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1"
 	routev1 "github.com/openshift/api/route/v1"
 
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
@@ -235,21 +236,22 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 
 		//check that user exists
-		foundUser := newMessagingUser(instance)
+		user := newMessagingUser(instance)
 
 		// Set UnifiedPushServer instance as the owner and controller
-		if err := controllerutil.SetControllerReference(instance, foundUser, r.scheme); err != nil {
+		if err := controllerutil.SetControllerReference(instance, user, r.scheme); err != nil {
 			return reconcile.Result{}, err
 		}
 
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: foundUser.Name, Namespace: foundUser.Namespace}, foundUser)
+		foundUser := &messaginguserv1beta.MessagingUser{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: user.Name, Namespace: user.Namespace}, foundUser)
 		if err != nil && errors.IsNotFound(err) {
-			reqLogger.Info("Creating a new MessagingUser", "MessagingUser.Namespace", foundUser.Namespace, "MessagingUser.Name", foundUser.Name)
-			err = r.client.Create(context.TODO(), foundUser)
+			reqLogger.Info("Creating a new MessagingUser", "MessagingUser.Namespace", user.Namespace, "MessagingUser.Name", user.Name)
+			err = r.client.Create(context.TODO(), user)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-			return reconcile.Result{Requeue: true}, nil
+			return reconcile.Result{RequeueAfter: time.Second * 1}, nil
 		} else if err != nil {
 			return reconcile.Result{}, err
 		} /*User exists and is ready*/
@@ -260,17 +262,17 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		queues := []string{"APNsPushMessageQueue", "APNsTokenBatchQueue", "GCMPushMessageQueue", "GCMTokenBatchQueue", "WNSPushMessageQueue", "WNSTokenBatchQueue", "MetricsQueue", "TriggerMetricCollectionQueue", "TriggerVariantMetricCollectionQueue", "BatchLoadedQueue", "AllBatchesLoadedQueue", "FreeServiceSlotQueue"}
 		requeueCreate := false
 		for _, address := range queues {
-			foundQueue := newQueue(instance, address)
-
+			queue := newQueue(instance, address)
+			foundQueue := &enmassev1beta.Address{}
 			// Set UnifiedPushServer instance as the owner and controller
-			if err := controllerutil.SetControllerReference(instance, foundQueue, r.scheme); err != nil {
+			if err := controllerutil.SetControllerReference(instance, queue, r.scheme); err != nil {
 				return reconcile.Result{}, err
 			}
 
-			err = r.client.Get(context.TODO(), types.NamespacedName{Name: foundQueue.Name, Namespace: foundQueue.Namespace}, foundQueue)
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: queue.Name, Namespace: queue.Namespace}, foundQueue)
 			if err != nil && errors.IsNotFound(err) {
-				reqLogger.Info("Creating a new Queue", "Queue.Namespace", foundQueue.Namespace, "Queue.Name", foundQueue.Name)
-				err = r.client.Create(context.TODO(), foundQueue)
+				reqLogger.Info("Creating a new Queue", "Queue.Namespace", queue.Namespace, "Queue.Name", queue.Name)
+				err = r.client.Create(context.TODO(), queue)
 				if err != nil {
 					return reconcile.Result{}, err
 				}
@@ -293,17 +295,17 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		//topics
 		topics := []string{"MetricsProcessingStartedTopic", "topic/APNSClient"}
 		for _, address := range topics {
-			foundTopic := newTopic(instance, address)
-
+			topic := newTopic(instance, address)
+			foundTopic := &enmassev1beta.Address{}
 			// Set UnifiedPushServer instance as the owner and controller
-			if err := controllerutil.SetControllerReference(instance, foundTopic, r.scheme); err != nil {
+			if err := controllerutil.SetControllerReference(instance, topic, r.scheme); err != nil {
 				return reconcile.Result{}, err
 			}
 
-			err = r.client.Get(context.TODO(), types.NamespacedName{Name: foundTopic.Name, Namespace: foundTopic.Namespace}, foundTopic)
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: topic.Name, Namespace: topic.Namespace}, foundTopic)
 			if err != nil && errors.IsNotFound(err) {
-				reqLogger.Info("Creating a new Topic", "Topic.Namespace", foundTopic.Namespace, "Topic.Name", foundTopic.Name)
-				err = r.client.Create(context.TODO(), foundTopic)
+				reqLogger.Info("Creating a new Topic", "Topic.Namespace", topic.Namespace, "Topic.Name", topic.Name)
+				err = r.client.Create(context.TODO(), topic)
 				if err != nil {
 					return reconcile.Result{}, err
 				}
@@ -314,10 +316,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 
 		if requeueCreate {
-			return reconcile.Result{Requeue: true}, nil
-		} else {
-			reqLogger.Info("Found All queues and topics for UPS")
+			return reconcile.Result{RequeueAfter: time.Second * 5}, nil
 		}
+
+		reqLogger.Info("Found All queues and topics for UPS")
 
 	}
 	//If AMQ is used, it is ready
