@@ -7,8 +7,20 @@ import (
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
 	messaginguserv1beta "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func newAMQConfigMap(cr *pushv1alpha1.UnifiedPushServer, addressURL string) *corev1.ConfigMap {
+
+	return &corev1.ConfigMap{
+		ObjectMeta: objectMeta(cr, "amq"),
+		Data: map[string]string{
+			"address-url": addressURL,
+		},
+	}
+
+}
 
 func newQueue(cr *pushv1alpha1.UnifiedPushServer, address string) *enmassev1beta.Address {
 	name := fmt.Sprintf("ups.%s", strings.ToLower(address))

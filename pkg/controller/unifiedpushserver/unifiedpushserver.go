@@ -89,7 +89,7 @@ func newOauthProxyImageStream(cr *pushv1alpha1.UnifiedPushServer) (*imagev1.Imag
 	}, nil
 }
 
-func buildEnv(cr *pushv1alpha1.UnifiedPushServer, addressSpaceURL string) []corev1.EnvVar {
+func buildEnv(cr *pushv1alpha1.UnifiedPushServer) []corev1.EnvVar {
 	var env = []corev1.EnvVar{
 		{
 			Name: "POSTGRES_SERVICE_HOST",
@@ -153,8 +153,15 @@ func buildEnv(cr *pushv1alpha1.UnifiedPushServer, addressSpaceURL string) []core
 				Value: "password",
 			},
 			corev1.EnvVar{
-				Name:  "ARTEMIS_SERVICE_HOST",
-				Value: addressSpaceURL,
+				Name: "ARTEMIS_SERVICE_HOST",
+				ValueFrom: &corev1.EnvVarSource{
+					ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+						Key: "address-url",
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: fmt.Sprintf("%s-amq", cr.Name),
+						},
+					},
+				},
 			},
 			corev1.EnvVar{
 				Name:  "ARTEMIS_SERVICE_PORT",
@@ -166,7 +173,7 @@ func buildEnv(cr *pushv1alpha1.UnifiedPushServer, addressSpaceURL string) []core
 
 }
 
-func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer, addressSpaceURL string) (*openshiftappsv1.DeploymentConfig, error) {
+func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer) (*openshiftappsv1.DeploymentConfig, error) {
 
 	labels := map[string]string{
 		"app":     cr.Name,
@@ -255,7 +262,7 @@ func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer, addressS
 							Name:            cfg.UPSContainerName,
 							Image:           cfg.UPSImageStreamName + ":" + cfg.UPSImageStreamTag,
 							ImagePullPolicy: corev1.PullAlways,
-							Env:             buildEnv(cr, addressSpaceURL),
+							Env:             buildEnv(cr),
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          cfg.UPSContainerName,

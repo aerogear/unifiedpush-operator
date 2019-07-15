@@ -199,7 +199,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			return reconcile.Result{}, err
 		}
 	}
-	addressSpaceURL := ""
+
 	//Begin AMQ resource reconcile
 	if instance.Spec.UseMessageBroker {
 		//check that address space exists
@@ -231,7 +231,13 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 		for _, status := range foundAddressSpace.Status.EndpointStatus {
 			if status.Name == "messaging" { //magic value
-				addressSpaceURL = status.ServiceHost
+				addressSpaceURL := status.ServiceHost
+				addressConfigMap := newAMQConfigMap(instance, addressSpaceURL)
+				err = r.client.Create(context.TODO(), addressConfigMap)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+
 			}
 		}
 
@@ -288,9 +294,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 		if requeueCreate {
 			return reconcile.Result{RequeueAfter: time.Second * 5}, nil
-		} else {
-			reqLogger.Info("Found All queues  for UPS")
 		}
+
+		reqLogger.Info("Found All queues  for UPS")
 
 		//topics
 		topics := []string{"MetricsProcessingStartedTopic", "topic/APNSClient"}
@@ -572,7 +578,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	//#endregion
 
 	//#region UPS DeploymentConfig
-	unifiedpushDeploymentConfig, err := newUnifiedPushServerDeployment(instance, addressSpaceURL)
+	unifiedpushDeploymentConfig, err := newUnifiedPushServerDeployment(instance)
 
 	if err := controllerutil.SetControllerReference(instance, unifiedpushDeploymentConfig, r.scheme); err != nil {
 		return reconcile.Result{}, err
