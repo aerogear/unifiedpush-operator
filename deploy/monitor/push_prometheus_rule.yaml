@@ -14,7 +14,7 @@ spec:
   groups:
     - name: general.rules
       rules:
-      - alert: UnifiedpushDown
+      - alert: UnifiedPushDown
         expr: absent(kube_pod_container_status_running{namespace="unifiedpush",container="ups"}==1)
         for: 5m
         labels:
