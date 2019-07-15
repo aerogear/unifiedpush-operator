@@ -22,6 +22,16 @@ func newAMQConfigMap(cr *pushv1alpha1.UnifiedPushServer, addressURL string) *cor
 
 }
 
+func newAMQSecret(cr *pushv1alpha1.UnifiedPushServer, artemisPassword string) *corev1.Secret {
+
+	return &corev1.Secret{
+		ObjectMeta: objectMeta(cr, "amq"),
+		StringData: map[string]string{
+			"artemis-password": artemisPassword,
+		},
+	}
+}
+
 func newQueue(cr *pushv1alpha1.UnifiedPushServer, address string) *enmassev1beta.Address {
 	name := fmt.Sprintf("ups.%s", strings.ToLower(address))
 	return &enmassev1beta.Address{
@@ -59,8 +69,13 @@ func newTopic(cr *pushv1alpha1.UnifiedPushServer, address string) *enmassev1beta
 	}
 }
 
-func newMessagingUser(cr *pushv1alpha1.UnifiedPushServer) *messaginguserv1beta.MessagingUser {
-	password := []byte("password")
+func newMessagingUser(cr *pushv1alpha1.UnifiedPushServer) (*messaginguserv1beta.MessagingUser, error) {
+
+	artemisPassword, err := generatePassword()
+	if err != nil {
+		return nil, err
+	}
+	password := []byte(artemisPassword)
 
 	return &messaginguserv1beta.MessagingUser{
 		ObjectMeta: metav1.ObjectMeta{
@@ -86,7 +101,7 @@ func newMessagingUser(cr *pushv1alpha1.UnifiedPushServer) *messaginguserv1beta.M
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func newAddressSpace(cr *pushv1alpha1.UnifiedPushServer) *enmassev1beta.AddressSpace {

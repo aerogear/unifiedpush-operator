@@ -234,7 +234,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				addressSpaceURL := status.ServiceHost
 				addressConfigMap := newAMQConfigMap(instance, addressSpaceURL)
 				err = r.client.Create(context.TODO(), addressConfigMap)
-				if err != nil {
+				if err != nil && !errors.IsAlreadyExists(err) {
 					return reconcile.Result{}, err
 				}
 
@@ -242,7 +242,11 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 
 		//check that user exists
-		user := newMessagingUser(instance)
+		user, err := newMessagingUser(instance)
+
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 
 		// Set UnifiedPushServer instance as the owner and controller
 		if err := controllerutil.SetControllerReference(instance, user, r.scheme); err != nil {
@@ -257,6 +261,13 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			if err != nil {
 				return reconcile.Result{}, err
 			}
+
+			secret := newAMQSecret(instance, string(user.Spec.Authentication.Password))
+			err = r.client.Create(context.TODO(), secret)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
 			return reconcile.Result{RequeueAfter: time.Second * 1}, nil
 		} else if err != nil {
 			return reconcile.Result{}, err

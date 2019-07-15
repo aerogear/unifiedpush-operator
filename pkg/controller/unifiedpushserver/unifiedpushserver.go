@@ -149,8 +149,15 @@ func buildEnv(cr *pushv1alpha1.UnifiedPushServer) []corev1.EnvVar {
 			},
 
 			corev1.EnvVar{
-				Name:  "ARTEMIS_PASSWORD",
-				Value: "password",
+				Name: "ARTEMIS_PASSWORD",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						Key: "artemis-password",
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: fmt.Sprintf("%s-amq", cr.Name),
+						},
+					},
+				},
 			},
 			corev1.EnvVar{
 				Name: "ARTEMIS_SERVICE_HOST",
