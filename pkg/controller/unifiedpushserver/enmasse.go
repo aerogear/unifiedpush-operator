@@ -11,23 +11,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func newAMQConfigMap(cr *pushv1alpha1.UnifiedPushServer, addressURL string) *corev1.ConfigMap {
-
-	return &corev1.ConfigMap{
-		ObjectMeta: objectMeta(cr, "amq"),
-		Data: map[string]string{
-			"address-url": addressURL,
-		},
-	}
-
-}
-
-func newAMQSecret(cr *pushv1alpha1.UnifiedPushServer, artemisPassword string) *corev1.Secret {
+func newAMQSecret(cr *pushv1alpha1.UnifiedPushServer, artemisPassword string, addressURL string) *corev1.Secret {
 
 	return &corev1.Secret{
 		ObjectMeta: objectMeta(cr, "amq"),
 		StringData: map[string]string{
 			"artemis-password": artemisPassword,
+			"artemis-url":      addressURL,
 		},
 	}
 }

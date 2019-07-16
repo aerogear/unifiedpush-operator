@@ -200,9 +200,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 	}
 
-	//Begin AMQ resource reconcile
+	//#region AMQ resource reconcile
 	if instance.Spec.UseMessageBroker {
-		//check that address space exists
+		//#region create addressSpace
 		addressSpace := newAddressSpace(instance)
 
 		// Set UnifiedPushServer instance as the owner and controller
@@ -218,32 +218,20 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			if err != nil {
 				return reconcile.Result{}, err
 			}
+			reqLogger.Info("Requeuing, AddressSpace not ready.", "AddressSpace.Namespace", addressSpace.Namespace, "AddressSpace.Name", addressSpace.Name)
 			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
 		} else if err != nil {
 			return reconcile.Result{}, err
 		} else if !foundAddressSpace.Status.IsReady {
+			reqLogger.Info("Requeuing, AddressSpace not ready.", "AddressSpace.Namespace", foundAddressSpace.Namespace, "AddressSpace.Name", foundAddressSpace.Name)
 			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
 		} else {
 			reqLogger.Info("Found AddressSpace for UPS")
 		}
+		//#endregion
 
-		/*Address space exists and is ready*/
-
-		for _, status := range foundAddressSpace.Status.EndpointStatus {
-			if status.Name == "messaging" { //magic value
-				addressSpaceURL := status.ServiceHost
-				addressConfigMap := newAMQConfigMap(instance, addressSpaceURL)
-				err = r.client.Create(context.TODO(), addressConfigMap)
-				if err != nil && !errors.IsAlreadyExists(err) {
-					return reconcile.Result{}, err
-				}
-
-			}
-		}
-
-		//check that user exists
+		//#region check that user exists
 		user, err := newMessagingUser(instance)
-
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -262,20 +250,34 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				return reconcile.Result{}, err
 			}
 
-			secret := newAMQSecret(instance, string(user.Spec.Authentication.Password))
-			err = r.client.Create(context.TODO(), secret)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-
-			return reconcile.Result{RequeueAfter: time.Second * 1}, nil
 		} else if err != nil {
 			return reconcile.Result{}, err
-		} /*User exists and is ready*/
+		}
+		//#endregion
 
-		/*User exists and is ready*/
-		//check that addresses exist
-		//queues
+		//#region create secret for user password and artemis url
+		for _, status := range foundAddressSpace.Status.EndpointStatus {
+			if status.Name == "messaging" { //"messaging" is a key from enmasse.
+				addressSpaceURL := status.ServiceHost
+				password := string(user.Spec.Authentication.Password)
+				secret := newAMQSecret(instance, password, addressSpaceURL)
+				foundSecret := &corev1.Secret{}
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, foundSecret)
+				if err != nil && errors.IsNotFound(err) {
+					reqLogger.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
+					err = r.client.Create(context.TODO(), secret)
+					if err != nil {
+						return reconcile.Result{}, err
+					}
+				} else if err != nil {
+					return reconcile.Result{}, err
+				}
+				break
+			}
+		}
+		//#endregion
+
+		//#region queues
 		queues := []string{"APNsPushMessageQueue", "APNsTokenBatchQueue", "GCMPushMessageQueue", "GCMTokenBatchQueue", "WNSPushMessageQueue", "WNSTokenBatchQueue", "MetricsQueue", "TriggerMetricCollectionQueue", "TriggerVariantMetricCollectionQueue", "BatchLoadedQueue", "AllBatchesLoadedQueue", "FreeServiceSlotQueue"}
 		requeueCreate := false
 		for _, address := range queues {
@@ -304,12 +306,14 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 
 		if requeueCreate {
+			reqLogger.Info("Requeueing while queues are created")
 			return reconcile.Result{RequeueAfter: time.Second * 5}, nil
 		}
+		//#endregion
 
-		reqLogger.Info("Found All queues  for UPS")
+		reqLogger.Info("Found all queues  for UPS")
 
-		//topics
+		//#region topics
 		topics := []string{"MetricsProcessingStartedTopic", "topic/APNSClient"}
 		for _, address := range topics {
 			topic := newTopic(instance, address)
@@ -333,18 +337,19 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 
 		if requeueCreate {
+			reqLogger.Info("Requeueing while topics are created")
 			return reconcile.Result{RequeueAfter: time.Second * 5}, nil
 		}
+		//#endregion
 
 		reqLogger.Info("Found All queues and topics for UPS")
 
 	}
-	//If AMQ is used, it is ready
+	//#endregion
 
 	//#region Postgres PVC
 	persistentVolumeClaim, err := newPostgresqlPersistentVolumeClaim(instance)
 	if err != nil {
-		reqLogger.Info("Error making PVC")
 		return reconcile.Result{}, err
 	}
 
@@ -589,7 +594,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	//#endregion
 
 	//#region UPS DeploymentConfig
-	unifiedpushDeploymentConfig, err := newUnifiedPushServerDeployment(instance)
+	unifiedpushDeploymentConfig, err := newUnifiedPushServerDeploymentConfig(instance)
 
 	if err := controllerutil.SetControllerReference(instance, unifiedpushDeploymentConfig, r.scheme); err != nil {
 		return reconcile.Result{}, err

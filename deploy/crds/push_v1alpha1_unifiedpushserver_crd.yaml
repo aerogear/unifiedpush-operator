@@ -8,6 +8,8 @@ spec:
     kind: UnifiedPushServer
     listKind: UnifiedPushServerList
     plural: unifiedpushservers
+    shortNames:
+    - ups
     singular: unifiedpushserver
   scope: Namespaced
   subresources:
@@ -68,8 +70,8 @@ spec:
                 type: object
               type: array
             useMessageBroker:
-              description: If you are using enmasse you can set this value to true
-                to use managed queues.
+              description: UseMessageBroker can be set to true to use managed queues,
+                if you are using enmasse. Defaults to false.
               type: boolean
           type: object
         status:

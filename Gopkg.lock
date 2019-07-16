@@ -128,8 +128,8 @@
   version = "v2.9.3"
 
 [[projects]]
-  branch = "address_type_update"
-  digest = "1:75ae4342c9d77578b7b7b1c3e92746d231db961afc9b26498aace6ef1afda885"
+  branch = "master"
+  digest = "1:7efb40040debf1fe1a114dace0d1a2f601e34ca10c67570d8c0214a431440ba7"
   name = "github.com/enmasseproject/enmasse"
   packages = [
     "pkg/apis/enmasse",
@@ -137,9 +137,8 @@
     "pkg/apis/user",
     "pkg/apis/user/v1beta1",
   ]
-  pruneopts = "NT"
-  revision = "42e62d49462dbc812691997fcf01388a5d131bf2"
-  source = "https://github.com/secondsun/enmasse.git"
+  pruneopts = "NUT"
+  revision = "410a8fdb9799c6e488d8b696e2d36ded55846304"
 
 [[projects]]
   digest = "1:448bf60e9dce6d5fd9dfa8fd9eb9a23163424ff4e4f142456405781e942e3998"

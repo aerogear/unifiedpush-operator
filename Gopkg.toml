@@ -64,8 +64,7 @@ required = [
 
 [[constraint]]
   name = "github.com/enmasseproject/enmasse"
-  source = "https://github.com/secondsun/enmasse.git"
-  branch = "address_type_update"
+  branch = "master"
 
 [prune]
   go-tests = true

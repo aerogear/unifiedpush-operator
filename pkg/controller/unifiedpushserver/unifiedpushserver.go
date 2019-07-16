@@ -162,8 +162,8 @@ func buildEnv(cr *pushv1alpha1.UnifiedPushServer) []corev1.EnvVar {
 			corev1.EnvVar{
 				Name: "ARTEMIS_SERVICE_HOST",
 				ValueFrom: &corev1.EnvVarSource{
-					ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-						Key: "address-url",
+					SecretKeyRef: &corev1.SecretKeySelector{
+						Key: "artemis-url",
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: fmt.Sprintf("%s-amq", cr.Name),
 						},
@@ -180,7 +180,7 @@ func buildEnv(cr *pushv1alpha1.UnifiedPushServer) []corev1.EnvVar {
 
 }
 
-func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer) (*openshiftappsv1.DeploymentConfig, error) {
+func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshiftappsv1.DeploymentConfig, error) {
 
 	labels := map[string]string{
 		"app":     cr.Name,
