@@ -44,16 +44,14 @@ The following guide outlines the steps required to resolve issues with the Prome
 NOTE: The operator is responsible to manage and create all objects required in order to have the UnifiedPush Service and its database provided in the cluster.
 . Check its logs by running `oc logs <operator-podname>`
 +
-NOTE: You can save the logs by running `oc logs <operator-podname> > <filename>.log`. The logs may provide to you useful information to lead you the root cause as it is a required information for its maintainers are able to help you with.
-+
-TIP: May will be required re-install the project or just the link:./deploy/operator.yaml[operator.yaml] file if all kinds of CR and CRD's are applied in the namespace.
+NOTE: You can save the logs by running `oc logs <operator-podname> > <filename>.log`. The logs may provide you with useful information to lead you to the root cause, and they are also useful for providing to the project maintainers when you create an issue.
 
 == Warning
 
 === UnifiedPushPodCount
 
 . Switch to the UnifiedPush namespace by running `oc project <namespace>`. E.g `oc project unifiedpush`.
-. Check if it has at least 3 pods (Service, Database and Operator) by running `oc get pods`.Following an example of the expected result.
+. Check if it has at least 3 pods (Service, Database and Operator) by running `oc get pods`. The following is an example of the expected result:
 +
 [source,shell]
 ----

@@ -468,20 +468,6 @@ NOTE: You can save the logs by running `oc logs <database-podname> > <filename>.
 .. Check if the Database image was pulled successfully.
 . Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
 
-==== UnifiedPushApiHighRequestFailure
-
-It means that Service pod(s) are facing performance issues.
-
-. Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
-. Following the steps <<To scale the pod>> in order to try to solve performance issues.
-
-==== UnifiedPushPodCPUHigh
-
-It means that Service pod(s) are using more CPU than expected.
-
-. Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
-. Following the steps <<To scale the pod>> in order to try to solve performance issues.
-
 ==== UnifiedPushJavaHeapThresholdExceeded
 
 It means that Service pod(s) are facing performance issues.
@@ -510,36 +496,6 @@ It means that Service pod(s) are facing performance issues.
 It means that Service pod(s) has some error that is not able to send the quantity of messages expected.
 
 . Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
-
-==== UnifiedPushPodMemoryHigh
-
-It means that Service pod(s) are facing performance issues.
-
-. Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
-. Following the steps <<To scale the pod>> in order to try to solve performance issues.
-
-==== UnifiedPushApiHighRequestDuration
-
-It means that the requests performed to the UPS Service are taking too long.
-
-. Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
-. Following the steps <<To scale the pod>> in order to try to solve performance issues.
-
-==== UnifiedPushApiHighConcurrentRequests
-
-It means that are to many requests to the UPS Service falling.
-
-. Please following the <<To capture the logs>> procedure before in order to capture the logs and send it to its maintainers.
-
-TIP: May delete the UPS Deployment could allow the operator re-create it with the correct configuration.
-
-==== UnifiedPushJavaDeadlockedThreads,
-
-It means that are threads locked in the UPS Service.
-
-. Please following the <<To capture the logs>> procedure before in order to capture the logs and send it to its maintainers.
-
-TIP: May delete the UPS Deployment could allow the operator re-create it with the correct configuration.
 
 === To capture the logs
 
