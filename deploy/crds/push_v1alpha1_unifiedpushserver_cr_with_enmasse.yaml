@@ -1,6 +1,6 @@
 apiVersion: push.aerogear.org/v1alpha1
 kind: UnifiedPushServer
 metadata:
-  name: example-unifiedpushserver
+  name: ups-with-enmasse
 spec:
-  useMessageBroker: false
+  useMessageBroker: true
