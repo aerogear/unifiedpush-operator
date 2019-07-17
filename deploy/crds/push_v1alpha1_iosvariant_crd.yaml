@@ -10,9 +10,6 @@ spec:
   - JSONPath: .status.variantId
     name: VariantId
     type: string
-  - JSONPath: .status.secret
-    name: Secret
-    type: string
   - JSONPath: .status.ready
     name: Ready
     type: string

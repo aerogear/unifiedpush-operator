@@ -69,6 +69,10 @@ spec:
                 - backendSecretName
                 type: object
               type: array
+            useMessageBroker:
+              description: UseMessageBroker can be set to true to use managed queues,
+                if you are using enmasse. Defaults to false.
+              type: boolean
           type: object
         status:
           properties:

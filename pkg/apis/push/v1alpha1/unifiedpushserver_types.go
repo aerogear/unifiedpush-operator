@@ -14,6 +14,9 @@ type UnifiedPushServerSpec struct {
 
 	// Backups is an array of configs that will be used to create CronJob resource instances
 	Backups []UnifiedPushServerBackup `json:"backups,omitempty"`
+
+	// UseMessageBroker can be set to true to use managed queues, if you are using enmasse. Defaults to false.
+	UseMessageBroker bool `json:"useMessageBroker,omitempty"`
 }
 
 // UnifiedPushServerStatus defines the observed state of UnifiedPushServer

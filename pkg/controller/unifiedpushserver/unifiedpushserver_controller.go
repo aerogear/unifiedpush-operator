@@ -6,11 +6,14 @@ import (
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/config"
+	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
+	messaginguserv1beta "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1"
 	routev1 "github.com/openshift/api/route/v1"
 
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	imagev1 "github.com/openshift/api/image/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -128,6 +131,33 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	// Watch for changes to secondary resource MessagingUser and requeue the owner UnifiedPushServer
+	err = c.Watch(&source.Kind{Type: &messaginguserv1beta.MessagingUser{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to secondary resource AddressSpace and requeue the owner UnifiedPushServer
+	err = c.Watch(&source.Kind{Type: &enmassev1beta.AddressSpace{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to secondary resource Address and requeue the owner UnifiedPushServer
+	err = c.Watch(&source.Kind{Type: &enmassev1beta.Address{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -197,6 +227,153 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 	}
 
+	//#region AMQ resource reconcile
+	if instance.Spec.UseMessageBroker {
+		//#region create addressSpace
+		addressSpace := newAddressSpace(instance)
+
+		// Set UnifiedPushServer instance as the owner and controller
+		if err := controllerutil.SetControllerReference(instance, addressSpace, r.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		foundAddressSpace := &enmassev1beta.AddressSpace{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: addressSpace.Name, Namespace: addressSpace.Namespace}, foundAddressSpace)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new Address Space", "AddressSpace.Namespace", addressSpace.Namespace, "AddressSpace.Name", addressSpace.Name)
+			err = r.client.Create(context.TODO(), addressSpace)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			reqLogger.Info("Requeuing, AddressSpace not ready.", "AddressSpace.Namespace", addressSpace.Namespace, "AddressSpace.Name", addressSpace.Name)
+			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
+		} else if err != nil {
+			return reconcile.Result{}, err
+		} else if !foundAddressSpace.Status.IsReady {
+			reqLogger.Info("Requeuing, AddressSpace not ready.", "AddressSpace.Namespace", foundAddressSpace.Namespace, "AddressSpace.Name", foundAddressSpace.Name)
+			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
+		} else {
+			reqLogger.Info("Found AddressSpace for UPS")
+		}
+		//#endregion
+
+		//#region check that user exists
+		user, err := newMessagingUser(instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		// Set UnifiedPushServer instance as the owner and controller
+		if err := controllerutil.SetControllerReference(instance, user, r.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		foundUser := &messaginguserv1beta.MessagingUser{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: user.Name, Namespace: user.Namespace}, foundUser)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new MessagingUser", "MessagingUser.Namespace", user.Namespace, "MessagingUser.Name", user.Name)
+			err = r.client.Create(context.TODO(), user)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
+		} else if err != nil {
+			return reconcile.Result{}, err
+		}
+		//#endregion
+
+		//#region create secret for user password and artemis url
+		for _, status := range foundAddressSpace.Status.EndpointStatus {
+			if status.Name == "messaging" { //"messaging" is a key from enmasse.
+				addressSpaceURL := status.ServiceHost
+				password := string(user.Spec.Authentication.Password)
+				secret := newAMQSecret(instance, password, addressSpaceURL)
+				foundSecret := &corev1.Secret{}
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, foundSecret)
+				if err != nil && errors.IsNotFound(err) {
+					reqLogger.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
+					err = r.client.Create(context.TODO(), secret)
+					if err != nil {
+						return reconcile.Result{}, err
+					}
+				} else if err != nil {
+					return reconcile.Result{}, err
+				}
+				break
+			}
+		}
+		//#endregion
+
+		//#region queues
+		queues := []string{"APNsPushMessageQueue", "APNsTokenBatchQueue", "GCMPushMessageQueue", "GCMTokenBatchQueue", "WNSPushMessageQueue", "WNSTokenBatchQueue", "MetricsQueue", "TriggerMetricCollectionQueue", "TriggerVariantMetricCollectionQueue", "BatchLoadedQueue", "AllBatchesLoadedQueue", "FreeServiceSlotQueue"}
+		requeueCreate := false
+		for _, address := range queues {
+			queue := newQueue(instance, address)
+			foundQueue := &enmassev1beta.Address{}
+			// Set UnifiedPushServer instance as the owner and controller
+			if err := controllerutil.SetControllerReference(instance, queue, r.scheme); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: queue.Name, Namespace: queue.Namespace}, foundQueue)
+			if err != nil && errors.IsNotFound(err) {
+				reqLogger.Info("Creating a new Queue", "Queue.Namespace", queue.Namespace, "Queue.Name", queue.Name)
+				err = r.client.Create(context.TODO(), queue)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+				requeueCreate = true
+			} else if err != nil {
+				reqLogger.Info("Queue Error")
+				return reconcile.Result{}, err
+			} else if !foundQueue.Status.IsReady {
+				reqLogger.Info("Queue Not ready", "Queue.Name", foundQueue.Name)
+				requeueCreate = true
+			}
+		}
+
+		if requeueCreate {
+			reqLogger.Info("Requeueing while queues are created")
+			return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+		}
+		//#endregion
+
+		reqLogger.Info("Found all queues  for UPS")
+
+		//#region topics
+		topics := []string{"MetricsProcessingStartedTopic", "topic/APNSClient"}
+		for _, address := range topics {
+			topic := newTopic(instance, address)
+			foundTopic := &enmassev1beta.Address{}
+			// Set UnifiedPushServer instance as the owner and controller
+			if err := controllerutil.SetControllerReference(instance, topic, r.scheme); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: topic.Name, Namespace: topic.Namespace}, foundTopic)
+			if err != nil && errors.IsNotFound(err) {
+				reqLogger.Info("Creating a new Topic", "Topic.Namespace", topic.Namespace, "Topic.Name", topic.Name)
+				err = r.client.Create(context.TODO(), topic)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+				requeueCreate = true
+			} else if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+
+		if requeueCreate {
+			reqLogger.Info("Requeueing while topics are created")
+			return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+		}
+		//#endregion
+
+		reqLogger.Info("Found All queues and topics for UPS")
+
+	}
+	//#endregion
+
 	//#region Postgres PVC
 	persistentVolumeClaim, err := newPostgresqlPersistentVolumeClaim(instance)
 	if err != nil {
@@ -221,7 +398,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, err
 	}
 	//#endregion
-
 	//#region Postgres DeploymentConfig
 	postgresqlDeploymentConfig, err := newPostgresqlDeploymentConfig(instance)
 	if err != nil {
