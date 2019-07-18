@@ -16,6 +16,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -136,7 +137,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		IsController: true,
 		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
 	})
-	if err != nil {
+	// If the problem is just a missing kind, don't worry about it
+	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
 		return err
 	}
 
@@ -145,7 +147,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		IsController: true,
 		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
 	})
-	if err != nil {
+	// If the problem is just a missing kind, don't worry about it
+	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
 		return err
 	}
 
@@ -154,7 +157,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		IsController: true,
 		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
 	})
-	if err != nil {
+	// If the problem is just a missing kind, don't worry about it
+	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
 		return err
 	}
 
