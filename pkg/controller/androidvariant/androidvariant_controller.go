@@ -6,6 +6,7 @@ import (
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/controller/util"
+	"github.com/aerogear/unifiedpush-operator/pkg/nspredicate"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,7 +41,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource AndroidVariant
-	err = c.Watch(&source.Kind{Type: &pushv1alpha1.AndroidVariant{}}, &handler.EnqueueRequestForObject{})
+	onlyEnqueueForValidNamespaces, err := nspredicate.NewFromEnvVar("APP_NAMESPACES")
+	if err != nil {
+		return err
+	}
+	err = c.Watch(
+		&source.Kind{Type: &pushv1alpha1.AndroidVariant{}},
+		&handler.EnqueueRequestForObject{},
+		onlyEnqueueForValidNamespaces,
+	)
 	if err != nil {
 		return err
 	}
