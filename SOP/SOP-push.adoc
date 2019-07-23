@@ -16,41 +16,446 @@ endif::[]
 :toc:
 toc::[]
 
-== Critical
+== Overview
 
-=== UnifiedpushDown or UnifiedPushConsoleDown
+The following guide outlines the steps required to manage and solve issues over the https://github.com/aerogear/aerogear-unifiedpush-server[UnifiedPush Server] managed, installed and configured via the https://github.com/aerogear/unifiedpush-operator[UnifiedPush Operator].
 
-. Check that the UnifiedPushServer CR is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`
+== Reference Articles
+
+- https://github.com/aerogear/aerogear-unifiedpush-server[UnifiedPush Server]
+- https://github.com/aerogear/unifiedpush-operator[UnifiedPush Operator]
+- https://prometheus.io/docs/practices/alerting/[Prometheus Alerts documentation]
+
+== Success Indicators
+
+All alerts should appears as green in the Prometheus Alert Monitoring.
+
+== Prometheus Alerts Procedures
+
+The following guide outlines the steps required to solve issues which will be alert by the Prometheus alerts configured to monitoring the  https://github.com/aerogear/aerogear-unifiedpush-server[UnifiedPush Server] when it is managed, installed and configured via the https://github.com/aerogear/unifiedpush-operator[UnifiedPush Operator].
+
+IMPORTANT: Before check any following steps see if the operator pod is running successfully. More info: https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
+
+TIP: You can save the logs by running `oc logs <podname> > <filename>.log`. The logs can provided to you useful information in order to identify the root cause of the issue as they are required information to be send to its maintainers in the case it need to be checked by them.
+
+=== Critical
+
+==== UnifiedPushDown or UnifiedPushConsoleDown
+
+The pod which runs the https://github.com/aerogear/aerogear-unifiedpush-server[UnifiedPush Server] is down or is not present in the same namespace of the operator.
+
+. Check that the link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml[UnifiedPushServer CR] or link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR] is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`. Following the expected result.
++
+NOTE: Just one kind of UnifiedPushServer CR can be applied, however, if the backup service is enable for your installation then it means that it is using the ink:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR].
++
+[source,shell]
+----
+$ oc get UnifiedPushServer
+NAME                        AGE
+example-unifiedpushserver   9d
+----
++
+NOTE: The UnifiedPushServer should be applied in the same namespace of the operator. The operator will not able to manage it in another namespace.
++
 . Check the environment variables of the Server
 .. Run `oc describe pods -l service=ups`
-.. For further information see https://github.com/aerogear/aerogear-unifiedpush-server#container-configuration.
 +
-Note: It will use the values mapped in the Secret created by the operator with the database pod name.
+NOTE: For further information see https://github.com/aerogear/aerogear-unifiedpush-server#container-configuration.
++
+WARNING: It will use the values mapped in the Secret created by the operator with the database pod name.
 +
 . Check the environment variables of the Database
-.. Run `oc get pods` and check the database pod name
-.. Run `oc describe pods <databasepodname>`
+.. Run `oc get pods` and check the database pod name. Following an example of the expected result.
++
+[source,shell]
+----
+$ oc get pods
+NAME                                           READY     STATUS    RESTARTS   AGE
+example-unifiedpushserver-1-dk8vm              2/2       Running   2          9d
+example-unifiedpushserver-postgresql-1-bw8mt   1/1       Running   1          9d
+unifiedpush-operator-58c8877fd8-g6dvr          1/1       Running   3          9d
+----
++
+.. Run `oc describe pods <databasepodname>`. Following an example of the expected result.
++
+[source,shell]
+----
+ $ oc describe pods example-unifiedpushserver-postgresql-1-bw8mt
+Name:               example-unifiedpushserver-postgresql-1-bw8mt
+Namespace:          unifiedpush
+Priority:           0
+PriorityClassName:  <none>
+Node:               localhost/192.168.64.27
+Start Time:         Wed, 03 Jul 2019 21:45:02 -0300
+Labels:             app=example-unifiedpushserver
+                    deployment=example-unifiedpushserver-postgresql-1
+                    deploymentconfig=example-unifiedpushserver-postgresql
+                    service=example-unifiedpushserver-postgresql
+Annotations:        openshift.io/deployment-config.latest-version=1
+                    openshift.io/deployment-config.name=example-unifiedpushserver-postgresql
+                    openshift.io/deployment.name=example-unifiedpushserver-postgresql-1
+                    openshift.io/scc=restricted
+Status:             Running
+IP:                 172.17.0.13
+Controlled By:      ReplicationController/example-unifiedpushserver-postgresql-1
+Containers:
+  postgresql:
+    Container ID:   docker://16f6f7ea2ac25f72d308d4e89662dc5f4ccd1935db51374aedaed64edd104934
+    Image:          172.30.1.1:5000/openshift/postgresql@sha256:0c78f036478b50800913056c564147ec452214fd0b6d41f4eec4fb3b5c63d246
+    Image ID:       docker-pullable://172.30.1.1:5000/openshift/postgresql@sha256:0c78f036478b50800913056c564147ec452214fd0b6d41f4eec4fb3b5c63d246
+    Port:           5432/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Fri, 12 Jul 2019 08:51:38 -0300
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    255
+      Started:      Wed, 03 Jul 2019 21:45:05 -0300
+      Finished:     Fri, 12 Jul 2019 08:48:00 -0300
+    Ready:          True
+    Restart Count:  1
+    Limits:
+      memory:  512Mi
+    Requests:
+      memory:   512Mi
+    Liveness:   tcp-socket :5432 delay=0s timeout=1s period=10s #success=1 #failure=3
+    Readiness:  exec [/bin/sh -i -c psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c 'SELECT 1'] delay=5s timeout=1s period=10s #success=1 #failure=3
+    Environment:
+      POSTGRESQL_USER:      <set to the key 'POSTGRES_USERNAME' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
+      POSTGRESQL_PASSWORD:  <set to the key 'POSTGRES_PASSWORD' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
+      POSTGRESQL_DATABASE:  <set to the key 'POSTGRES_DATABASE' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
+    Mounts:
+      /var/lib/pgsql/data from example-unifiedpushserver-postgresql-data (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-hkwgz (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  example-unifiedpushserver-postgresql-data:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  example-unifiedpushserver-postgresql
+    ReadOnly:   false
+  default-token-hkwgz:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-hkwgz
+    Optional:    false
+QoS Class:       Burstable
+Node-Selectors:  <none>
+Tolerations:     node.kubernetes.io/memory-pressure:NoSchedule
+Events:          <none>
+----
++
+NOTE: It can lead you to find the root cause of the issue faced.
++
 .. Check if the database image was pulled successfully.
 . Check the logs of the UPS OAuth Proxy Container
-.. Get the service pod name -> `oc describe pods -l service=ups`
-.. Run `oc logs <service-podname> -c ups-oauth-proxy`
-.. Save the logs by running `oc logs <service-podname> -c ups-oauth-proxy > <filename>.log`
-.. Check if the oauth-proxy image was pulled successfully
+.. Get the service pod name -> `oc describe pods -l service=ups`. Following an example of the expected result.
++
+[source,shell]
+----
+$ oc describe pods -l service=ups
+Name:               example-unifiedpushserver-1-dk8vm
+Namespace:          unifiedpush
+Priority:           0
+PriorityClassName:  <none>
+Node:               localhost/192.168.64.27
+Start Time:         Wed, 03 Jul 2019 21:45:05 -0300
+Labels:             app=example-unifiedpushserver
+                    deployment=example-unifiedpushserver-1
+                    deploymentconfig=example-unifiedpushserver
+                    service=ups
+Annotations:        openshift.io/deployment-config.latest-version=1
+                    openshift.io/deployment-config.name=example-unifiedpushserver
+                    openshift.io/deployment.name=example-unifiedpushserver-1
+                    openshift.io/scc=restricted
+Status:             Running
+IP:                 172.17.0.4
+Controlled By:      ReplicationController/example-unifiedpushserver-1
+Init Containers:
+  postgresql:
+    Container ID:  docker://ba7061aa4b115367eb4e9354aec327162dca6f181dd11b36632e15d273e3037d
+    Image:         172.30.1.1:5000/openshift/postgresql@sha256:0c78f036478b50800913056c564147ec452214fd0b6d41f4eec4fb3b5c63d246
+    Image ID:      docker-pullable://172.30.1.1:5000/openshift/postgresql@sha256:0c78f036478b50800913056c564147ec452214fd0b6d41f4eec4fb3b5c63d246
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /bin/sh
+      -c
+      source /opt/rh/rh-postgresql96/enable && until pg_isready -h $POSTGRES_SERVICE_HOST; do echo waiting for database; sleep 2; done;
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Fri, 12 Jul 2019 08:51:28 -0300
+      Finished:     Fri, 12 Jul 2019 08:51:53 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:
+      POSTGRES_SERVICE_HOST:  example-unifiedpushserver-postgresql
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-5cmlp (ro)
+Containers:
+  ups:
+    Container ID:   docker://28fc71000c66d9223ab6e340a030491c4348a0b51979237de04488fe18282337
+    Image:          docker.io/aerogear/unifiedpush-wildfly-plain@sha256:62ecab1e74e3b1a7b2ef1d9eb7594f29bcf6b55702c269c9deebdadf8aea8a8a
+    Image ID:       docker-pullable://docker.io/aerogear/unifiedpush-wildfly-plain@sha256:62ecab1e74e3b1a7b2ef1d9eb7594f29bcf6b55702c269c9deebdadf8aea8a8a
+    Port:           8080/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Fri, 12 Jul 2019 08:51:57 -0300
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    255
+      Started:      Wed, 03 Jul 2019 21:45:20 -0300
+      Finished:     Fri, 12 Jul 2019 08:48:01 -0300
+    Ready:          True
+    Restart Count:  1
+    Liveness:       http-get http://:8080/rest/applications delay=60s timeout=2s period=10s #success=1 #failure=3
+    Readiness:      http-get http://:8080/rest/applications delay=15s timeout=2s period=10s #success=1 #failure=3
+    Environment:
+      POSTGRES_SERVICE_HOST:  example-unifiedpushserver-postgresql
+      POSTGRES_SERVICE_PORT:  5432
+      POSTGRES_USER:          <set to the key 'POSTGRES_USERNAME' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
+      POSTGRES_PASSWORD:      <set to the key 'POSTGRES_PASSWORD' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
+      POSTGRES_DATABASE:      <set to the key 'POSTGRES_DATABASE' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-5cmlp (ro)
+  ups-oauth-proxy:
+    Container ID:  docker://05f0d609bc3c9a2273db9b88a13cc26e4504e1bfed125e7c7dad59ba8a6c6712
+    Image:         docker.io/openshift/oauth-proxy@sha256:731c1fdad1de4bf68ae9eece5e99519f063fd8d9990da312082b4c995c4e4e33
+    Image ID:      docker-pullable://docker.io/openshift/oauth-proxy@sha256:731c1fdad1de4bf68ae9eece5e99519f063fd8d9990da312082b4c995c4e4e33
+    Port:          4180/TCP
+    Host Port:     0/TCP
+    Args:
+      --provider=openshift
+      --openshift-service-account=example-unifiedpushserver
+      --upstream=http://localhost:8080
+      --http-address=0.0.0.0:4180
+      --skip-auth-regex=/rest/sender,/rest/registry/device,/rest/prometheus/metrics,/rest/auth/config
+      --https-address=
+      --cookie-secret=b3207b16503d491993e2057b9959951a
+    State:          Running
+      Started:      Fri, 12 Jul 2019 08:52:01 -0300
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    255
+      Started:      Wed, 03 Jul 2019 21:45:23 -0300
+      Finished:     Fri, 12 Jul 2019 08:48:01 -0300
+    Ready:          True
+    Restart Count:  1
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-5cmlp (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  example-unifiedpushserver-token-5cmlp:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  example-unifiedpushserver-token-5cmlp
+    Optional:    false
+QoS Class:       BestEffort
+Node-Selectors:  <none>
+Tolerations:     <none>
+Events:          <none>
+----
++
+NOTE: It can lead you to find the root cause of the issue faced.
++
+.. Run `oc logs <service-podname> -c ups-oauth-proxy`. E.g `oc logs example-unifiedpushserver-1-dk8vm -c ups-oauth-proxy`
++
+NOTE: Usually it has no logs at all, however, it can lead you to find the root cause of the issue faced.
++
+.. If logs are found in the above step then save the logs by running `oc logs <service-podname> -c ups-oauth-proxy > <filename>.log`
++
+NOTE: Capture the logs are important to provide the required information for its maintainers in order to allow them check it.
++
+.. Check if the oauth-proxy image was pulled successfully.
 . Check the logs of the UPS Container
-.. Get the service pod name -> `oc describe pods -l service=ups`
-.. Save the logs by running `oc logs <service-podname> -c ups > <filename>.log`
-.. See the `pod/example-unifiedpushserver-<xyz123>` logs.
+.. Get the service pod name -> `oc describe pods -l service=ups`. Following an example of the expected result.
++
+[source,shell]
+----
+$ oc describe pods -l service=ups
+Name:               example-unifiedpushserver-1-dk8vm
+Namespace:          unifiedpush
+Priority:           0
+PriorityClassName:  <none>
+Node:               localhost/192.168.64.27
+Start Time:         Wed, 03 Jul 2019 21:45:05 -0300
+Labels:             app=example-unifiedpushserver
+                    deployment=example-unifiedpushserver-1
+                    deploymentconfig=example-unifiedpushserver
+                    service=ups
+Annotations:        openshift.io/deployment-config.latest-version=1
+                    openshift.io/deployment-config.name=example-unifiedpushserver
+                    openshift.io/deployment.name=example-unifiedpushserver-1
+                    openshift.io/scc=restricted
+Status:             Running
+IP:                 172.17.0.4
+Controlled By:      ReplicationController/example-unifiedpushserver-1
+Init Containers:
+  postgresql:
+    Container ID:  docker://ba7061aa4b115367eb4e9354aec327162dca6f181dd11b36632e15d273e3037d
+    Image:         172.30.1.1:5000/openshift/postgresql@sha256:0c78f036478b50800913056c564147ec452214fd0b6d41f4eec4fb3b5c63d246
+    Image ID:      docker-pullable://172.30.1.1:5000/openshift/postgresql@sha256:0c78f036478b50800913056c564147ec452214fd0b6d41f4eec4fb3b5c63d246
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /bin/sh
+      -c
+      source /opt/rh/rh-postgresql96/enable && until pg_isready -h $POSTGRES_SERVICE_HOST; do echo waiting for database; sleep 2; done;
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Fri, 12 Jul 2019 08:51:28 -0300
+      Finished:     Fri, 12 Jul 2019 08:51:53 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:
+      POSTGRES_SERVICE_HOST:  example-unifiedpushserver-postgresql
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-5cmlp (ro)
+Containers:
+  ups:
+    Container ID:   docker://28fc71000c66d9223ab6e340a030491c4348a0b51979237de04488fe18282337
+    Image:          docker.io/aerogear/unifiedpush-wildfly-plain@sha256:62ecab1e74e3b1a7b2ef1d9eb7594f29bcf6b55702c269c9deebdadf8aea8a8a
+    Image ID:       docker-pullable://docker.io/aerogear/unifiedpush-wildfly-plain@sha256:62ecab1e74e3b1a7b2ef1d9eb7594f29bcf6b55702c269c9deebdadf8aea8a8a
+    Port:           8080/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Fri, 12 Jul 2019 08:51:57 -0300
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    255
+      Started:      Wed, 03 Jul 2019 21:45:20 -0300
+      Finished:     Fri, 12 Jul 2019 08:48:01 -0300
+    Ready:          True
+    Restart Count:  1
+    Liveness:       http-get http://:8080/rest/applications delay=60s timeout=2s period=10s #success=1 #failure=3
+    Readiness:      http-get http://:8080/rest/applications delay=15s timeout=2s period=10s #success=1 #failure=3
+    Environment:
+      POSTGRES_SERVICE_HOST:  example-unifiedpushserver-postgresql
+      POSTGRES_SERVICE_PORT:  5432
+      POSTGRES_USER:          <set to the key 'POSTGRES_USERNAME' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
+      POSTGRES_PASSWORD:      <set to the key 'POSTGRES_PASSWORD' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
+      POSTGRES_DATABASE:      <set to the key 'POSTGRES_DATABASE' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-5cmlp (ro)
+  ups-oauth-proxy:
+    Container ID:  docker://05f0d609bc3c9a2273db9b88a13cc26e4504e1bfed125e7c7dad59ba8a6c6712
+    Image:         docker.io/openshift/oauth-proxy@sha256:731c1fdad1de4bf68ae9eece5e99519f063fd8d9990da312082b4c995c4e4e33
+    Image ID:      docker-pullable://docker.io/openshift/oauth-proxy@sha256:731c1fdad1de4bf68ae9eece5e99519f063fd8d9990da312082b4c995c4e4e33
+    Port:          4180/TCP
+    Host Port:     0/TCP
+    Args:
+      --provider=openshift
+      --openshift-service-account=example-unifiedpushserver
+      --upstream=http://localhost:8080
+      --http-address=0.0.0.0:4180
+      --skip-auth-regex=/rest/sender,/rest/registry/device,/rest/prometheus/metrics,/rest/auth/config
+      --https-address=
+      --cookie-secret=b3207b16503d491993e2057b9959951a
+    State:          Running
+      Started:      Fri, 12 Jul 2019 08:52:01 -0300
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    255
+      Started:      Wed, 03 Jul 2019 21:45:23 -0300
+      Finished:     Fri, 12 Jul 2019 08:48:01 -0300
+    Ready:          True
+    Restart Count:  1
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-5cmlp (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  example-unifiedpushserver-token-5cmlp:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  example-unifiedpushserver-token-5cmlp
+    Optional:    false
+QoS Class:       BestEffort
+Node-Selectors:  <none>
+Tolerations:     <none>
+Events:          <none>
+----
++
+NOTE: It can lead you to find the root cause of the issue faced.
++
+.. Save the logs by running `oc logs <service-podname> -c ups > <filename>.log`. E.g `oc logs example-unifiedpushserver-1-dk8vm -c ups > logs.log`
++
+NOTE: Capture the logs are important to provide the required information for its maintainers in order to allow them check it.
++
+.. See and capture the `pod/example-unifiedpushserver-<xyz123> > <filename>.log` logs. E.g `oc logs example-unifiedpushserver-1-dk8vm -c ups > logs.log`
++
+NOTE: May the logs can lead you to check the root cause of this issuse and capture the logs are important to provide the required information for its maintainers in order to allow them check it.
++
 .. Check if the UnifiedPush Server image was pulled successfully
 . Check if the secret was created
-.. Run `oc get secrets` in the namespace where the operator is installed
-. Check if the values in the secret are correct.
-.. Run `for field in POSTGRES_{DATABASE,HOST,USERNAME,PASSWORD,SUPERUSER,VERSION}; do printf "${field}: " && oc get secret <CR Name>-postgresql -o jsonpath="{.data.$field}" | base64 -d && echo; done`
+.. Run `oc get secrets | grep postgresql` in the namespace where the operator is installed. Following the expected result.
++
+[source,shell]
+----
+$ oc get secrets | grep postgresql
+example-unifiedpushserver-postgresql        Opaque                                6         9d
+----
++
+NOTE: The secret is required in order to provide the data required for the database pod container as user, database name and password.
++
+. Check if the values in the secret are correct. To check them you can use `oc edit secret <postgresqlsecretname>`. E.g `oc edit secret example-unifiedpushserver-postgresql`. Following an example of the expected result.
++
+[source,shell]
+----
+apiVersion: v1
+data:
+  POSTGRES_DATABASE: dW5pZmllZHB1c2g=
+  POSTGRES_HOST: ZXhhbXBsZS11bmlmaWVkcHVzaHNlcnZlci1wb3N0Z3Jlc3FsLnVuaWZpZWRwdXNoLnN2Yw==
+  POSTGRES_PASSWORD: NzM4NDQ1Mjg1Nzc2NDc4NmIxY2FmMjRlNjdkZDYyNzY=
+  POSTGRES_SUPERUSER: ZmFsc2U=
+  POSTGRES_USERNAME: dW5pZmllZHB1c2g=
+  POSTGRES_VERSION: MTA=
+kind: Secret
+...
+----
++
+NOTE: The values described above should not be the same but should all data keys shoud be present with each respective value.
++
 . Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
 
-=== UnifiedPushDatabaseDown
+==== UnifiedPushDatabaseDown
 
-. Check that the UnifiedPushServer CR is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`
-. Check that the Database Pod is deployed in the same namespace as the operator by running `oc get pods | grep postgresql`
+The pod which runs the https://github.com/aerogear/aerogear-unifiedpush-server[UnifiedPush Server]'s Database(PostgreSQL) is down or is not present in the same namespace of the operator.
+
+. Check that the link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml[UnifiedPushServer CR] or link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR] is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`. Following the expected result.
++
+NOTE: Just one kind of UnifiedPushServer CR can be applied, however, if the backup service is enable for your installation then it means that it is using the ink:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR].
++
+[source,shell]
+----
+$ oc get UnifiedPushServer
+NAME                        AGE
+example-unifiedpushserver   9d
+----
++
+NOTE: The 1 UnifiedPushServer CR (link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml[UnifiedPushServer CR] or link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR]) should be applied in the same namespace of the operator.
++
+. Check that the Database Pod is deployed in the same namespace as the operator by running `oc get pods | grep postgresql`. Following an example of the expected result.
++
+[source,shell]
+----
+$ oc get pods | grep postgresql
+example-unifiedpushserver-postgresql-1-bw8mt   1/1       Running   1          9d
+----
 +
 NOTE: It will use the values mapped in the Secret created by the operator with the database pod name.
 +
@@ -59,61 +464,318 @@ NOTE: It will use the values mapped in the Secret created by the operator with t
 +
 NOTE: You can save the logs by running `oc logs <database-podname> > <filename>.log`
 +
-.. Check if the Database image was pulled successfully
+. Check if you are able to see any useful information in the logs which can lead you for the root cause of the issue. Also, by capturing the logs you are able to provide a required information for its maintainers if it be required.
+.. Check if the Database image was pulled successfully.
 . Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
 
-=== UnifiedPushApiHighRequestFailure
+==== UnifiedPushJavaHeapThresholdExceeded
 
-- Check <<General procedure>>
+It means that Service pod(s) are facing performance issues.
 
-=== UnifiedPushPodCPUHigh
+. Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
+. Following the steps <<To scale the pod>> in order to try to solve performance issues.
 
-- Check <<General procedure>>
+==== UnifiedPushJavaNonHeapThresholdExceeded
 
-=== UnifiedPushJavaHeapThresholdExceeded
+It means that Service pod(s) are facing performance issues.
 
-- Check <<General procedure>>
+. Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
+. Following the steps <<To scale the pod>> in order to try to solve performance issues.
 
-=== UnifiedPushJavaNonHeapThresholdExceeded
+==== UnifiedPushJavaGCTimePerMinuteScavenge
 
-- Check <<General procedure>>
+It means that Service pod(s) are facing performance issues.
 
-=== UnifiedPushJavaGCTimePerMinuteScavenge
+. Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
+. Following the steps <<To scale the pod>> in order to try to solve performance issues.
 
-- Check <<General procedure>>
+=== Warning
 
-== Warning
+==== UnifiedPushMessagesFailures
 
-=== UnifiedPushMessagesFailures
+It means that Service pod(s) has some error that is not able to send the quantity of messages expected.
 
-- Check <<General procedure>>
+. Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
 
-=== UnifiedPushPodMemoryHigh
-
-- Check <<General procedure>>
-
-=== UnifiedPushApiHighRequestDuration
-
-- Check <<General procedure>>
-
-=== UnifiedPushApiHighConcurrentRequests
-
-- Check <<General procedure>>
-
-=== UnifiedPushJavaDeadlockedThreads,
-
-- Check <<General procedure>>
-
-== General procedure
+=== To capture the logs
 
 . Capture a snapshot of the 'UnifiedPush Server' Grafana dashboard and track it over time. The metrics can be useful for identifying performance issues over time.
 
 . Capture application logs for analysis.
-.. Get the pod names by running `oc get pods`
+.. Get the pod names by running `oc get pods`. Following an example of teh expected result.
++
+[source,shell]
+----
+$ oc get pods
+NAME                                           READY     STATUS    RESTARTS   AGE
+example-unifiedpushserver-1-dk8vm              2/2       Running   2          9d
+example-unifiedpushserver-postgresql-1-bw8mt   1/1       Running   1          9d
+unifiedpush-operator-58c8877fd8-g6dvr          1/1       Running   3          9d
+----
++
 .. Save the logs by running `oc logs <database-podname> > <filename>.log` for each pod
++
+NOTE: You can get the logs from the Console (OCP UI) as well.
++
+IMPORTANT: Capture this data will be useful in order to provide the required information for its maintainers are able to check it.
 
-NOTE: You are able to the the logs by the Console (OCP UI) as well.
+=== To scale the pod
 
-. If necessary, recreate the service pod to restore service.
-. Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
+Currently, is not possible scale the UPS Server and its Database
 
+== Validate
+
+=== Installation
+
+Following the steps to ensure that all is as expected.
+
+. Switch to the UPS namespace by running `oc project <namespace>`. E.g `oc project unifiedpush`
+. Check that the link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml[UnifiedPushServer CR] or link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR] is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`. Following the expected result.
++
+NOTE: Just one kind of UnifiedPushServer CR can be applied, however, if the backup service is enable for your installation then it means that it is using the ink:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR].
++
+[source,shell]
+----
+$ oc get UnifiedPushServer
+NAME                        AGE
+example-unifiedpushserver   9d
+----
++
+IMPORTANT: This CR will install and configure the Database and Service pods.
++
+. Check if it has at least 3 pods running which each one will be with the Database, Server and Operator by running `oc get pods`. Following an example of the expected result.
++
+[source,shell]
+----
+$ oc get pods
+NAME                                           READY     STATUS    RESTARTS   AGE
+example-unifiedpushserver-1-dk8vm              2/2       Running   4          12d
+example-unifiedpushserver-postgresql-1-bw8mt   1/1       Running   2          12d
+unifiedpush-operator-58c8877fd8-g6dvr          1/1       Running   6          12d
+----
++
+. Check if the secret with the Database data which will be used by the service and its database was created by running `oc get secrets | grep postgresql`.  Following an example of the expected result.
++
+[source,shell]
+----
+$ oc get secrets | grep postgresql
+example-unifiedpushserver-postgresql        Opaque                                6         12d
+----
++
+. Check if the image streams for the Service and Oauth was created with success by running `oc get imagestream`.  Following an example of the expected result.
++
+[source,shell]
+----
+$ oc get imagestream
+NAME                          DOCKER REPO                                               TAGS      UPDATED
+ups-imagestream               172.30.1.1:5000/unifiedpush/ups-imagestream               latest    12 days ago
+ups-oauth-proxy-imagestream   172.30.1.1:5000/unifiedpush/ups-oauth-proxy-imagestream   latest    12 days ago
+----
++
+. Check if the route to expose the service public was created with success by running `oc get route | grep unifiedpush-proxy`.  Following an example of the expected result.
++
+[source,shell]
+----
+$ oc get route | grep unifiedpush-proxy
+example-unifiedpushserver-unifiedpush-proxy   example-unifiedpushserver-unifiedpush-proxy-unifiedpush.192.168.64.27.nip.io             example-unifiedpushserver-unifiedpush-proxy   <all>     edge/None     None
+----
+. Check if the DeploymentConfigs to deploy the Service and Database were created with success by running `oc get deploymentconfig | grep unifiedpush`.  Following an example of the expected result.
++
+[source,shell]
+----
+$ oc get deploymentconfig | grep unifiedpush
+example-unifiedpushserver              1          1         1         config,image(postgresql:postgresql:10),image(ups-imagestream:latest),image(ups-oauth-proxy-imagestream:latest)
+example-unifiedpushserver-postgresql   1          1         1         image(postgresql:10)
+----
++
+. Check if the Proxy Service which is required to allow the UPS Server persist data into its Database was created with success by running `oc get service | grep unifiedpush-proxy`
++
+[source,shell]
+----
+$ oc get service | grep unifiedpush-proxy
+example-unifiedpushserver-unifiedpush-proxy   ClusterIP   172.30.189.9     <none>        80/TCP     12d
+----
++
+. Check if the  Service for the Database was created with success by running `oc get service | grep postgresql`
++
+[source,shell]
+----
+$ oc get service | grep postgresql
+example-unifiedpushserver-postgresql          ClusterIP   172.30.67.199    <none>        5432/TCP   12d
+----
++
+. Check if the Service for the Service was created with success by running `oc get service | grep unifiedpushserver`
++
+[source,shell]
+----
+$ oc get service | grep unifiedpushserver
+example-unifiedpushserver-postgresql          ClusterIP   172.30.67.199    <none>        5432/TCP   12d
+example-unifiedpushserver-unifiedpush         ClusterIP   172.30.90.23     <none>        80/TCP     12d
+example-unifiedpushserver-unifiedpush-proxy   ClusterIP   172.30.189.9     <none>        80/TCP     12d
+----
++
+Following an example of an installation which has the UPS installed without the Backup.
++
+[source,shell]
+----
+$ oc get all
+NAME                                               READY     STATUS    RESTARTS   AGE
+pod/example-unifiedpushserver-1-dk8vm              2/2       Running   4          12d
+pod/example-unifiedpushserver-postgresql-1-bw8mt   1/1       Running   2          12d
+pod/unifiedpush-operator-58c8877fd8-g6dvr          1/1       Running   6          12d
+
+NAME                                                           DESIRED   CURRENT   READY     AGE
+replicationcontroller/example-unifiedpushserver-1              1         1         1         12d
+replicationcontroller/example-unifiedpushserver-postgresql-1   1         1         1         12d
+
+NAME                                                  TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+service/example-unifiedpushserver-postgresql          ClusterIP   172.30.67.199    <none>        5432/TCP   12d
+service/example-unifiedpushserver-unifiedpush         ClusterIP   172.30.90.23     <none>        80/TCP     12d
+service/example-unifiedpushserver-unifiedpush-proxy   ClusterIP   172.30.189.9     <none>        80/TCP     12d
+service/unifiedpush-operator                          ClusterIP   172.30.132.236   <none>        8383/TCP   12d
+
+NAME                                   DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/unifiedpush-operator   1         1         1            1           12d
+
+NAME                                              DESIRED   CURRENT   READY     AGE
+replicaset.apps/unifiedpush-operator-58c8877fd8   1         1         1         12d
+
+NAME                                                                      REVISION   DESIRED   CURRENT   TRIGGERED BY
+deploymentconfig.apps.openshift.io/example-unifiedpushserver              1          1         1         config,image(postgresql:postgresql:10),image(ups-imagestream:latest),image(ups-oauth-proxy-imagestream:latest)
+deploymentconfig.apps.openshift.io/example-unifiedpushserver-postgresql   1          1         1         image(postgresql:10)
+
+NAME                                                         DOCKER REPO                                               TAGS      UPDATED
+imagestream.image.openshift.io/ups-imagestream               172.30.1.1:5000/unifiedpush/ups-imagestream               latest    12 days ago
+imagestream.image.openshift.io/ups-oauth-proxy-imagestream   172.30.1.1:5000/unifiedpush/ups-oauth-proxy-imagestream   latest    12 days ago
+
+NAME                                                                   HOST/PORT                                                                      PATH      SERVICES                                      PORT      TERMINATION   WILDCARD
+route.route.openshift.io/example-unifiedpushserver-unifiedpush-proxy   example-unifiedpushserver-unifiedpush-proxy-unifiedpush.192.168.64.27.nip.io             example-unifiedpushserver-unifiedpush-proxy   <all>     edge/None     None
+----
+
+=== Optional configurations
+
+==== Monitor
+
+If the https://github.com/aerogear/unifiedpush-operator#monitoring-service-metrics[Monitoring Service (Metrics)] is enabled for your installation you are able to check its Grafana Dashboard, `UnifiedPush Server`, and the Prometheus Monitoring instance used for it.
+
+==== Backup
+
+. Switch to the UPS namespace by running `oc project <namespace>`. E.g `oc project unifiedpush`
+. Check that link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR] is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`. Following the expected result.
++
+NOTE: Just one kind of UnifiedPushServer CR can be applied, however, if the backup service is enable for your installation then it means that it is using the ink:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR].
++
+[source,shell]
+----
+$ oc get UnifiedPushServer
+NAME                        AGE
+example-unifiedpushserver   9d
+----
++
+. To ensure that it is the UnifiedPushServer with the Backup see its specs by running `oc describe UnifiedPushServer`.
+.. Following an example without Backup installed.
++
+[source,shell]
+----
+$ oc describe UnifiedPushServer
+Name:         example-unifiedpushserver
+Namespace:    unifiedpush
+Labels:       <none>
+Annotations:  kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"annotations":{},"name":"example-unifiedpushserver","namespace":"unif...
+API Version:  push.aerogear.org/v1alpha1
+Kind:         UnifiedPushServer
+Metadata:
+  Creation Timestamp:  2019-07-04T00:44:47Z
+  Generation:          1
+  Resource Version:    7026921
+  Self Link:           /apis/push.aerogear.org/v1alpha1/namespaces/unifiedpush/unifiedpushservers/example-unifiedpushserver
+  UID:                 ec430bf1-9df4-11e9-817f-beb071062273
+Status:
+  Phase:  Complete
+Events:   <none>
+----
+.. Following an example with the Backup
++
+[source,shell]
+----
+$ oc describe UnifiedPushServer
+Name:         example-unifiedpushserver
+Namespace:    unifiedpush
+Labels:       <none>
+Annotations:  kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"annotations":{},"name":"example-unifiedpushserver","namespace":"unif...
+API Version:  push.aerogear.org/v1alpha1
+Kind:         UnifiedPushServer
+Metadata:
+  Creation Timestamp:  2019-07-04T00:44:47Z
+  Generation:          1
+  Resource Version:    7026921
+  Self Link:           /apis/push.aerogear.org/v1alpha1/namespaces/unifiedpush/unifiedpushservers/example-unifiedpushserver
+  UID:                 ec430bf1-9df4-11e9-817f-beb071062273
+Status:
+  Phase:  Complete
+Events:   <none>
+
+
+Name:         example-ups-with-backups
+Namespace:    unifiedpush
+Labels:       <none>
+Annotations:  kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"annotations":{},"name":"example-ups-with-backups","namespace":"unifi...
+API Version:  push.aerogear.org/v1alpha1
+Kind:         UnifiedPushServer
+Metadata:
+  Creation Timestamp:  2019-07-16T08:51:47Z
+  Generation:          1
+  Resource Version:    8621940
+  Self Link:           /apis/push.aerogear.org/v1alpha1/namespaces/unifiedpush/unifiedpushservers/example-ups-with-backups
+  UID:                 f20c5f0b-a7a6-11e9-a6b1-beb071062273
+Spec:
+  Backups:
+    Backend Secret Name:              example-aws-key
+    Backend Secret Namespace:         unifiedpush
+    Encryption Key Secret Name:       example-encryption-key
+    Encryption Key Secret Namespace:  unifiedpush
+    Name:                             ups-daily-at-midnight
+    Schedule:                         0 0 * * *
+Events:                               <none>
+----
++
+. To verify that the backup has been successfully created you can run the following command in the namespace where the operator is installed.
++
+[source,shell]
+----
+$ oc get cronjob.batch/example-ups-with-backups
+NAME                             SCHEDULE      SUSPEND   ACTIVE    LAST SCHEDULE   AGE
+example-ups-with-backups   0 * * * *   False     0         13s             12m
+----
++
+. To check the jobs executed you can run the command `oc get jobs` in the namespace where the operator is installed as in the following example.
++
+[source,shell]
+----
+$ oc get jobs
+NAME                                 DESIRED   SUCCESSFUL   AGE
+example-ups-with-backups-1561588320   1         0            6m
+example-ups-with-backups-1561588380   1         0            5m
+example-ups-with-backups-1561588440   1         0            4m
+example-ups-with-backups-1561588500   1         0            3m
+example-ups-with-backups-1561588560   1         0            2m
+example-ups-with-backups-1561588620   1         0            1m
+example-ups-with-backups-1561588680   1         0            43s
+----
++
+NOTE: In the above example the schedule was made to run this job each minute (`*/1 * * * *`)
++
+. To check the logs and troubleshooting you can run the command `oc logs $podName -f` in the namespace where the operator is installed as the following example.
++
+[source,shell]
+----
+$ oc logs job.batch/example-ups-with-backups-1561589040 -f
+dumping ups
+dumping postgres
+==> Component data dump completed
+/tmp/intly/archives/ups.ups-22_46_06.pg_dump.gz
+WARNING: ups.ups-22_46_06.pg_dump.gz: Owner username not known. Storing UID=1001 instead.
+upload: '/tmp/intly/archives/ups.ups-22_46_06.pg_dump.gz' -> 's3://camilabkp/backups/mss/postgres/2019/06/26/ups.ups-22_46_06.pg_dump.gz'  [1 of 1]
+1213 of 1213   100% in    1s   955.54 B/s  done
+ERROR: S3 error: 403 (RequestTimeTooSkewed): The difference between the request time and the current time is too large.
+----

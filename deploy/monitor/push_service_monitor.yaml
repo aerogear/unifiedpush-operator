@@ -7,8 +7,8 @@ metadata:
   name: unifiedpush
 spec:
   endpoints:
-    - path: /api/metrics
-      port: server
+    - path: /rest/prometheus/metrics
+      port: web
   selector:
     matchLabels:
-      app: unifiedpush
+      internal: unifiedpush

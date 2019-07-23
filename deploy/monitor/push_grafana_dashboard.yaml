@@ -49,1333 +49,1164 @@ spec:
           ],
           "annotations": {
             "list": [
-              {
-                "builtIn": 1,
-                "datasource": "-- Grafana --",
-                "enable": true,
-                "hide": true,
-                "iconColor": "rgba(0, 211, 255, 1)",
-                "name": "Annotations & Alerts",
-                "type": "dashboard"
-              }
+            {
+              "builtIn": 1,
+              "datasource": "-- Grafana --",
+              "enable": true,
+              "hide": true,
+              "iconColor": "rgba(0, 211, 255, 1)",
+              "name": "Annotations & Alerts",
+              "type": "dashboard"
+            }
             ]
           },
           "description": "Application metrics",
           "editable": true,
           "gnetId": null,
           "graphTooltip": 0,
-          "id": null,
           "links": [],
           "panels": [
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 0
+            },
+            "id": 9,
+            "panels": [],
+            "repeat": null,
+            "title": "Uptime",
+            "type": "row"
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": false,
+            "colors": [
+              "#d44a3a",
+              "rgba(237, 129, 40, 0.89)",
+              "#299c46"
+            ],
+            "datasource": "Prometheus",
+            "decimals": null,
+            "format": "percent",
+            "gauge": {
+              "maxValue": 100,
+              "minValue": 95,
+              "show": true,
+              "thresholdLabels": true,
+              "thresholdMarkers": true
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 3,
+              "x": 0,
+              "y": 1
+            },
+            "id": 8,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
             {
-              "collapsed": false,
-              "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 0
-              },
-              "id": 9,
-              "panels": [],
-              "repeat": null,
-              "title": "Uptime",
-              "type": "row"
+              "name": "value to text",
+              "value": 1
             },
             {
-              "cacheTimeout": null,
-              "colorBackground": false,
-              "colorValue": false,
-              "colors": [
-                "#d44a3a",
-                "rgba(237, 129, 40, 0.89)",
-                "#299c46"
-              ],
-              "datasource": "Prometheus",
-              "decimals": null,
-              "format": "percent",
-              "gauge": {
-                "maxValue": 100,
-                "minValue": 95,
-                "show": true,
-                "thresholdLabels": true,
-                "thresholdMarkers": true
-              },
-              "gridPos": {
-                "h": 8,
-                "w": 3,
-                "x": 0,
-                "y": 1
-              },
-              "id": 8,
-              "interval": null,
-              "links": [],
-              "mappingType": 1,
-              "mappingTypes": [
-                {
-                  "name": "value to text",
-                  "value": 1
-                },
-                {
-                  "name": "range to text",
-                  "value": 2
-                }
-              ],
-              "maxDataPoints": 100,
-              "nullPointMode": "connected",
-              "nullText": null,
-              "postfix": "",
-              "postfixFontSize": "50%",
-              "prefix": "",
-              "prefixFontSize": "50%",
-              "rangeMaps": [
-                {
-                  "from": "null",
-                  "text": "N/A",
-                  "to": "null"
-                }
-              ],
-              "sparkline": {
-                "fillColor": "rgba(31, 118, 189, 0.18)",
-                "full": false,
-                "lineColor": "rgb(31, 120, 193)",
-                "show": false
-              },
-              "tableColumn": "",
-              "targets": [
-                {
-                  "expr": "avg(kube_endpoint_address_available{endpoint='example-unifiedpushserver-unifiedpush'})*100",
-                  "format": "time_series",
-                  "hide": false,
-                  "intervalFactor": 1,
-                  "refId": "A"
-                }
-              ],
-              "thresholds": "98,99",
-              "title": "Admin Console Average Percentage Uptime",
-              "transparent": false,
-              "type": "singlestat",
-              "valueFontSize": "70%",
-              "valueMaps": [
-                {
-                  "op": "=",
-                  "text": "N/A",
-                  "value": "null"
-                }
-              ],
-              "valueName": "avg"
-            },
-            {
-              "aliasColors": {},
-              "bars": true,
-              "dashLength": 10,
-              "dashes": false,
-              "datasource": "Prometheus",
-              "fill": 1,
-              "gridPos": {
-                "h": 8,
-                "w": 21,
-                "x": 3,
-                "y": 1
-              },
-              "id": 1,
-              "legend": {
-                "avg": false,
-                "current": false,
-                "max": false,
-                "min": false,
-                "show": true,
-                "total": false,
-                "values": false
-              },
-              "lines": true,
-              "linewidth": 1,
-              "links": [
-                {
-                  "type": "dashboard"
-                }
-              ],
-              "nullPointMode": "null",
-              "percentage": true,
-              "pointradius": 5,
-              "points": false,
-              "renderer": "flot",
-              "seriesOverrides": [],
-              "spaceLength": 10,
-              "stack": false,
-              "steppedLine": false,
-              "targets": [
-                {
-                  "expr": "kube_endpoint_address_available{endpoint='example-unifiedpushserver-unifiedpush'}",
-                  "format": "time_series",
-                  "hide": false,
-                  "intervalFactor": 2,
-                  "legendFormat": "Admin Console - Uptime",
-                  "metric": "",
-                  "refId": "A",
-                  "step": 2
-                }
-              ],
-              "thresholds": [],
-              "timeFrom": null,
-              "timeRegions": [],
-              "timeShift": null,
-              "title": "Admin Console - Uptime",
-              "tooltip": {
-                "shared": true,
-                "sort": 0,
-                "value_type": "individual"
-              },
-              "type": "graph",
-              "xaxis": {
-                "buckets": null,
-                "mode": "time",
-                "name": null,
-                "show": true,
-                "values": []
-              },
-              "yaxes": [
-                {
-                  "format": "none",
-                  "label": null,
-                  "logBase": null,
-                  "max": 1.5,
-                  "min": 0,
-                  "show": true
-                },
-                {
-                  "format": "short",
-                  "label": null,
-                  "logBase": null,
-                  "max": 2,
-                  "min": 0,
-                  "show": true
-                }
-              ],
-              "yaxis": {
-                "align": false,
-                "alignLevel": null
-              }
-            },
-            {
-              "cacheTimeout": null,
-              "colorBackground": false,
-              "colorValue": false,
-              "colors": [
-                "#d44a3a",
-                "rgba(237, 129, 40, 0.89)",
-                "#299c46"
-              ],
-              "datasource": "Prometheus",
-              "format": "percent",
-              "gauge": {
-                "maxValue": 100,
-                "minValue": 95,
-                "show": true,
-                "thresholdLabels": true,
-                "thresholdMarkers": true
-              },
-              "gridPos": {
-                "h": 8,
-                "w": 3,
-                "x": 0,
-                "y": 9
-              },
-              "id": 16,
-              "interval": null,
-              "links": [],
-              "mappingType": 1,
-              "mappingTypes": [
-                {
-                  "name": "value to text",
-                  "value": 1
-                },
-                {
-                  "name": "range to text",
-                  "value": 2
-                }
-              ],
-              "maxDataPoints": 100,
-              "nullPointMode": "connected",
-              "nullText": null,
-              "postfix": "",
-              "postfixFontSize": "50%",
-              "prefix": "",
-              "prefixFontSize": "50%",
-              "rangeMaps": [
-                {
-                  "from": "null",
-                  "text": "N/A",
-                  "to": "null"
-                }
-              ],
-              "sparkline": {
-                "fillColor": "rgba(31, 118, 189, 0.18)",
-                "full": false,
-                "lineColor": "rgb(31, 120, 193)",
-                "show": false
-              },
-              "tableColumn": "",
-              "targets": [
-                {
-                  "expr": "avg(kube_pod_container_status_running{namespace='unifiedpush',container='postgresql'})*100",
-                  "format": "time_series",
-                  "hide": false,
-                  "intervalFactor": 1,
-                  "refId": "A"
-                }
-              ],
-              "thresholds": "98,99",
-              "title": "Database Average Percentage - Uptime",
-              "type": "singlestat",
-              "valueFontSize": "80%",
-              "valueMaps": [
-                {
-                  "op": "=",
-                  "text": "N/A",
-                  "value": "null"
-                }
-              ],
-              "valueName": "avg"
-            },
-            {
-              "aliasColors": {},
-              "bars": true,
-              "dashLength": 10,
-              "dashes": false,
-              "datasource": "Prometheus",
-              "fill": 1,
-              "gridPos": {
-                "h": 8,
-                "w": 21,
-                "x": 3,
-                "y": 9
-              },
-              "id": 12,
-              "legend": {
-                "alignAsTable": false,
-                "avg": false,
-                "current": false,
-                "max": false,
-                "min": false,
-                "show": true,
-                "total": false,
-                "values": false
-              },
-              "lines": true,
-              "linewidth": 1,
-              "links": [],
-              "nullPointMode": "null",
-              "percentage": false,
-              "pointradius": 5,
-              "points": false,
-              "renderer": "flot",
-              "seriesOverrides": [],
-              "spaceLength": 10,
-              "stack": false,
-              "steppedLine": true,
-              "targets": [
-                {
-                  "expr": "kube_pod_container_status_running{namespace='unifiedpush',container='postgresql'}",
-                  "format": "time_series",
-                  "hide": false,
-                  "intervalFactor": 1,
-                  "legendFormat": "Postgres postgresql - Uptime",
-                  "refId": "A"
-                }
-              ],
-              "thresholds": [],
-              "timeFrom": null,
-              "timeRegions": [],
-              "timeShift": null,
-              "title": "UnifiedPush Database - Uptime",
-              "tooltip": {
-                "shared": true,
-                "sort": 0,
-                "value_type": "individual"
-              },
-              "type": "graph",
-              "xaxis": {
-                "buckets": null,
-                "mode": "time",
-                "name": null,
-                "show": true,
-                "values": []
-              },
-              "yaxes": [
-                {
-                  "format": "short",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                },
-                {
-                  "format": "short",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                }
-              ],
-              "yaxis": {
-                "align": false,
-                "alignLevel": null
-              }
-            },
-            {
-              "cacheTimeout": null,
-              "colorBackground": false,
-              "colorValue": false,
-              "colors": [
-                "#d44a3a",
-                "rgba(237, 129, 40, 0.89)",
-                "#299c46"
-              ],
-              "datasource": "Prometheus",
-              "format": "percent",
-              "gauge": {
-                "maxValue": 100,
-                "minValue": 95,
-                "show": true,
-                "thresholdLabels": true,
-                "thresholdMarkers": true
-              },
-              "gridPos": {
-                "h": 8,
-                "w": 3,
-                "x": 0,
-                "y": 17
-              },
-              "id": 18,
-              "interval": null,
-              "links": [],
-              "mappingType": 1,
-              "mappingTypes": [
-                {
-                  "name": "value to text",
-                  "value": 1
-                },
-                {
-                  "name": "range to text",
-                  "value": 2
-                }
-              ],
-              "maxDataPoints": 100,
-              "nullPointMode": "connected",
-              "nullText": null,
-              "postfix": "",
-              "postfixFontSize": "50%",
-              "prefix": "",
-              "prefixFontSize": "50%",
-              "rangeMaps": [
-                {
-                  "from": "null",
-                  "text": "N/A",
-                  "to": "null"
-                }
-              ],
-              "sparkline": {
-                "fillColor": "rgba(31, 118, 189, 0.18)",
-                "full": false,
-                "lineColor": "rgb(31, 120, 193)",
-                "show": false
-              },
-              "tableColumn": "",
-              "targets": [
-                {
-                  "expr": "avg(kube_pod_container_status_running{namespace='unifiedpush',container='ups'})*100",
-                  "format": "time_series",
-                  "hide": false,
-                  "intervalFactor": 1,
-                  "refId": "A"
-                }
-              ],
-              "thresholds": "98,99",
-              "title": "UnifiedPush Server Average Percentage Uptime",
-              "type": "singlestat",
-              "valueFontSize": "80%",
-              "valueMaps": [
-                {
-                  "op": "=",
-                  "text": "N/A",
-                  "value": "null"
-                }
-              ],
-              "valueName": "avg"
-            },
-            {
-              "aliasColors": {},
-              "bars": true,
-              "dashLength": 10,
-              "dashes": false,
-              "datasource": "Prometheus",
-              "fill": 1,
-              "gridPos": {
-                "h": 8,
-                "w": 21,
-                "x": 3,
-                "y": 17
-              },
-              "id": 14,
-              "legend": {
-                "avg": false,
-                "current": false,
-                "max": false,
-                "min": false,
-                "show": true,
-                "total": false,
-                "values": false
-              },
-              "lines": true,
-              "linewidth": 1,
-              "links": [],
-              "nullPointMode": "null",
-              "percentage": false,
-              "pointradius": 5,
-              "points": false,
-              "renderer": "flot",
-              "seriesOverrides": [],
-              "spaceLength": 10,
-              "stack": false,
-              "steppedLine": true,
-              "targets": [
-                {
-                  "expr": "kube_pod_container_status_running{namespace='unifiedpush',container='ups'}",
-                  "format": "time_series",
-                  "intervalFactor": 1,
-                  "legendFormat": "UnifiedPush Server - Uptime",
-                  "refId": "A"
-                }
-              ],
-              "thresholds": [],
-              "timeFrom": null,
-              "timeRegions": [],
-              "timeShift": null,
-              "title": "UnifiedPush Server  - Uptime",
-              "tooltip": {
-                "shared": true,
-                "sort": 0,
-                "value_type": "individual"
-              },
-              "type": "graph",
-              "xaxis": {
-                "buckets": null,
-                "mode": "time",
-                "name": null,
-                "show": true,
-                "values": []
-              },
-              "yaxes": [
-                {
-                  "format": "short",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                },
-                {
-                  "format": "short",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                }
-              ],
-              "yaxis": {
-                "align": false,
-                "alignLevel": null
-              }
-            },
-            {
-              "collapsed": false,
-              "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 25
-              },
-              "id": 10,
-              "panels": [],
-              "repeat": null,
-              "title": "Messages",
-              "type": "row"
-            },
-            {
-              "aliasColors": {},
-              "bars": false,
-              "dashLength": 10,
-              "dashes": false,
-              "datasource": "Prometheus",
-              "fill": 1,
-              "gridPos": {
-                "h": 8,
-                "w": 24,
-                "x": 0,
-                "y": 26
-              },
-              "id": 4,
-              "legend": {
-                "avg": false,
-                "current": false,
-                "max": false,
-                "min": false,
-                "show": true,
-                "total": false,
-                "values": false
-              },
-              "lines": true,
-              "linewidth": 1,
-              "links": [],
-              "nullPointMode": "null",
-              "percentage": false,
-              "pointradius": 5,
-              "points": false,
-              "renderer": "flot",
-              "seriesOverrides": [],
-              "spaceLength": 10,
-              "stack": false,
-              "steppedLine": false,
-              "targets": [
-                {
-                  "expr": "sum(rate(ups_msg_fails_total{namespace='unifiedpush'}[1m]))*1000",
-                  "format": "time_series",
-                  "intervalFactor": 1,
-                  "legendFormat": "Failures",
-                  "refId": "A"
-                }
-              ],
-              "thresholds": [],
-              "timeFrom": null,
-              "timeRegions": [],
-              "timeShift": null,
-              "title": "Failures",
-              "tooltip": {
-                "shared": true,
-                "sort": 0,
-                "value_type": "individual"
-              },
-              "type": "graph",
-              "xaxis": {
-                "buckets": null,
-                "mode": "time",
-                "name": null,
-                "show": true,
-                "values": []
-              },
-              "yaxes": [
-                {
-                  "format": "bytes",
-                  "label": null,
-                  "logBase": 2,
-                  "max": null,
-                  "min": 0,
-                  "show": true
-                },
-                {
-                  "format": "short",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                }
-              ],
-              "yaxis": {
-                "align": false,
-                "alignLevel": null
-              }
-            },
-            {
-              "aliasColors": {},
-              "bars": false,
-              "dashLength": 10,
-              "dashes": false,
-              "datasource": "Prometheus",
-              "fill": 1,
-              "gridPos": {
-                "h": 8,
-                "w": 24,
-                "x": 0,
-                "y": 34
-              },
-              "id": 2,
-              "legend": {
-                "avg": false,
-                "current": false,
-                "max": false,
-                "min": false,
-                "show": true,
-                "total": false,
-                "values": false
-              },
-              "lines": true,
-              "linewidth": 1,
-              "links": [],
-              "nullPointMode": "null",
-              "percentage": false,
-              "pointradius": 5,
-              "points": false,
-              "renderer": "flot",
-              "seriesOverrides": [],
-              "spaceLength": 10,
-              "stack": false,
-              "steppedLine": false,
-              "targets": [
-                {
-                  "expr": "sum(rate(ups_msg_total{namespace='unifiedpush'}[1m]))*1000",
-                  "format": "time_series",
-                  "interval": "",
-                  "intervalFactor": 2,
-                  "legendFormat": "Messages",
-                  "refId": "A",
-                  "step": 2
-                }
-              ],
-              "thresholds": [],
-              "timeFrom": null,
-              "timeRegions": [],
-              "timeShift": null,
-              "title": "Messages",
-              "tooltip": {
-                "shared": true,
-                "sort": 0,
-                "value_type": "individual"
-              },
-              "transparent": false,
-              "type": "graph",
-              "xaxis": {
-                "buckets": null,
-                "mode": "time",
-                "name": null,
-                "show": true,
-                "values": []
-              },
-              "yaxes": [
-                {
-                  "format": "short",
-                  "label": "Millicores",
-                  "logBase": 10,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                },
-                {
-                  "format": "short",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                }
-              ],
-              "yaxis": {
-                "align": false,
-                "alignLevel": null
-              }
-            },
-            {
-              "collapsed": false,
-              "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 42
-              },
-              "id": 20,
-              "panels": [],
-              "title": "API HTTP Monitoring",
-              "type": "row"
-            },
-            {
-              "aliasColors": {},
-              "bars": false,
-              "dashLength": 10,
-              "dashes": false,
-              "datasource": "Prometheus",
-              "fill": 1,
-              "gridPos": {
-                "h": 9,
-                "w": 24,
-                "x": 0,
-                "y": 43
-              },
-              "id": 28,
-              "legend": {
-                "avg": false,
-                "current": false,
-                "max": false,
-                "min": false,
-                "show": true,
-                "total": false,
-                "values": false
-              },
-              "lines": true,
-              "linewidth": 1,
-              "links": [],
-              "nullPointMode": "null",
-              "percentage": false,
-              "pointradius": 5,
-              "points": false,
-              "renderer": "flot",
-              "seriesOverrides": [],
-              "spaceLength": 10,
-              "stack": false,
-              "steppedLine": false,
-              "targets": [
-                {
-                  "expr": "(api_requests_duration_seconds{job='example-unifiedpushserver-unifiedpush'})",
-                  "format": "time_series",
-                  "hide": false,
-                  "intervalFactor": 1,
-                  "legendFormat": "{{method}} {{path}}",
-                  "refId": "A"
-                }
-              ],
-              "thresholds": [],
-              "timeFrom": null,
-              "timeRegions": [],
-              "timeShift": null,
-              "title": "API Requests Duration",
-              "tooltip": {
-                "shared": true,
-                "sort": 0,
-                "value_type": "individual"
-              },
-              "type": "graph",
-              "xaxis": {
-                "buckets": null,
-                "mode": "time",
-                "name": null,
-                "show": true,
-                "values": []
-              },
-              "yaxes": [
-                {
-                  "format": "s",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": "0",
-                  "show": true
-                },
-                {
-                  "format": "short",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                }
-              ],
-              "yaxis": {
-                "align": false,
-                "alignLevel": null
-              }
-            },
-            {
-              "aliasColors": {},
-              "bars": false,
-              "dashLength": 10,
-              "dashes": false,
-              "datasource": "Prometheus",
-              "fill": 1,
-              "gridPos": {
-                "h": 8,
-                "w": 8,
-                "x": 0,
-                "y": 52
-              },
-              "id": 30,
-              "legend": {
-                "avg": false,
-                "current": false,
-                "max": false,
-                "min": false,
-                "show": true,
-                "total": false,
-                "values": false
-              },
-              "lines": true,
-              "linewidth": 1,
-              "links": [],
-              "nullPointMode": "null",
-              "percentage": false,
-              "pointradius": 5,
-              "points": false,
-              "renderer": "flot",
-              "seriesOverrides": [],
-              "spaceLength": 10,
-              "stack": false,
-              "steppedLine": false,
-              "targets": [
-                {
-                  "expr": "rate(api_requests_failure_total[30m])",
-                  "format": "time_series",
-                  "hide": false,
-                  "intervalFactor": 1,
-                  "legendFormat": "Errors {{code}} - {{method}} {{path}}",
-                  "refId": "A"
-                }
-              ],
-              "thresholds": [],
-              "timeFrom": null,
-              "timeRegions": [],
-              "timeShift": null,
-              "title": "Rate of HTTP Errors Per Second",
-              "tooltip": {
-                "shared": true,
-                "sort": 0,
-                "value_type": "individual"
-              },
-              "type": "graph",
-              "xaxis": {
-                "buckets": null,
-                "mode": "time",
-                "name": null,
-                "show": true,
-                "values": []
-              },
-              "yaxes": [
-                {
-                  "decimals": null,
-                  "format": "short",
-                  "label": "Rate of HTTP Errors/Second",
-                  "logBase": 1,
-                  "max": null,
-                  "min": "0",
-                  "show": true
-                },
-                {
-                  "format": "short",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                }
-              ],
-              "yaxis": {
-                "align": false,
-                "alignLevel": null
-              }
-            },
-            {
-              "aliasColors": {},
-              "bars": false,
-              "dashLength": 10,
-              "dashes": false,
-              "datasource": "Prometheus",
-              "fill": 1,
-              "gridPos": {
-                "h": 8,
-                "w": 10,
-                "x": 8,
-                "y": 52
-              },
-              "id": 32,
-              "legend": {
-                "avg": false,
-                "current": false,
-                "max": false,
-                "min": false,
-                "show": true,
-                "total": false,
-                "values": false
-              },
-              "lines": true,
-              "linewidth": 1,
-              "links": [],
-              "nullPointMode": "null",
-              "percentage": false,
-              "pointradius": 5,
-              "points": false,
-              "renderer": "flot",
-              "seriesOverrides": [],
-              "spaceLength": 10,
-              "stack": false,
-              "steppedLine": false,
-              "targets": [
-                {
-                  "expr": "rate(api_requests_total[1h])",
-                  "format": "time_series",
-                  "hide": false,
-                  "intervalFactor": 1,
-                  "legendFormat": "{{method}} - {{code}} - {{path}}",
-                  "refId": "A"
-                }
-              ],
-              "thresholds": [],
-              "timeFrom": null,
-              "timeRegions": [],
-              "timeShift": null,
-              "title": "Rate of  HTTP Responses",
-              "tooltip": {
-                "shared": true,
-                "sort": 0,
-                "value_type": "individual"
-              },
-              "type": "graph",
-              "xaxis": {
-                "buckets": null,
-                "mode": "time",
-                "name": null,
-                "show": true,
-                "values": []
-              },
-              "yaxes": [
-                {
-                  "format": "short",
-                  "label": "Rate of HTTP Responses/Second",
-                  "logBase": 1,
-                  "max": null,
-                  "min": "0",
-                  "show": true
-                },
-                {
-                  "format": "short",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                }
-              ],
-              "yaxis": {
-                "align": false,
-                "alignLevel": null
-              }
-            },
-            {
-              "cacheTimeout": null,
-              "colorBackground": false,
-              "colorValue": false,
-              "colors": [
-                "#299c46",
-                "rgba(237, 129, 40, 0.89)",
-                "#d44a3a"
-              ],
-              "datasource": "Prometheus",
-              "format": "s",
-              "gauge": {
-                "maxValue": 40,
-                "minValue": 0,
-                "show": true,
-                "thresholdLabels": true,
-                "thresholdMarkers": true
-              },
-              "gridPos": {
-                "h": 4,
-                "w": 3,
-                "x": 18,
-                "y": 52
-              },
-              "id": 26,
-              "interval": null,
-              "links": [],
-              "mappingType": 1,
-              "mappingTypes": [
-                {
-                  "name": "value to text",
-                  "value": 1
-                },
-                {
-                  "name": "range to text",
-                  "value": 2
-                }
-              ],
-              "maxDataPoints": 100,
-              "nullPointMode": "connected",
-              "nullText": null,
-              "postfix": "",
-              "postfixFontSize": "50%",
-              "prefix": "",
-              "prefixFontSize": "50%",
-              "rangeMaps": [
-                {
-                  "from": "null",
-                  "text": "N/A",
-                  "to": "null"
-                }
-              ],
-              "sparkline": {
-                "fillColor": "rgba(31, 118, 189, 0.18)",
-                "full": false,
-                "lineColor": "rgb(31, 120, 193)",
-                "show": true
-              },
-              "tableColumn": "",
-              "targets": [
-                {
-                  "expr": "max(api_requests_duration_seconds{job='example-unifiedpushserver-unifiedpush'})",
-                  "format": "time_series",
-                  "hide": false,
-                  "intervalFactor": 1,
-                  "refId": "A"
-                }
-              ],
-              "thresholds": "25,30",
-              "title": "Max API Requests Duration",
-              "type": "singlestat",
-              "valueFontSize": "80%",
-              "valueMaps": [
-                {
-                  "op": "=",
-                  "text": "N/A",
-                  "value": "null"
-                }
-              ],
-              "valueName": "max"
-            },
-            {
-              "cacheTimeout": null,
-              "colorBackground": false,
-              "colorValue": false,
-              "colors": [
-                "#299c46",
-                "rgba(237, 129, 40, 0.89)",
-                "#d44a3a"
-              ],
-              "datasource": "Prometheus",
-              "format": "s",
-              "gauge": {
-                "maxValue": 40,
-                "minValue": 0,
-                "show": true,
-                "thresholdLabels": true,
-                "thresholdMarkers": true
-              },
-              "gridPos": {
-                "h": 4,
-                "w": 3,
-                "x": 21,
-                "y": 52
-              },
-              "id": 34,
-              "interval": null,
-              "links": [],
-              "mappingType": 1,
-              "mappingTypes": [
-                {
-                  "name": "value to text",
-                  "value": 1
-                },
-                {
-                  "name": "range to text",
-                  "value": 2
-                }
-              ],
-              "maxDataPoints": 100,
-              "nullPointMode": "connected",
-              "nullText": null,
-              "postfix": "",
-              "postfixFontSize": "50%",
-              "prefix": "",
-              "prefixFontSize": "50%",
-              "rangeMaps": [
-                {
-                  "from": "null",
-                  "text": "N/A",
-                  "to": "null"
-                }
-              ],
-              "sparkline": {
-                "fillColor": "rgba(31, 118, 189, 0.18)",
-                "full": false,
-                "lineColor": "rgb(31, 120, 193)",
-                "show": true
-              },
-              "tableColumn": "",
-              "targets": [
-                {
-                  "expr": "min(api_requests_duration_seconds{job='example-unifiedpushserver-unifiedpush'})",
-                  "format": "time_series",
-                  "hide": false,
-                  "intervalFactor": 1,
-                  "refId": "A"
-                }
-              ],
-              "thresholds": "25,30",
-              "title": "Minium API Requests Duration Seconds",
-              "type": "singlestat",
-              "valueFontSize": "80%",
-              "valueMaps": [
-                {
-                  "op": "=",
-                  "text": "N/A",
-                  "value": "null"
-                }
-              ],
-              "valueName": "min"
-            },
-            {
-              "cacheTimeout": null,
-              "colorBackground": false,
-              "colorValue": false,
-              "colors": [
-                "#299c46",
-                "rgba(237, 129, 40, 0.89)",
-                "#d44a3a"
-              ],
-              "datasource": "Prometheus",
-              "format": "s",
-              "gauge": {
-                "maxValue": 40,
-                "minValue": 0,
-                "show": true,
-                "thresholdLabels": true,
-                "thresholdMarkers": true
-              },
-              "gridPos": {
-                "h": 4,
-                "w": 3,
-                "x": 18,
-                "y": 56
-              },
-              "id": 24,
-              "interval": null,
-              "links": [],
-              "mappingType": 1,
-              "mappingTypes": [
-                {
-                  "name": "value to text",
-                  "value": 1
-                },
-                {
-                  "name": "range to text",
-                  "value": 2
-                }
-              ],
-              "maxDataPoints": 100,
-              "nullPointMode": "connected",
-              "nullText": null,
-              "postfix": "",
-              "postfixFontSize": "50%",
-              "prefix": "",
-              "prefixFontSize": "50%",
-              "rangeMaps": [
-                {
-                  "from": "null",
-                  "text": "N/A",
-                  "to": "null"
-                }
-              ],
-              "sparkline": {
-                "fillColor": "rgba(31, 118, 189, 0.18)",
-                "full": false,
-                "lineColor": "rgb(31, 120, 193)",
-                "show": true
-              },
-              "tableColumn": "",
-              "targets": [
-                {
-                  "expr": "avg(api_requests_duration_seconds{job='example-unifiedpushserver-unifiedpush'})",
-                  "format": "time_series",
-                  "hide": false,
-                  "intervalFactor": 1,
-                  "refId": "A"
-                }
-              ],
-              "thresholds": "25, 30",
-              "title": "Average API Requests Duration",
-              "type": "singlestat",
-              "valueFontSize": "80%",
-              "valueMaps": [
-                {
-                  "op": "=",
-                  "text": "N/A",
-                  "value": "null"
-                }
-              ],
-              "valueName": "avg"
-            },
-            {
-              "cacheTimeout": null,
-              "colorBackground": false,
-              "colorValue": false,
-              "colors": [
-                "#299c46",
-                "rgba(237, 129, 40, 0.89)",
-                "#d44a3a"
-              ],
-              "datasource": "Prometheus",
-              "format": "none",
-              "gauge": {
-                "maxValue": 40,
-                "minValue": 0,
-                "show": true,
-                "thresholdLabels": true,
-                "thresholdMarkers": true
-              },
-              "gridPos": {
-                "h": 4,
-                "w": 3,
-                "x": 21,
-                "y": 56
-              },
-              "id": 22,
-              "interval": null,
-              "links": [],
-              "mappingType": 1,
-              "mappingTypes": [
-                {
-                  "name": "value to text",
-                  "value": 1
-                },
-                {
-                  "name": "range to text",
-                  "value": 2
-                }
-              ],
-              "maxDataPoints": 100,
-              "nullPointMode": "connected",
-              "nullText": null,
-              "postfix": "",
-              "postfixFontSize": "50%",
-              "prefix": "",
-              "prefixFontSize": "50%",
-              "rangeMaps": [
-                {
-                  "from": "null",
-                  "text": "N/A",
-                  "to": "null"
-                }
-              ],
-              "sparkline": {
-                "fillColor": "rgba(31, 118, 189, 0.18)",
-                "full": false,
-                "lineColor": "rgb(31, 120, 193)",
-                "show": true
-              },
-              "tableColumn": "",
-              "targets": [
-                {
-                  "expr": "avg(api_requests_in_flight{job='example-unifiedpushserver-unifiedpush'})",
-                  "format": "time_series",
-                  "hide": false,
-                  "intervalFactor": 1,
-                  "legendFormat": "",
-                  "refId": "A"
-                }
-              ],
-              "thresholds": "15 ,20",
-              "title": "Average API requests in flight",
-              "type": "singlestat",
-              "valueFontSize": "80%",
-              "valueMaps": [
-                {
-                  "op": "=",
-                  "text": "N/A",
-                  "value": "null"
-                }
-              ],
-              "valueName": "avg"
+              "name": "range to text",
+              "value": 2
             }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+            {
+              "from": "null",
+              "text": "N/A",
+              "to": "null"
+            }
+            ],
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": false,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": false
+            },
+            "tableColumn": "",
+            "targets": [
+            {
+              "expr": "avg(kube_endpoint_address_available{endpoint='example-unifiedpushserver-unifiedpush'})*100",
+              "format": "time_series",
+              "hide": false,
+              "intervalFactor": 1,
+              "refId": "A"
+            }
+            ],
+            "thresholds": "98,99",
+            "title": "Admin Console Average Percentage Uptime",
+            "transparent": false,
+            "type": "singlestat",
+            "valueFontSize": "70%",
+            "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+            ],
+            "valueName": "avg"
+          },
+          {
+            "aliasColors": {},
+            "bars": true,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "Prometheus",
+            "decimals": 0,
+            "fill": 1,
+            "gridPos": {
+              "h": 8,
+              "w": 21,
+              "x": 3,
+              "y": 1
+            },
+            "id": 1,
+            "legend": {
+              "alignAsTable": true,
+              "avg": false,
+              "current": false,
+              "max": false,
+              "min": false,
+              "show": true,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "links": [
+            {
+              "type": "dashboard"
+            }
+            ],
+            "nullPointMode": "null",
+            "percentage": true,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+            {
+              "expr": "kube_endpoint_address_available{endpoint='example-unifiedpushserver-unifiedpush'}",
+              "format": "time_series",
+              "hide": false,
+              "interval": "1s",
+              "intervalFactor": 1,
+              "legendFormat": "uptime service endpoint",
+              "metric": "",
+              "refId": "A",
+              "step": 2
+            }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "Admin Console - Uptime",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+            {
+              "decimals": null,
+              "format": "none",
+              "label": null,
+              "logBase": null,
+              "max": 1.5,
+              "min": 0,
+              "show": true
+            },
+            {
+              "decimals": null,
+              "format": "short",
+              "label": null,
+              "logBase": null,
+              "max": 2,
+              "min": 0,
+              "show": true
+            }
+            ],
+            "yaxis": {
+              "align": false,
+              "alignLevel": null
+            }
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": false,
+            "colors": [
+              "#d44a3a",
+              "rgba(237, 129, 40, 0.89)",
+              "#299c46"
+            ],
+            "datasource": "Prometheus",
+            "format": "percent",
+            "gauge": {
+              "maxValue": 100,
+              "minValue": 95,
+              "show": true,
+              "thresholdLabels": true,
+              "thresholdMarkers": true
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 3,
+              "x": 0,
+              "y": 9
+            },
+            "id": 16,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+            {
+              "name": "value to text",
+              "value": 1
+            },
+            {
+              "name": "range to text",
+              "value": 2
+            }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+            {
+              "from": "null",
+              "text": "N/A",
+              "to": "null"
+            }
+            ],
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": false,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": false
+            },
+            "tableColumn": "",
+            "targets": [
+            {
+              "expr": "avg(kube_pod_container_status_running{namespace='unifiedpush',container='postgresql'})*100",
+              "format": "time_series",
+              "hide": false,
+              "intervalFactor": 1,
+              "refId": "A"
+            }
+            ],
+            "thresholds": "98,99",
+            "title": "Database Average Percentage - Uptime",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+            ],
+            "valueName": "avg"
+          },
+          {
+            "aliasColors": {},
+            "bars": true,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "Prometheus",
+            "fill": 1,
+            "gridPos": {
+              "h": 8,
+              "w": 21,
+              "x": 3,
+              "y": 9
+            },
+            "id": 12,
+            "legend": {
+              "alignAsTable": true,
+              "avg": false,
+              "current": false,
+              "max": false,
+              "min": false,
+              "show": true,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "links": [],
+            "nullPointMode": "null",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": true,
+            "targets": [
+            {
+              "expr": "avg(kube_pod_container_status_running{namespace='unifiedpush',container='postgresql'})",
+              "format": "time_series",
+              "hide": false,
+              "interval": "1s",
+              "intervalFactor": 1,
+              "legendFormat": "database container ",
+              "refId": "A"
+            }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "UnifiedPush Database - Uptime",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+            ],
+            "yaxis": {
+              "align": false,
+              "alignLevel": null
+            }
+          },
+          {
+            "cacheTimeout": null,
+            "colorBackground": false,
+            "colorValue": false,
+            "colors": [
+              "#d44a3a",
+              "rgba(237, 129, 40, 0.89)",
+              "#299c46"
+            ],
+            "datasource": "Prometheus",
+            "format": "percent",
+            "gauge": {
+              "maxValue": 100,
+              "minValue": 95,
+              "show": true,
+              "thresholdLabels": true,
+              "thresholdMarkers": true
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 3,
+              "x": 0,
+              "y": 17
+            },
+            "id": 18,
+            "interval": null,
+            "links": [],
+            "mappingType": 1,
+            "mappingTypes": [
+            {
+              "name": "value to text",
+              "value": 1
+            },
+            {
+              "name": "range to text",
+              "value": 2
+            }
+            ],
+            "maxDataPoints": 100,
+            "nullPointMode": "connected",
+            "nullText": null,
+            "postfix": "",
+            "postfixFontSize": "50%",
+            "prefix": "",
+            "prefixFontSize": "50%",
+            "rangeMaps": [
+            {
+              "from": "null",
+              "text": "N/A",
+              "to": "null"
+            }
+            ],
+            "sparkline": {
+              "fillColor": "rgba(31, 118, 189, 0.18)",
+              "full": false,
+              "lineColor": "rgb(31, 120, 193)",
+              "show": false
+            },
+            "tableColumn": "",
+            "targets": [
+            {
+              "expr": "avg(kube_pod_container_status_running{namespace='unifiedpush',container='ups'})*100",
+              "format": "time_series",
+              "hide": false,
+              "intervalFactor": 1,
+              "refId": "A"
+            }
+            ],
+            "thresholds": "98,99",
+            "title": "UnifiedPush Server Average Percentage Uptime",
+            "type": "singlestat",
+            "valueFontSize": "80%",
+            "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+            ],
+            "valueName": "avg"
+          },
+          {
+            "aliasColors": {},
+            "bars": true,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "Prometheus",
+            "fill": 1,
+            "gridPos": {
+              "h": 8,
+              "w": 21,
+              "x": 3,
+              "y": 17
+            },
+            "id": 14,
+            "legend": {
+              "avg": false,
+              "current": false,
+              "max": false,
+              "min": false,
+              "show": true,
+              "total": false,
+              "values": false
+            },
+            "lines": false,
+            "linewidth": 1,
+            "links": [],
+            "nullPointMode": "null",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": true,
+            "targets": [
+            {
+              "expr": "avg(kube_pod_container_status_running{namespace='unifiedpush',container='ups'})",
+              "format": "time_series",
+              "interval": "1s",
+              "intervalFactor": 1,
+              "legendFormat": "server container",
+              "refId": "A"
+            }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "UnifiedPush Server  - Uptime",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+            ],
+            "yaxis": {
+              "align": false,
+              "alignLevel": null
+            }
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 25
+            },
+            "id": 10,
+            "panels": [],
+            "repeat": null,
+            "title": "Resources",
+            "type": "row"
+          },
+          {
+            "aliasColors": {},
+            "bars": true,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "Prometheus",
+            "fill": 1,
+            "gridPos": {
+              "h": 8,
+              "w": 24,
+              "x": 0,
+              "y": 26
+            },
+            "id": 40,
+            "interval": "1s",
+            "legend": {
+              "alignAsTable": true,
+              "avg": true,
+              "current": false,
+              "max": true,
+              "min": true,
+              "show": true,
+              "total": false,
+              "values": true
+            },
+            "lines": true,
+            "linewidth": 1,
+            "links": [],
+            "nullPointMode": "null",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": true,
+            "targets": [
+            {
+              "expr": "max(jvm_memory_bytes_used{area='heap',namespace='unifiedpush'}) + max(jvm_memory_bytes_used{area='nonheap', namespace='unifiedpush'})",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "1s",
+              "intervalFactor": 1,
+              "legendFormat": "JVM memory",
+              "refId": "A"
+            }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "Current Memory",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+            {
+              "format": "bytes",
+              "label": null,
+              "logBase": 32,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 32,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+            ],
+            "yaxis": {
+              "align": false,
+              "alignLevel": null
+            }
+          },
+          {
+            "aliasColors": {},
+            "bars": true,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "Prometheus",
+            "fill": 1,
+            "gridPos": {
+              "h": 8,
+              "w": 24,
+              "x": 0,
+              "y": 34
+            },
+            "id": 41,
+            "interval": "1s",
+            "legend": {
+              "alignAsTable": true,
+              "avg": true,
+              "current": false,
+              "max": true,
+              "min": true,
+              "show": true,
+              "total": false,
+              "values": true
+            },
+            "lines": true,
+            "linewidth": 1,
+            "links": [],
+            "nullPointMode": "null",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": true,
+            "targets": [
+            {
+              "expr": "sum(jvm_memory_bytes_max{namespace=\"unifiedpush\"})",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "1s",
+              "intervalFactor": 1,
+              "legendFormat": "max",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(jvm_memory_bytes_committed{namespace=\"unifiedpush\"})",
+              "format": "time_series",
+              "interval": "1s",
+              "intervalFactor": 1,
+              "legendFormat": "commited",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(jvm_memory_bytes_used{namespace=\"unifiedpush\"})",
+              "format": "time_series",
+              "hide": false,
+              "interval": "1s",
+              "intervalFactor": 1,
+              "legendFormat": "used",
+              "refId": "C"
+            }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "Memory Usage",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+            {
+              "format": "bytes",
+              "label": null,
+              "logBase": 32,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 32,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+            ],
+            "yaxis": {
+              "align": false,
+              "alignLevel": null
+            }
+          },
+          {
+            "aliasColors": {},
+            "bars": true,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "Prometheus",
+            "fill": 1,
+            "gridPos": {
+              "h": 8,
+              "w": 24,
+              "x": 0,
+              "y": 42
+            },
+            "id": 42,
+            "interval": "1s",
+            "legend": {
+              "alignAsTable": true,
+              "avg": true,
+              "current": false,
+              "max": true,
+              "min": true,
+              "show": true,
+              "total": false,
+              "values": true
+            },
+            "lines": true,
+            "linewidth": 1,
+            "links": [],
+            "nullPointMode": "null",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": true,
+            "targets": [
+            {
+              "expr": "sum(process_cpu_seconds_total{namespace=\"unifiedpush\"})",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "1s",
+              "intervalFactor": 1,
+              "legendFormat": "used",
+              "refId": "A"
+            }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "CPU Usage",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+            {
+              "format": "mbytes",
+              "label": null,
+              "logBase": 32,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 32,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+            ],
+            "yaxis": {
+              "align": false,
+              "alignLevel": null
+            }
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 50
+            },
+            "id": 20,
+            "panels": [],
+            "title": "API Monitoring",
+            "type": "row"
+          },
+          {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "Prometheus",
+            "decimals": 0,
+            "fill": 1,
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 51
+            },
+            "id": 35,
+            "interval": "1m",
+            "legend": {
+              "alignAsTable": false,
+              "avg": true,
+              "current": false,
+              "hideEmpty": false,
+              "max": false,
+              "min": true,
+              "rightSide": false,
+              "show": true,
+              "total": false,
+              "values": true
+            },
+            "lines": true,
+            "linewidth": 1,
+            "links": [],
+            "nullPointMode": "null",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": true,
+            "steppedLine": false,
+            "targets": [
+            {
+              "expr": "sum(aerogear_ups_push_requests_total{namespace='unifiedpush',service='example-unifiedpushserver-unifiedpush'})",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "1s",
+              "intervalFactor": 1,
+              "legendFormat": "attempts",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(aerogear_ups_push_requests_fail_total{namespace='unifiedpush',service='example-unifiedpushserver-unifiedpush'})",
+              "format": "time_series",
+              "hide": false,
+              "instant": false,
+              "interval": "1s",
+              "intervalFactor": 1,
+              "legendFormat": "failures",
+              "refId": "B"
+            }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "Push Notifications",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+            {
+              "decimals": 0,
+              "format": "short",
+              "label": null,
+              "logBase": 10,
+              "max": null,
+              "min": 0,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+            ],
+            "yaxis": {
+              "align": false,
+              "alignLevel": null
+            }
+          },
+          {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "Prometheus",
+            "decimals": 0,
+            "fill": 1,
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 51
+            },
+            "id": 39,
+            "interval": "1m",
+            "legend": {
+              "alignAsTable": false,
+              "avg": false,
+              "current": false,
+              "hideEmpty": false,
+              "max": false,
+              "min": false,
+              "rightSide": false,
+              "show": true,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "links": [],
+            "nullPointMode": "null",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": true,
+            "steppedLine": false,
+            "targets": [
+            {
+              "expr": "sum(aerogear_ups_push_requests_ios{namespace='unifiedpush',service='example-unifiedpushserver-unifiedpush'})",
+              "format": "time_series",
+              "hide": false,
+              "interval": "1m",
+              "intervalFactor": 1,
+              "legendFormat": "ios",
+              "refId": "C"
+            },
+            {
+              "expr": "sum(aerogear_ups_push_requests_android{namespace='unifiedpush',service='example-unifiedpushserver-unifiedpush'})",
+              "format": "time_series",
+              "hide": false,
+              "interval": "1m",
+              "intervalFactor": 1,
+              "legendFormat": "android",
+              "refId": "D"
+            }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "Push Notifications per Platform",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+            {
+              "decimals": 0,
+              "format": "short",
+              "label": null,
+              "logBase": 10,
+              "max": null,
+              "min": 0,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+            ],
+            "yaxis": {
+              "align": false,
+              "alignLevel": null
+            }
+          },
+          {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "Prometheus",
+            "fill": 1,
+            "gridPos": {
+              "h": 9,
+              "w": 24,
+              "x": 0,
+              "y": 59
+            },
+            "id": 36,
+            "interval": "1m",
+            "legend": {
+              "avg": false,
+              "current": false,
+              "max": false,
+              "min": false,
+              "show": true,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "links": [],
+            "nullPointMode": "null",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+            {
+              "expr": "aerogear_ups_device_register_requests_total{namespace='unifiedpush',service='example-unifiedpushserver-unifiedpush'}",
+              "format": "time_series",
+              "hide": false,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "requests to register devices",
+              "refId": "A"
+            }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "Devices",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "transparent": false,
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+            {
+              "format": "bytes",
+              "label": null,
+              "logBase": 2,
+              "max": null,
+              "min": 0,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+            ],
+            "yaxis": {
+              "align": false,
+              "alignLevel": null
+            }
+          }
           ],
-          "refresh": "10s",
+          "refresh": false,
           "schemaVersion": 16,
           "style": "dark",
           "tags": [],
@@ -1414,6 +1245,6 @@ spec:
           "timezone": "browser",
           "title": "UnifiedPush Server",
           "uid": "_cxgpLnZx",
-          "version": 2
+          "version": 1
         }
   name: unifiedpushserver.json
