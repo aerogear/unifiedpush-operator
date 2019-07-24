@@ -6,5 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
-## Released 
-
+## [0.1.0] - 2019-07-24
+### Added
+- Initial implementation of the unifiedpush-operator
+- `UnifiedPushServer` kind to deploy a UPS deployment (only one supported)
+- `PushApplication` kind to create an application in your UPS deployment
+- `AndroidVariant` kind to create an Android variant for an application
+- `IOSVariant` kind to create an iOS variant for an application
