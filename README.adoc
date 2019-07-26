@@ -164,7 +164,7 @@ After creating the PushApplication above, you should be able to get the `pushApp
 
 [source,shell]
 ----
-kubectl get PushApplication example-pushapplication -n unifiedpush -o jsonpath='{.status.pushApplicationId}'
+kubectl get PushApplication example-pushapplication -n unifiedpush-apps -o jsonpath='{.status.pushApplicationId}'
 ----
 
 Here are all of the configurable fields in an IOSVariant:
@@ -196,7 +196,7 @@ Here are all of the configurable fields in an IOSVariant:
 +
 [source,shell]
 ----
-kubectl apply -n unifiedpush-apps -f ./deploy/crds/push_v1alpha1_iosvariant_cr.yaml
+kubectl apply -n unifiedpush-apps -f ./deploy/crds/examples/push_v1alpha1_iosvariant_cr.yaml
 ----
 
 === Uninstalling
