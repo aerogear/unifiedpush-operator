@@ -18,7 +18,7 @@ toc::[]
 
 == Overview
 
-The following guide outlines the steps required to manage and solve issues over the https://github.com/aerogear/aerogear-unifiedpush-server[UnifiedPush Server] managed, installed and configured via the https://github.com/aerogear/unifiedpush-operator[UnifiedPush Operator].
+The following guide outlines the steps required to manage and solve issues in the https://github.com/aerogear/aerogear-unifiedpush-server[UnifiedPush Server] which is managed, installed and configured via the https://github.com/aerogear/unifiedpush-operator[UnifiedPush Operator].
 
 == Reference Articles
 
@@ -32,9 +32,7 @@ All alerts should appears as green in the Prometheus Alert Monitoring.
 
 == Prometheus Alerts Procedures
 
-The following guide outlines the steps required to solve issues which will be alert by the Prometheus alerts configured to monitoring the  https://github.com/aerogear/aerogear-unifiedpush-server[UnifiedPush Server] when it is managed, installed and configured via the https://github.com/aerogear/unifiedpush-operator[UnifiedPush Operator].
-
-IMPORTANT: Before check any following steps see if the operator pod is running successfully. More info: https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
+IMPORTANT: Before checking any of following steps see if the operator pod is running successfully. More info: link:./SOP-operator.adoc[UnifiedPushOperatorDown]
 
 TIP: You can save the logs by running `oc logs <podname> > <filename>.log`. The logs can provided to you useful information in order to identify the root cause of the issue as they are required information to be send to its maintainers in the case it need to be checked by them.
 
@@ -46,8 +44,6 @@ The pod which runs the https://github.com/aerogear/aerogear-unifiedpush-server[U
 
 . Check that the link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml[UnifiedPushServer CR] or link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR] is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`. Following the expected result.
 +
-NOTE: Just one kind of UnifiedPushServer CR can be applied, however, if the backup service is enable for your installation then it means that it is using the ink:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR].
-+
 [source,shell]
 ----
 $ oc get UnifiedPushServer
@@ -55,7 +51,7 @@ NAME                        AGE
 example-unifiedpushserver   9d
 ----
 +
-NOTE: The UnifiedPushServer should be applied in the same namespace of the operator. The operator will not able to manage it in another namespace.
+NOTE: The UnifiedPushServer should be applied in the same namespace as the operator. The operator will not be able to manage it in another namespace.
 +
 . Check the environment variables of the Server
 .. Run `oc describe pods -l service=ups`
@@ -269,9 +265,20 @@ NOTE: It can lead you to find the root cause of the issue faced.
 +
 .. Run `oc logs <service-podname> -c ups-oauth-proxy`. E.g `oc logs example-unifiedpushserver-1-dk8vm -c ups-oauth-proxy`
 +
-NOTE: Usually it has no logs at all, however, it can lead you to find the root cause of the issue faced.
+Logs should include the following:
 +
-.. If logs are found in the above step then save the logs by running `oc logs <service-podname> -c ups-oauth-proxy > <filename>.log`
+----
+2019/08/08 11:28:42 oauthproxy.go:201: mapping path "/" => upstream "http://localhost:8080/ "
+2019/08/08 11:28:42 oauthproxy.go:222: compiled skip-auth-regex => "/rest/sender"
+2019/08/08 11:28:42 oauthproxy.go:222: compiled skip-auth-regex => "/rest/registry/device"
+2019/08/08 11:28:42 oauthproxy.go:222: compiled skip-auth-regex => "/rest/prometheus/metrics"
+2019/08/08 11:28:42 oauthproxy.go:222: compiled skip-auth-regex => "/rest/auth/config"
+2019/08/08 11:28:42 oauthproxy.go:228: OAuthProxy configured for  Client ID: system:serviceaccount:unifiedpush:example-unifiedpushserver
+2019/08/08 11:28:42 oauthproxy.go:238: Cookie settings: name:_oauth_proxy secure(https):true httponly:true expiry:168h0m0s domain:<default> refresh:disabled
+2019/08/08 11:28:42 http.go:56: HTTP: listening on 0.0.0.0:4180
+----
++
+.. If alternative logs are found in the above step then save the logs by running `oc logs <service-podname> -c ups-oauth-proxy > <filename>.log`
 +
 NOTE: Capture the logs are important to provide the required information for its maintainers in order to allow them check it.
 +
@@ -397,9 +404,7 @@ NOTE: It can lead you to find the root cause of the issue faced.
 NOTE: Capture the logs are important to provide the required information for its maintainers in order to allow them check it.
 +
 .. See and capture the `pod/example-unifiedpushserver-<xyz123> > <filename>.log` logs. E.g `oc logs example-unifiedpushserver-1-dk8vm -c ups > logs.log`
-+
-NOTE: May the logs can lead you to check the root cause of this issuse and capture the logs are important to provide the required information for its maintainers in order to allow them check it.
-+
+
 .. Check if the UnifiedPush Server image was pulled successfully
 . Check if the secret was created
 .. Run `oc get secrets | grep postgresql` in the namespace where the operator is installed. Following the expected result.
@@ -435,12 +440,10 @@ NOTE: The values described above should not be the same but should all data keys
 
 ==== UnifiedPushDatabaseDown
 
-The pod which runs the https://github.com/aerogear/aerogear-unifiedpush-server[UnifiedPush Server]'s Database(PostgreSQL) is down or is not present in the same namespace of the operator.
+The pod which runs the https://github.com/aerogear/aerogear-unifiedpush-server[UnifiedPush Server]'s Database(PostgreSQL) is down or is not present in the same namespace as the operator.
 
 . Check that the link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml[UnifiedPushServer CR] or link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR] is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`. Following the expected result.
-+
-NOTE: Just one kind of UnifiedPushServer CR can be applied, however, if the backup service is enable for your installation then it means that it is using the ink:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR].
-+
+
 [source,shell]
 ----
 $ oc get UnifiedPushServer
@@ -448,7 +451,7 @@ NAME                        AGE
 example-unifiedpushserver   9d
 ----
 +
-NOTE: The 1 UnifiedPushServer CR (link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml[UnifiedPushServer CR] or link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR]) should be applied in the same namespace of the operator.
+NOTE: The 1 UnifiedPushServer CR (link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml[UnifiedPushServer CR] or link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR]) should be applied in the same namespace as the operator.
 +
 . Check that the Database Pod is deployed in the same namespace as the operator by running `oc get pods | grep postgresql`. Following an example of the expected result.
 +
@@ -472,21 +475,21 @@ NOTE: You can save the logs by running `oc logs <database-podname> > <filename>.
 
 ==== UnifiedPushJavaHeapThresholdExceeded
 
-It means that Service pod(s) are facing performance issues.
+This alert indicates that the Service pod(s) is/are facing performance issues.
 
 . Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
 . Following the steps <<To scale the pod>> in order to try to solve performance issues.
 
 ==== UnifiedPushJavaNonHeapThresholdExceeded
 
-It means that Service pod(s) are facing performance issues.
+This alert indicates that the Service pod(s) is/are facing performance issues.
 
 . Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
 . Following the steps <<To scale the pod>> in order to try to solve performance issues.
 
 ==== UnifiedPushJavaGCTimePerMinuteScavenge
 
-It means that Service pod(s) are facing performance issues.
+This alert indicates that the Service pod(s) is/are facing performance issues.
 
 . Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
 . Following the steps <<To scale the pod>> in order to try to solve performance issues.
@@ -495,7 +498,7 @@ It means that Service pod(s) are facing performance issues.
 
 ==== UnifiedPushMessagesFailures
 
-It means that Service pod(s) has some error that is not able to send the quantity of messages expected.
+This alert indicates that the Service pod(s) has some error which is preventing it sending the quantity of messages expected.
 
 . Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
 
@@ -523,7 +526,7 @@ IMPORTANT: Capture this data will be useful in order to provide the required inf
 
 === To scale the pod
 
-Currently, is not possible scale the UPS Server and its Database
+Currently, it is not possible scale the UPS Server and its Database
 
 == Validate
 
@@ -534,7 +537,7 @@ Following the steps to ensure that all is as expected.
 . Switch to the UPS namespace by running `oc project <namespace>`. E.g `oc project unifiedpush`
 . Check that the link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml[UnifiedPushServer CR] or link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR] is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`. Following the expected result.
 +
-NOTE: Just one kind of UnifiedPushServer CR can be applied, however, if the backup service is enable for your installation then it means that it is using the ink:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR].
+NOTE: Just one kind of UnifiedPushServer CR can be applied, however, if the backup service is enable for your installation then it means that it is using the link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR].
 +
 [source,shell]
 ----
@@ -658,21 +661,24 @@ route.route.openshift.io/example-unifiedpushserver-unifiedpush-proxy   example-u
 
 ==== Monitor
 
-If the https://github.com/aerogear/unifiedpush-operator#monitoring-service-metrics[Monitoring Service (Metrics)] is enabled for your installation you are able to check its Grafana Dashboard, `UnifiedPush Server`, and the Prometheus Monitoring instance used for it.
+If the https://github.com/aerogear/unifiedpush-operator#monitoring-service-metrics[Monitoring Service (Metrics)] is enabled for the installation, a Grafana Dashboard titled `UnifiedPush Operator`, and the Prometheus Monitoring instance are created.
 
 ==== Backup
 
 . Switch to the UPS namespace by running `oc project <namespace>`. E.g `oc project unifiedpush`
 . Check that link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR] is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`. Following the expected result.
-+
-NOTE: Just one kind of UnifiedPushServer CR can be applied, however, if the backup service is enable for your installation then it means that it is using the ink:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR].
-+
+
 [source,shell]
 ----
 $ oc get UnifiedPushServer
 NAME                        AGE
 example-unifiedpushserver   9d
 ----
+
++
+NOTE: Just one kind of UnifiedPushServer CR can be applied, however, if the backup service is enable for your installation then it means that it is using the link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR].
++
+
 +
 . To ensure that it is the UnifiedPushServer with the Backup see its specs by running `oc describe UnifiedPushServer`.
 .. Following an example without Backup installed.
