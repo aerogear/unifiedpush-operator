@@ -3,105 +3,47 @@ kind: ClusterRole
 metadata:
   name: unifiedpush-operator
 rules:
-
-# The resources in this group are the CRs that the controllers in this
-# operator react to. Nothing in the operator is expected to create or
-# delete CRs, so those permissions are not given.
-- apiGroups:
-  - push.aerogear.org
-  resources:
-  - '*'
-  verbs:
-  - get
-  - list
-  - watch
-  - update
-
-# For "secondary resources", the operator needs to be able to do
-# pretty much everything. The "deletecollection" permission is the
-# only one not given here (if it needs to delete more than one
-# instance of a kind, it can do them one-by-one.
 - apiGroups:
   - ""
   resources:
+  - pods
   - services
+  - endpoints
   - persistentvolumeclaims
   - events
   - configmaps
   - secrets
   - serviceaccounts
   verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - batch
-  resources:
-  - cronjobs
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
+  - '*'
 - apiGroups:
   - route.openshift.io
   resources:
   - routes
   verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - image.openshift.io
-  resources:
-  - imagestreams
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - apps.openshift.io
-  resources:
-  - deploymentconfigs
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-
-# Need to be able to check if a namespace is in APP_NAMESPACES
+  - '*'
 - apiGroups:
   - ""
   resources:
   - namespaces
   verbs:
   - get
-
-# These are needed to be able to run the operator itself
 - apiGroups:
   - apps
   resources:
   - deployments
+  - daemonsets
+  - replicasets
+  - statefulsets
+  verbs:
+  - '*'
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
   verbs:
   - get
+  - create
 - apiGroups:
   - apps
   resourceNames:
@@ -110,16 +52,27 @@ rules:
   - deployments/finalizers
   verbs:
   - update
-  - patch
 - apiGroups:
-  - ""
+  - push.aerogear.org
   resources:
-  - pods
+  - '*'
   verbs:
-  - get
+  - '*'
 - apiGroups:
-  - apps
+  - image.openshift.io
   resources:
-  - replicasets
+  - imagestreams
   verbs:
-  - get
+  - '*'
+- apiGroups:
+  - apps.openshift.io
+  resources:
+  - deploymentconfigs
+  verbs:
+  - '*'
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - '*'
