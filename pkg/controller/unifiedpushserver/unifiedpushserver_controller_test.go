@@ -1,16 +1,15 @@
 package unifiedpushserver
 
 import (
+	"context"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
+	imagev1 "github.com/openshift/api/image/v1"
+	routev1 "github.com/openshift/api/route/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"testing"
-	"context"
-	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	routev1 "github.com/openshift/api/route/v1"
-	imagev1 "github.com/openshift/api/image/v1"
-
 )
 
 func TestReconcileUnifiedPushServer_Reconcile(t *testing.T) {
@@ -36,7 +35,7 @@ func TestReconcileUnifiedPushServer_Reconcile(t *testing.T) {
 
 	// Check if persistentVolumeClaim has been created
 	persistentVolumeClaim := &corev1.PersistentVolumeClaim{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name+"-postgresql", Namespace: pushServerInstance.Namespace}, persistentVolumeClaim)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-postgresql", Namespace: pushServerInstance.Namespace}, persistentVolumeClaim)
 	if err != nil {
 		t.Fatalf("get persistentVolumeClaim: (%v)", err)
 	}
@@ -50,7 +49,7 @@ func TestReconcileUnifiedPushServer_Reconcile(t *testing.T) {
 
 	// Check if service has been created
 	service := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name+"-postgresql", Namespace: pushServerInstance.Namespace}, service)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-postgresql", Namespace: pushServerInstance.Namespace}, service)
 	if err != nil {
 		t.Fatalf("get service: (%v)", err)
 	}
@@ -64,35 +63,35 @@ func TestReconcileUnifiedPushServer_Reconcile(t *testing.T) {
 
 	// Check if service has been created
 	secret := &corev1.Secret{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name+"-postgresql", Namespace: pushServerInstance.Namespace}, secret)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-postgresql", Namespace: pushServerInstance.Namespace}, secret)
 	if err != nil {
 		t.Fatalf("get secret: (%v)", err)
 	}
 
 	// Check if service has been created
 	oauthProxyService := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name+"-unifiedpush-proxy", Namespace: pushServerInstance.Namespace}, oauthProxyService)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-unifiedpush-proxy", Namespace: pushServerInstance.Namespace}, oauthProxyService)
 	if err != nil {
 		t.Fatalf("get oauthProxyService: (%v)", err)
 	}
 
 	// Check if service has been created
 	serviceOauth := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name+"-unifiedpush-proxy", Namespace: pushServerInstance.Namespace}, serviceOauth)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-unifiedpush-proxy", Namespace: pushServerInstance.Namespace}, serviceOauth)
 	if err != nil {
 		t.Fatalf("get serviceOauth: (%v)", err)
 	}
 
 	// Check if route has been created
 	serviceOauthRoute := &routev1.Route{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name+"-unifiedpush-proxy", Namespace: pushServerInstance.Namespace}, serviceOauthRoute)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-unifiedpush-proxy", Namespace: pushServerInstance.Namespace}, serviceOauthRoute)
 	if err != nil {
 		t.Fatalf("get service Oauth route: (%v)", err)
 	}
 
 	// Check if servicePush has been created
 	servicePush := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name+"-unifiedpush", Namespace: pushServerInstance.Namespace}, servicePush)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-unifiedpush", Namespace: pushServerInstance.Namespace}, servicePush)
 	if err != nil {
 		t.Fatalf("get servicePush: (%v)", err)
 	}
@@ -103,7 +102,6 @@ func TestReconcileUnifiedPushServer_Reconcile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get oauthImageStream: (%v)", err)
 	}
-
 
 	// Check if imageStream has been created
 	upsImageStream := &imagev1.ImageStream{}

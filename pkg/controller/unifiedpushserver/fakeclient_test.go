@@ -3,14 +3,13 @@ package unifiedpushserver
 import (
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
+	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
-	imagev1 "github.com/openshift/api/image/v1"
-
 )
 
 //buildReconcileWithFakeClientWithMocks return reconcile with fake client, schemes and mock objects

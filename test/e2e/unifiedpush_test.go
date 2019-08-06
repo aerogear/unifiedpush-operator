@@ -2,8 +2,6 @@ package e2e
 
 import (
 	goctx "context"
-	"testing"
-	"time"
 	apis "github.com/aerogear/unifiedpush-operator/pkg/apis"
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	dcv1 "github.com/openshift/client-go/apps/clientset/versioned/typed/apps/v1"
@@ -12,6 +10,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"testing"
+	"time"
 )
 
 var (
