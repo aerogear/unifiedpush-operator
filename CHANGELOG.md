@@ -5,7 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
-- Adding step checked to solve issue with the Service and Database in the SOP.
+
+## [0.1.1] - 2019-08-06
+### Changed
+- Made delete methods in UPS client package idempotent
+- Added step to the SOP to re-deploy UPS & PostgreSQL
 
 ## [0.1.0] - 2019-07-24
 ### Added
