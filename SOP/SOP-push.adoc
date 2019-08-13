@@ -34,34 +34,35 @@ All alerts should appears as green in the Prometheus Alert Monitoring.
 
 IMPORTANT: Before checking any of following steps see if the operator pod is running successfully. More info: link:./SOP-operator.adoc[UnifiedPushOperatorDown]
 
-TIP: You can save the logs by running `oc logs <podname> > <filename>.log`. The logs can provided to you useful information in order to identify the root cause of the issue as they are required information to be send to its maintainers in the case it need to be checked by them.
+TIP: Logs can be saved by running `oc logs <podname> > <filename>.log`. The logs can provide useful information in order to identify the root cause of the issue. They may also contain useful information which should be included when creating any issues against the project for maintainers to check.
 
 === Critical
 
 ==== UnifiedPushDown or UnifiedPushConsoleDown
 
+
 The pod which runs the https://github.com/aerogear/aerogear-unifiedpush-server[UnifiedPush Server] is down or is not present in the same namespace of the operator.
 
 . Check that the link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml[UnifiedPushServer CR] or link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR] is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`. Following the expected result.
-+
+
 [source,shell]
 ----
 $ oc get UnifiedPushServer
 NAME                        AGE
 example-unifiedpushserver   9d
 ----
-+
+
 NOTE: The UnifiedPushServer should be applied in the same namespace as the operator. The operator will not be able to manage it in another namespace.
-+
+
 . Check the environment variables of the Server
 .. Run `oc describe pods -l service=ups`
 +
 NOTE: For further information see https://github.com/aerogear/aerogear-unifiedpush-server#container-configuration.
 +
 WARNING: It will use the values mapped in the Secret created by the operator with the database pod name.
-+
+
 . Check the environment variables of the Database
-.. Run `oc get pods` and check the database pod name. Following an example of the expected result.
+.. Run `oc get pods` and check the database pod name. The following is an example of the expected result.
 +
 [source,shell]
 ----
@@ -71,8 +72,8 @@ example-unifiedpushserver-1-dk8vm              2/2       Running   2          9d
 example-unifiedpushserver-postgresql-1-bw8mt   1/1       Running   1          9d
 unifiedpush-operator-58c8877fd8-g6dvr          1/1       Running   3          9d
 ----
-+
-.. Run `oc describe pods <databasepodname>`. Following an example of the expected result.
+
+.. Run `oc describe pods <databasepodname>`. The following is an example of the expected result.
 +
 [source,shell]
 ----
@@ -145,10 +146,10 @@ Events:          <none>
 ----
 +
 NOTE: It can lead you to find the root cause of the issue faced.
-+
+
 .. Check if the database image was pulled successfully.
 . Check the logs of the UPS OAuth Proxy Container
-.. Get the service pod name -> `oc describe pods -l service=ups`. Following an example of the expected result.
+.. Get the service pod name -> `oc describe pods -l service=ups`. The following is an example of the expected result.
 +
 [source,shell]
 ----
@@ -262,7 +263,7 @@ Events:          <none>
 ----
 +
 NOTE: It can lead you to find the root cause of the issue faced.
-+
+
 .. Run `oc logs <service-podname> -c ups-oauth-proxy`. E.g `oc logs example-unifiedpushserver-1-dk8vm -c ups-oauth-proxy`
 +
 Logs should include the following:
@@ -284,7 +285,7 @@ NOTE: Capture the logs are important to provide the required information for its
 +
 .. Check if the oauth-proxy image was pulled successfully.
 . Check the logs of the UPS Container
-.. Get the service pod name -> `oc describe pods -l service=ups`. Following an example of the expected result.
+.. Get the service pod name -> `oc describe pods -l service=ups`. The following is an example of the expected result.
 +
 [source,shell]
 ----
@@ -398,11 +399,10 @@ Events:          <none>
 ----
 +
 NOTE: It can lead you to find the root cause of the issue faced.
-+
 .. Save the logs by running `oc logs <service-podname> -c ups > <filename>.log`. E.g `oc logs example-unifiedpushserver-1-dk8vm -c ups > logs.log`
 +
 NOTE: Capture the logs are important to provide the required information for its maintainers in order to allow them check it.
-+
+
 .. See and capture the `pod/example-unifiedpushserver-<xyz123> > <filename>.log` logs. E.g `oc logs example-unifiedpushserver-1-dk8vm -c ups > logs.log`
 
 .. Check if the UnifiedPush Server image was pulled successfully
@@ -417,7 +417,7 @@ example-unifiedpushserver-postgresql        Opaque                              
 +
 NOTE: The secret is required in order to provide the data required for the database pod container as user, database name and password.
 +
-. Check if the values in the secret are correct. To check them you can use `oc edit secret <postgresqlsecretname>`. E.g `oc edit secret example-unifiedpushserver-postgresql`. Following an example of the expected result.
+. Check if the values in the secret are correct. To check them you can use `oc edit secret <postgresqlsecretname>`. E.g `oc edit secret example-unifiedpushserver-postgresql`. The following is an example of the expected result.
 +
 [source,shell]
 ----
@@ -443,7 +443,7 @@ NOTE: The values described above should not be the same but should all data keys
 The pod which runs the https://github.com/aerogear/aerogear-unifiedpush-server[UnifiedPush Server]'s Database(PostgreSQL) is down or is not present in the same namespace as the operator.
 
 . Check that the link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml[UnifiedPushServer CR] or link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR] is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`. Following the expected result.
-
++
 [source,shell]
 ----
 $ oc get UnifiedPushServer
@@ -453,7 +453,7 @@ example-unifiedpushserver   9d
 +
 NOTE: The 1 UnifiedPushServer CR (link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml[UnifiedPushServer CR] or link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR]) should be applied in the same namespace as the operator.
 +
-. Check that the Database Pod is deployed in the same namespace as the operator by running `oc get pods | grep postgresql`. Following an example of the expected result.
+. Check that the Database Pod is deployed in the same namespace as the operator by running `oc get pods | grep postgresql`. The following is an example of the expected result.
 +
 [source,shell]
 ----
@@ -462,12 +462,10 @@ example-unifiedpushserver-postgresql-1-bw8mt   1/1       Running   1          9d
 ----
 +
 NOTE: It will use the values mapped in the Secret created by the operator with the database pod name.
-+
 . Check the pod logs
 .. Run `oc logs <database-podname>`
 +
 NOTE: You can save the logs by running `oc logs <database-podname> > <filename>.log`
-+
 . Check if you are able to see any useful information in the logs which can lead you for the root cause of the issue. Also, by capturing the logs you are able to provide a required information for its maintainers if it be required.
 .. Check if the Database image was pulled successfully.
 . Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
@@ -532,7 +530,7 @@ Currently, it is not possible scale the UPS Server and its Database
 
 === Installation
 
-Following the steps to ensure that all is as expected.
+Follow these steps to ensure that the installation completed as expected.
 
 . Switch to the UPS namespace by running `oc project <namespace>`. E.g `oc project unifiedpush`
 . Check that the link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml[UnifiedPushServer CR] or link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR] is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`. Following the expected result.
@@ -546,9 +544,10 @@ NAME                        AGE
 example-unifiedpushserver   9d
 ----
 +
-IMPORTANT: This CR will install and configure the Database and Service pods.
+IMPORTANT: This CR instructs the operator to install and configure the Database and the Service pods. If there is any issues with the creation of any of the following resources the logs of the operator should be checked for relevant errors.
 +
-. Check if it has at least 3 pods running which each one will be with the Database, Server and Operator by running `oc get pods`. Following an example of the expected result.
+TIP: Logs can be saved by running `oc logs <podname> > <filename>.log`. The logs can provide useful information in order to identify the root cause of the issue. They may also contain useful information which should be included when creating any issues against the project for maintainers to check.
+. Check that there are at least 3 pods running in the namspace (the Database, Server and Operator) by running `oc get pods`. The following is an example of the expected result.
 +
 [source,shell]
 ----
@@ -558,16 +557,14 @@ example-unifiedpushserver-1-dk8vm              2/2       Running   4          12
 example-unifiedpushserver-postgresql-1-bw8mt   1/1       Running   2          12d
 unifiedpush-operator-58c8877fd8-g6dvr          1/1       Running   6          12d
 ----
-+
-. Check if the secret with the Database data which will be used by the service and its database was created by running `oc get secrets | grep postgresql`.  Following an example of the expected result.
+. Check that the secret with the Database data which will be used by the service and its database was created by running `oc get secrets | grep postgresql`.  The following is an example of the expected result.
 +
 [source,shell]
 ----
 $ oc get secrets | grep postgresql
 example-unifiedpushserver-postgresql        Opaque                                6         12d
 ----
-+
-. Check if the image streams for the Service and Oauth was created with success by running `oc get imagestream`.  Following an example of the expected result.
+. Check that the image streams for the Service and Oauth was created with success by running `oc get imagestream`.  The following is an example of the expected result.
 +
 [source,shell]
 ----
@@ -576,15 +573,14 @@ NAME                          DOCKER REPO                                       
 ups-imagestream               172.30.1.1:5000/unifiedpush/ups-imagestream               latest    12 days ago
 ups-oauth-proxy-imagestream   172.30.1.1:5000/unifiedpush/ups-oauth-proxy-imagestream   latest    12 days ago
 ----
-+
-. Check if the route to expose the service public was created with success by running `oc get route | grep unifiedpush-proxy`.  Following an example of the expected result.
+. Check that the route to expose the service was created successfully by running `oc get route | grep unifiedpush-proxy`.  The following is an example of the expected result.
 +
 [source,shell]
 ----
 $ oc get route | grep unifiedpush-proxy
 example-unifiedpushserver-unifiedpush-proxy   example-unifiedpushserver-unifiedpush-proxy-unifiedpush.192.168.64.27.nip.io             example-unifiedpushserver-unifiedpush-proxy   <all>     edge/None     None
 ----
-. Check if the DeploymentConfigs to deploy the Service and Database were created with success by running `oc get deploymentconfig | grep unifiedpush`.  Following an example of the expected result.
+. Check that the DeploymentConfigs to deploy the Service and Database were created with success by running `oc get deploymentconfig | grep unifiedpush`.  The following is an example of the expected result.
 +
 [source,shell]
 ----
@@ -592,24 +588,21 @@ $ oc get deploymentconfig | grep unifiedpush
 example-unifiedpushserver              1          1         1         config,image(postgresql:postgresql:10),image(ups-imagestream:latest),image(ups-oauth-proxy-imagestream:latest)
 example-unifiedpushserver-postgresql   1          1         1         image(postgresql:10)
 ----
-+
-. Check if the Proxy Service which is required to allow the UPS Server persist data into its Database was created with success by running `oc get service | grep unifiedpush-proxy`
+. Check that the Proxy Service which is required to allow the UPS Server persist data into its Database was created with success by running `oc get service | grep unifiedpush-proxy`
 +
 [source,shell]
 ----
 $ oc get service | grep unifiedpush-proxy
 example-unifiedpushserver-unifiedpush-proxy   ClusterIP   172.30.189.9     <none>        80/TCP     12d
 ----
-+
-. Check if the  Service for the Database was created with success by running `oc get service | grep postgresql`
+. Check that the  Service for the Database was created with success by running `oc get service | grep postgresql`
 +
 [source,shell]
 ----
 $ oc get service | grep postgresql
 example-unifiedpushserver-postgresql          ClusterIP   172.30.67.199    <none>        5432/TCP   12d
 ----
-+
-. Check if the Service for the Service was created with success by running `oc get service | grep unifiedpushserver`
+. Check that the Service for the Service was created with success by running `oc get service | grep unifiedpushserver`
 +
 [source,shell]
 ----
@@ -667,19 +660,16 @@ If the https://github.com/aerogear/unifiedpush-operator#monitoring-service-metri
 
 . Switch to the UPS namespace by running `oc project <namespace>`. E.g `oc project unifiedpush`
 . Check that link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR] is deployed in the same namespace as the operator by running `oc get UnifiedPushServer`. Following the expected result.
-
++
 [source,shell]
 ----
 $ oc get UnifiedPushServer
 NAME                        AGE
 example-unifiedpushserver   9d
 ----
-
 +
 NOTE: Just one kind of UnifiedPushServer CR can be applied, however, if the backup service is enable for your installation then it means that it is using the link:./deploy/crds/push_v1alpha1_unifiedpushserver_cr_with_backup[UnifiedPushServerWithBackup CR].
-+
 
-+
 . To ensure that it is the UnifiedPushServer with the Backup see its specs by running `oc describe UnifiedPushServer`.
 .. Following an example without Backup installed.
 +
@@ -746,7 +736,6 @@ Spec:
     Schedule:                         0 0 * * *
 Events:                               <none>
 ----
-+
 . To verify that the backup has been successfully created you can run the following command in the namespace where the operator is installed.
 +
 [source,shell]
@@ -755,7 +744,6 @@ $ oc get cronjob.batch/example-ups-with-backups
 NAME                             SCHEDULE      SUSPEND   ACTIVE    LAST SCHEDULE   AGE
 example-ups-with-backups   0 * * * *   False     0         13s             12m
 ----
-+
 . To check the jobs executed you can run the command `oc get jobs` in the namespace where the operator is installed as in the following example.
 +
 [source,shell]
@@ -772,7 +760,6 @@ example-ups-with-backups-1561588680   1         0            43s
 ----
 +
 NOTE: In the above example the schedule was made to run this job each minute (`*/1 * * * *`)
-+
 . To check the logs and troubleshooting you can run the command `oc logs $podName -f` in the namespace where the operator is installed as the following example.
 +
 [source,shell]
