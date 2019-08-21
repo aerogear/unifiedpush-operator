@@ -14,7 +14,7 @@ import (
 )
 
 func newPostgresqlPersistentVolumeClaim(cr *pushv1alpha1.UnifiedPushServer) (*corev1.PersistentVolumeClaim, error) {
-	pvcSize, err := resource.ParseQuantity("1Gi")
+	pvcSize, err := resource.ParseQuantity("5Gi")
 	if err != nil {
 		return nil, errors.Wrap(err, "error parsing PostgreSQL PVC storage size")
 	}
@@ -52,16 +52,15 @@ func newPostgresqlSecret(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Secret, er
 }
 
 func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshiftappsv1.DeploymentConfig, error) {
-	memoryLimit, err := resource.ParseQuantity("512Mi")
-	if err != nil {
-		return nil, errors.Wrap(err, "error parsing PostgreSQL container memory limit size")
-	}
 
 	return &openshiftappsv1.DeploymentConfig{
 		ObjectMeta: objectMeta(cr, "postgresql"),
 		Spec: openshiftappsv1.DeploymentConfigSpec{
 			Replicas: 1,
 			Selector: labels(cr, "postgresql"),
+			Strategy: openshiftappsv1.DeploymentStrategy{
+				Type: openshiftappsv1.DeploymentStrategyTypeRecreate,
+			},
 			Triggers: openshiftappsv1.DeploymentTriggerPolicies{
 				openshiftappsv1.DeploymentTriggerPolicy{
 					Type: openshiftappsv1.DeploymentTriggerOnImageChange,
@@ -154,7 +153,11 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									corev1.ResourceMemory: memoryLimit,
+									corev1.ResourceMemory: resource.MustParse("512Mi"),
+									corev1.ResourceCPU:    resource.MustParse("1"),
+								}, Requests: corev1.ResourceList{
+									corev1.ResourceMemory: resource.MustParse("256Mi"),
+									corev1.ResourceCPU:    resource.MustParse("250m"),
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{

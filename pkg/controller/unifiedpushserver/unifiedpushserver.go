@@ -3,6 +3,8 @@ package unifiedpushserver
 import (
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	imagev1 "github.com/openshift/api/image/v1"
@@ -270,6 +272,16 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 							Image:           cfg.UPSImageStreamName + ":" + cfg.UPSImageStreamTag,
 							ImagePullPolicy: corev1.PullAlways,
 							Env:             buildEnv(cr),
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"memory": resource.MustParse("2Gi"),
+									"cpu":    resource.MustParse("1"),
+								},
+								Requests: corev1.ResourceList{
+									"memory": resource.MustParse("512Mi"),
+									"cpu":    resource.MustParse("500m"),
+								},
+							},
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          cfg.UPSContainerName,
@@ -313,6 +325,16 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 									Name:          "public",
 									Protocol:      corev1.ProtocolTCP,
 									ContainerPort: 4180,
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"memory": resource.MustParse("64Mi"),
+									"cpu":    resource.MustParse("20m"),
+								},
+								Requests: corev1.ResourceList{
+									"memory": resource.MustParse("32Mi"),
+									"cpu":    resource.MustParse("10m"),
 								},
 							},
 							Args: []string{
