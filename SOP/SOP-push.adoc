@@ -435,7 +435,7 @@ kind: Secret
 +
 NOTE: The values described above should not be the same but should all data keys shoud be present with each respective value.
 +
-. Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
+. Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.2/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
 . In order to fix it, try to deploy it again by running `oc rollout --latest dc/unifiedpush`
 
 ==== UnifiedPushDatabaseDown
@@ -468,7 +468,7 @@ NOTE: It will use the values mapped in the Secret created by the operator with t
 NOTE: You can save the logs by running `oc logs <database-podname> > <filename>.log`
 . Check if you are able to see any useful information in the logs which can lead you for the root cause of the issue. Also, by capturing the logs you are able to provide a required information for its maintainers if it be required.
 .. Check if the Database image was pulled successfully.
-. Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.0/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
+. Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.2/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
 . In order to fix it, try to deploy it again by running `oc rollout --latest dc/unifiedpush-postgresql`
 
 ==== UnifiedPushJavaHeapThresholdExceeded
