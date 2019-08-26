@@ -17,6 +17,35 @@ type UnifiedPushServerSpec struct {
 
 	// UseMessageBroker can be set to true to use managed queues, if you are using enmasse. Defaults to false.
 	UseMessageBroker bool `json:"useMessageBroker,omitempty"`
+
+	// Limit of Memory which will be available for the UnifiedPush Service container
+	UnifiedPushMemoryLimit string `json:"unifiedPushMemoryLimit,omitempty"`
+	// Limit of Memory Request which will be available for the UnifiedPush Service container
+	UnifiedPushMemoryRequest string `json:"unifiedPushMemoryRequest,omitempty"`
+	// Limit of CPU which will be available for the UnifiedPush Service container
+	UnifiedPushCpuLimit string `json:"unifiedPushCpuLimit,omitempty"`
+	// CPU resource which will be available for the UnifiedPush Service container
+	UnifiedPushCpuRequest string `json:"unifiedPushCpuRequest,omitempty"`
+
+	// Limit of Memory which will be available for the OAuth container
+	OAuthMemoryLimit string `json:"oAuthMemoryLimit,omitempty"`
+	// Limit of Memory Request which will be available for the OAuth container
+	OAuthMemoryRequest string `json:"oAuthMemoryRequest,omitempty"`
+	// Limit of CPU which will be available for the OAuth container
+	OAuthCpuLimit string `json:"oAuthCpuLimit,omitempty"`
+	// CPU resource which will be available for the OAuth container
+	OAuthCpuRequest string `json:"oAuthCpuRequest,omitempty"`
+
+	// Limit of Memory which will be available for the Postgres container
+	PostgresMemoryLimit string `json:"postgresMemoryLimit,omitempty"`
+	// Limit of Memory Request which will be available for the Postgres container
+	PostgresMemoryRequest string `json:"postgresMemoryRequest,omitempty"`
+	// Limit of CPU which will be available for the Postgres container
+	PostgresCpuLimit string `json:"postgresCpuLimit,omitempty"`
+	// CPU resource which will be available for the Postgres container
+	PostgresCpuRequest string `json:"postgresCpuRequest,omitempty"`
+	// PVC size for Postgres service
+	PostgresPVCSize string `json:"postgresPVCSize,omitempty"`
 }
 
 // UnifiedPushServerStatus defines the observed state of UnifiedPushServer

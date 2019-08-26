@@ -228,7 +228,7 @@ Here are all of the configurable fields in a UnifiedPushServer:
 
 .UnifiedPushServer fields
 |===
-|Field Name |Description
+|Field Name |Description |Default
 
 |backups
 |A list of backup entries that CronJobs will be created from. See
@@ -238,6 +238,64 @@ Here are all of the configurable fields in a UnifiedPushServer:
  backup CronJobs. See
  https://github.com/integr8ly/backup-container-image/tree/master/templates/openshift/rbac
  for an example.
+| No backups
+
+|useMessageBroker
+|Can be set to true to use managed queues, if you are using enmasse.
+|false
+
+|unifiedPushMemoryLimit
+|Limit of Memory which will be available for the UnifiedPush Service container
+|Value of `UPS_MEMORY_LIMIT` environment variable passed to operator
+
+|unifiedPushMemoryRequest
+|Limit of Memory Request which will be available for the UnifiedPush Service container
+|Value of `UPS_MEMORY_REQUEST` environment variable passed to operator
+
+|unifiedPushCpuLimit
+|Limit of CPU which will be available for the UnifiedPush Service container
+|Value of `UPS_CPU_LIMIT` environment variable passed to operator
+
+|unifiedPushCpuRequest
+|CPU resource which will be available for the UnifiedPush Service container
+|Value of `UPS_CPU_REQUEST` environment variable passed to operator
+
+|oAuthMemoryLimit
+|Limit of Memory which will be available for the OAuth container
+|Value of `OAUTH_MEMORY_LIMIT` environment variable passed to operator
+
+|oAuthMemoryRequest
+|Limit of Memory Request which will be available for the OAuth container
+|Value of `OAUTH_MEMORY_REQUEST` environment variable passed to operator
+
+|oAuthCpuLimit
+|Limit of CPU which will be available for the OAuth container
+|Value of `OAUTH_CPU_LIMIT` environment variable passed to operator
+
+|oAuthCpuRequest
+|CPU resource which will be available for the OAuth container
+|Value of `OAUTH_CPU_REQUEST` environment variable passed to operator
+
+|postgresMemoryLimit
+|Limit of Memory which will be available for the Postgres container
+|Value of `POSTGRES_MEMORY_LIMIT` environment variable passed to operator
+
+|postgresMemoryRequest
+|Limit of Memory Request which will be available for the Postgres container
+|Value of `UPS_MEMORY_LIMIT` environment variable passed to operator
+
+|postgresCpuLimit
+|Limit of CPU which will be available for the Postgres container
+|Value of `POSTGRES_CPU_LIMIT` environment variable passed to operator
+
+|postgresCpuRequest
+|CPU resource which will be available for the Postgres container
+|Value of `POSTGRES_CPU_REQUEST` environment variable passed to operator
+
+|postgresPVCSize
+|PVC size for Postgres service
+|Value of `POSTGRES_PVC_SIZE` environment variable passed to operator
+
 |===
 
 The most basic UnifiedPushServer CR doesn't specify anything in the
@@ -265,6 +323,76 @@ To see the created instance then, you can run:
 ....
 kubectl get ups example-unifiedpushserver -n unifiedpush -o yaml
 ....
+
+=== Defaults for resource sizes, limits and requests
+
+As described in the section above, it is possible to define memory, cpu and volume limits and requests in the UnifiedPushServer CR.
+
+However, operator will use some defaults that are passed to operator as environment variables, if no value is specified in the CR.
+If no environment variable is also passed to operator, operator will use some hardcoded values.
+
+Here are these variables:
+
+.Defaults for resource sizes, limits and requests
+|===
+|Variable |Default value | CR field
+
+
+|`UPS_MEMORY_LIMIT`
+|`2Gi`
+|`unifiedPushMemoryLimit`
+
+|`UPS_MEMORY_REQUEST`
+|`512Mi`
+|`unifiedPushMemoryRequest`
+
+|`UPS_CPU_LIMIT`
+|`1`
+|`unifiedPushCpuLimit`
+
+|`UPS_CPU_REQUEST`
+|`500m`
+|`unifiedPushCpuRequest`
+
+
+|`OAUTH_MEMORY_LIMIT`
+|`64Mi`
+|`oAuthMemoryLimit`
+
+|`OAUTH_MEMORY_REQUEST`
+|`32Mi`
+|`OauthMemoryRequest`
+
+|`OAUTH_CPU_LIMIT`
+|`20m`
+|`OauthCpuLimit`
+
+|`OAUTH_CPU_REQUEST`
+|`10m`
+|`OauthCpuRequest`
+
+
+|`POSTGRES_MEMORY_LIMIT`
+|`512Mi`
+|`PostgresMemoryLimit`
+
+|`POSTGRES_MEMORY_REQUEST`
+|`256Mi`
+|`PostgresMemoryRequest`
+
+|`POSTGRES_CPU_LIMIT`
+|`1`
+|`PostgresCpuLimit`
+
+|`POSTGRES_CPU_REQUEST`
+|`250m`
+|`PostgresCpuRequest`
+
+|`POSTGRES_PVC_SIZE`
+|`5Gi`
+|`PostgresPVCSize`
+
+|===
 
 === Image Streams
 

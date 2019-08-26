@@ -442,6 +442,97 @@ func schema_pkg_apis_push_v1alpha1_UnifiedPushServerSpec(ref common.ReferenceCal
 							Format:      "",
 						},
 					},
+					"unifiedPushMemoryLimit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Limit of Memory which will be available for the UnifiedPush Service container",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"unifiedPushMemoryRequest": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Limit of Memory Request which will be available for the UnifiedPush Service container",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"unifiedPushCpuLimit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Limit of CPU which will be available for the UnifiedPush Service container",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"unifiedPushCpuRequest": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CPU resource which will be available for the UnifiedPush Service container",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"oAuthMemoryLimit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Limit of Memory which will be available for the OAuth container",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"oAuthMemoryRequest": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Limit of Memory Request which will be available for the OAuth container",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"oAuthCpuLimit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Limit of CPU which will be available for the OAuth container",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"oAuthCpuRequest": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CPU resource which will be available for the OAuth container",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"postgresMemoryLimit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Limit of Memory which will be available for the Postgres container",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"postgresMemoryRequest": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Limit of Memory Request which will be available for the Postgres container",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"postgresCpuLimit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Limit of CPU which will be available for the Postgres container",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"postgresCpuRequest": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CPU resource which will be available for the Postgres container",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"postgresPVCSize": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PVC size for Postgres service",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
