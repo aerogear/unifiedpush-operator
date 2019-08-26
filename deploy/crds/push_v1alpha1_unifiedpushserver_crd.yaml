@@ -69,6 +69,52 @@ spec:
                 - backendSecretName
                 type: object
               type: array
+            oAuthCpuLimit:
+              description: Limit of CPU which will be available for the OAuth container
+              type: string
+            oAuthCpuRequest:
+              description: CPU resource which will be available for the OAuth container
+              type: string
+            oAuthMemoryLimit:
+              description: Limit of Memory which will be available for the OAuth container
+              type: string
+            oAuthMemoryRequest:
+              description: Limit of Memory Request which will be available for the
+                OAuth container
+              type: string
+            postgresCpuLimit:
+              description: Limit of CPU which will be available for the Postgres container
+              type: string
+            postgresCpuRequest:
+              description: CPU resource which will be available for the Postgres container
+              type: string
+            postgresMemoryLimit:
+              description: Limit of Memory which will be available for the Postgres
+                container
+              type: string
+            postgresMemoryRequest:
+              description: Limit of Memory Request which will be available for the
+                Postgres container
+              type: string
+            postgresPVCSize:
+              description: PVC size for Postgres service
+              type: string
+            unifiedPushCpuLimit:
+              description: Limit of CPU which will be available for the UnifiedPush
+                Service container
+              type: string
+            unifiedPushCpuRequest:
+              description: CPU resource which will be available for the UnifiedPush
+                Service container
+              type: string
+            unifiedPushMemoryLimit:
+              description: Limit of Memory which will be available for the UnifiedPush
+                Service container
+              type: string
+            unifiedPushMemoryRequest:
+              description: Limit of Memory Request which will be available for the
+                UnifiedPush Service container
+              type: string
             useMessageBroker:
               description: UseMessageBroker can be set to true to use managed queues,
                 if you are using enmasse. Defaults to false.

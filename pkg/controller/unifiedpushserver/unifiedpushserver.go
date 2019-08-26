@@ -274,12 +274,12 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 							Env:             buildEnv(cr),
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									"memory": resource.MustParse("2Gi"),
-									"cpu":    resource.MustParse("1"),
+									"memory": resource.MustParse(cr.Spec.UnifiedPushMemoryLimit),
+									"cpu":    resource.MustParse(cr.Spec.UnifiedPushCpuLimit),
 								},
 								Requests: corev1.ResourceList{
-									"memory": resource.MustParse("512Mi"),
-									"cpu":    resource.MustParse("500m"),
+									"memory": resource.MustParse(cr.Spec.UnifiedPushMemoryRequest),
+									"cpu":    resource.MustParse(cr.Spec.UnifiedPushCpuRequest),
 								},
 							},
 							Ports: []corev1.ContainerPort{
@@ -329,12 +329,12 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 							},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									"memory": resource.MustParse("64Mi"),
-									"cpu":    resource.MustParse("20m"),
+									"memory": resource.MustParse(cr.Spec.OAuthMemoryLimit),
+									"cpu":    resource.MustParse(cr.Spec.OAuthCpuLimit),
 								},
 								Requests: corev1.ResourceList{
-									"memory": resource.MustParse("32Mi"),
-									"cpu":    resource.MustParse("10m"),
+									"memory": resource.MustParse(cr.Spec.OAuthMemoryRequest),
+									"cpu":    resource.MustParse(cr.Spec.OAuthCpuRequest),
 								},
 							},
 							Args: []string{

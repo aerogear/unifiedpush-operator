@@ -1,0 +1,18 @@
+apiVersion: push.aerogear.org/v1alpha1
+kind: UnifiedPushServer
+metadata:
+  name: example-unifiedpushserver
+spec:
+  unifiedPushMemoryLimit: "3Gi"
+  unifiedPushMemoryRequest: "1Gi"
+  unifiedPushCpuLimit: "2"
+  unifiedPushCpuRequest: "1"
+  oAuthMemoryLimit: "128Mi"
+  oAuthMemoryRequest: "64Mi"
+  oAuthCpuLimit: "100m"
+  oAuthCpuRequest: "50m"
+  postgresMemoryLimit: "2Gi"
+  postgresMemoryRequest: "1Gi"
+  postgresCpuLimit: "2"
+  postgresCpuRequest: "1"
+  postgresPVCSize: "10Gi"

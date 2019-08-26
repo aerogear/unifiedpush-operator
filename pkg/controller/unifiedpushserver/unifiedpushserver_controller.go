@@ -247,6 +247,8 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 	}
 
+	applySpecDefaultValues(instance)
+
 	//#region AMQ resource reconcile
 	if instance.Spec.UseMessageBroker {
 		//#region create addressSpace
@@ -418,6 +420,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, err
 	}
 	//#endregion
+
 	//#region Postgres DeploymentConfig
 	postgresqlDeploymentConfig, err := newPostgresqlDeploymentConfig(instance)
 	if err != nil {
@@ -735,4 +738,64 @@ func containsCronJob(cronJobs []batchv1beta1.CronJob, candidate *batchv1beta1.Cr
 		}
 	}
 	return false
+}
+
+func applySpecDefaultValues(instance *pushv1alpha1.UnifiedPushServer) {
+
+	if instance.Spec.UnifiedPushMemoryLimit == "" {
+		instance.Spec.UnifiedPushMemoryLimit = cfg.UPSMemoryLimit
+	}
+
+	if instance.Spec.UnifiedPushMemoryRequest == "" {
+		instance.Spec.UnifiedPushMemoryRequest = cfg.UPSMemoryRequest
+	}
+
+	if instance.Spec.UnifiedPushCpuLimit == "" {
+		instance.Spec.UnifiedPushCpuLimit = cfg.UPSCpuLimit
+	}
+
+	if instance.Spec.UnifiedPushCpuRequest == "" {
+		instance.Spec.UnifiedPushCpuRequest = cfg.UPSCpuRequest
+	}
+
+	//
+
+	if instance.Spec.OAuthMemoryLimit == "" {
+		instance.Spec.OAuthMemoryLimit = cfg.OauthMemoryLimit
+	}
+
+	if instance.Spec.OAuthMemoryRequest == "" {
+		instance.Spec.OAuthMemoryRequest = cfg.OauthMemoryRequest
+	}
+
+	if instance.Spec.OAuthCpuLimit == "" {
+		instance.Spec.OAuthCpuLimit = cfg.OauthCpuLimit
+	}
+
+	if instance.Spec.OAuthCpuRequest == "" {
+		instance.Spec.OAuthCpuRequest = cfg.OauthCpuRequest
+	}
+
+	//
+
+	if instance.Spec.PostgresMemoryLimit == "" {
+		instance.Spec.PostgresMemoryLimit = cfg.PostgresMemoryLimit
+	}
+
+	if instance.Spec.PostgresMemoryRequest == "" {
+		instance.Spec.PostgresMemoryRequest = cfg.PostgresMemoryRequest
+	}
+
+	if instance.Spec.PostgresCpuLimit == "" {
+		instance.Spec.PostgresCpuLimit = cfg.PostgresCpuLimit
+	}
+
+	if instance.Spec.PostgresCpuRequest == "" {
+		instance.Spec.PostgresCpuRequest = cfg.PostgresCpuRequest
+	}
+
+	if instance.Spec.PostgresPVCSize == "" {
+		instance.Spec.PostgresPVCSize = cfg.PostgresPVCSize
+	}
+
 }
