@@ -60,3 +60,53 @@ unifiedpush-operator-58c8877fd8-g6dvr          1/1       Running   3          9d
 == Monitoring
 
 If the https://github.com/aerogear/unifiedpush-operator#monitoring-service-metrics[Monitoring Service (Metrics)] is enabled for the installation, a Grafana Dashboard titled `UnifiedPush Operator`, and the Prometheus Monitoring instance are created.
+
+== AMQ Integration
+
+There is a variable that is responsable for switching AMQ usage in the unifiedpushserver custom resource:
+
+```yaml
+apiVersion: push.aerogear.org/v1alpha1
+kind: UnifiedPushServer
+metadata:
+  name: unifiedpush
+spec:
+  useMessageBroker: false #set this value to true and update the cr
+```
+
+This will trigger the creation of some AMQ resources: `address`, `addressspace` and `messagingusers`.
+
+Sometimes AMQ adresses might get stuck in a `pending` state:
+
+```
+$ oc get address -n mobile-unifiedpush
+NAME                                      ADDRESS                               READY     PHASE     AGE
+ups.allbatchesloadedqueue                 AllBatchesLoadedQueue                 true      Active    25m
+ups.apnspushmessagequeue                  APNsPushMessageQueue                  false     Pending   25m
+ups.apnstokenbatchqueue                   APNsTokenBatchQueue                   false     Pending   25m
+ups.batchloadedqueue                      BatchLoadedQueue                      true      Active    25m
+ups.freeserviceslotqueue                  FreeServiceSlotQueue                  true      Active    25m
+ups.gcmpushmessagequeue                   GCMPushMessageQueue                   true      Active    25m
+ups.gcmtokenbatchqueue                    GCMTokenBatchQueue                    true      Active    25m
+ups.metricsqueue                          MetricsQueue                          true      Active    25m
+ups.triggermetriccollectionqueue          TriggerMetricCollectionQueue          true      Active    25m
+ups.triggervariantmetriccollectionqueue   TriggerVariantMetricCollectionQueue   true      Active    25m
+ups.wnspushmessagequeue                   WNSPushMessageQueue                   true      Active    25m
+ups.wnstokenbatchqueue                    WNSTokenBatchQueue                    true      Active    25m
+```
+
+UPS needs to be rolled out again once all adresses are ready:
+
+```
+oc rollout latest unifiedpush -n openshift-mobile-unifiedpush
+```
+
+The rollout status can be verified/watched by running the following command:
+
+```
+oc rollout status dc/unifiedpush -n openshift-mobile-unifiedpush
+```
+
+If an address gets stuck for some time, it should be deleted by running `oc delete address/$name -n mobile-unifiedpush` to trigger an adress recreation by the operator.
+
+NOTE: This process won't migrate messages from the internal UPS system to AMQ and results in a tiny UPS downtime (if no unexpected issues show up such as image pulling issues).
