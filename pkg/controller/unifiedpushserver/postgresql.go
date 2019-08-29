@@ -14,7 +14,7 @@ import (
 )
 
 func newPostgresqlPersistentVolumeClaim(cr *pushv1alpha1.UnifiedPushServer) (*corev1.PersistentVolumeClaim, error) {
-	pvcSize, err := resource.ParseQuantity(cr.Spec.PostgresPVCSize)
+	pvcSize, err := resource.ParseQuantity(getPostgresPVCSize(cr))
 	if err != nil {
 		return nil, errors.Wrap(err, "error parsing PostgreSQL PVC storage size")
 	}
@@ -151,15 +151,7 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									corev1.ResourceMemory: resource.MustParse(cr.Spec.PostgresMemoryLimit),
-									corev1.ResourceCPU:    resource.MustParse(cr.Spec.PostgresCpuLimit),
-								}, Requests: corev1.ResourceList{
-									corev1.ResourceMemory: resource.MustParse(cr.Spec.PostgresMemoryRequest),
-									corev1.ResourceCPU:    resource.MustParse(cr.Spec.PostgresCpuRequest),
-								},
-							},
+							Resources: getPostgresResourceRequirements(cr),
 							VolumeMounts: []corev1.VolumeMount{
 								corev1.VolumeMount{
 									Name:      fmt.Sprintf("%s-postgresql-data", cr.Name),

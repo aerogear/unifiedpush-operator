@@ -2,6 +2,8 @@ package unifiedpushserver
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"reflect"
 	"time"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
@@ -247,8 +249,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 	}
 
-	applySpecDefaultValues(instance)
-
 	//#region AMQ resource reconcile
 	if instance.Spec.UseMessageBroker {
 		//#region create addressSpace
@@ -418,6 +418,24 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 	} else if err != nil {
 		return reconcile.Result{}, err
+	} else {
+		requiredPostgresPVCSize := getPostgresPVCSize(instance)
+
+		foundPVCSize := foundPersistentVolumeClaim.Spec.Resources.Requests[corev1.ResourceStorage]
+		if foundPVCSize.String() != requiredPostgresPVCSize {
+			reqLogger.Info("Request size of PersistentVolumeClaim is different than in the UnifiedPushServer spec or the operator defaults", "PersistentVolumeClaim.Namespace", persistentVolumeClaim.Namespace, "PersistentVolumeClaim.Name", persistentVolumeClaim.Name, "Found size", foundPVCSize.String(), "Spec size", requiredPostgresPVCSize)
+
+			foundPersistentVolumeClaim.Spec.Resources.Requests[corev1.ResourceStorage] = resource.MustParse(requiredPostgresPVCSize)
+
+			// enqueue
+			err = operatorClient.Update(context.TODO(), foundPersistentVolumeClaim)
+			if err != nil {
+				reqLogger.Error(err, "Failed to update PersistentVolumeClaim", "PersistentVolumeClaim.Namespace", foundPersistentVolumeClaim.Namespace, "PersistentVolumeClaim.Name", foundPersistentVolumeClaim.Name)
+				return reconcile.Result{}, err
+			}
+			return reconcile.Result{Requeue: true}, nil
+		}
+
 	}
 	//#endregion
 
@@ -443,6 +461,28 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 	} else if err != nil {
 		return reconcile.Result{}, err
+	} else {
+		postgresResourceRequirements := getPostgresResourceRequirements(instance)
+
+		containers := foundPostgresqlDeploymentConfig.Spec.Template.Spec.Containers
+		for i := range containers {
+			if containers[i].Name == cfg.PostgresContainerName {
+				postgresContainerTemplate := containers[i]
+				if reflect.DeepEqual(postgresContainerTemplate.Resources, postgresResourceRequirements) == false {
+					reqLogger.Info("Postgres container resource requirements are different than in the UnifiedPushServer spec or the operator defaults", "DeploymentConfig.Namespace", foundPostgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", foundPostgresqlDeploymentConfig.Name, "Found resource requirements", postgresContainerTemplate.Resources, "Spec resource requirements", postgresResourceRequirements)
+
+					postgresContainerTemplate.Resources = postgresResourceRequirements
+
+					// enqueue
+					err = operatorClient.Update(context.TODO(), foundPostgresqlDeploymentConfig)
+					if err != nil {
+						reqLogger.Error(err, "Failed to update DeploymentConfig", "DeploymentConfig.Namespace", foundPostgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", foundPostgresqlDeploymentConfig.Name)
+						return reconcile.Result{}, err
+					}
+					return reconcile.Result{Requeue: true}, nil
+				}
+			}
+		}
 	}
 	//#endregion
 
@@ -664,6 +704,44 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
+	} else {
+		unifiedPushResourceRequirements := getUnifiedPushResourceRequirements(instance)
+		oauthProxyResourceRequirements := getOauthProxyResourceRequirements(instance)
+
+		containers := foundUnifiedpushDeploymentConfig.Spec.Template.Spec.Containers
+		for i := range containers {
+			if containers[i].Name == cfg.UPSContainerName {
+				unifiedPushContainerTemplate := containers[i]
+				if reflect.DeepEqual(unifiedPushContainerTemplate.Resources, unifiedPushResourceRequirements) == false {
+					reqLogger.Info("UnifiedPush container resource requirements are different than in the UnifiedPushServer spec or the operator defaults", "DeploymentConfig.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUnifiedpushDeploymentConfig.Name, "Found resource requirements", unifiedPushContainerTemplate.Resources, "Spec resource requirements", unifiedPushResourceRequirements)
+
+					unifiedPushContainerTemplate.Resources = unifiedPushResourceRequirements
+
+					// enqueue
+					err = operatorClient.Update(context.TODO(), foundUnifiedpushDeploymentConfig)
+					if err != nil {
+						reqLogger.Error(err, "Failed to update DeploymentConfig", "DeploymentConfig.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUnifiedpushDeploymentConfig.Name)
+						return reconcile.Result{}, err
+					}
+					return reconcile.Result{Requeue: true}, nil
+				}
+			} else if containers[i].Name == cfg.OauthProxyContainerName {
+				oauthProxyContainerTemplate := containers[i]
+				if reflect.DeepEqual(oauthProxyContainerTemplate.Resources, oauthProxyResourceRequirements) == false {
+					reqLogger.Info("OauthProxy container resource requirements are different than in the UnifiedPushServer spec or the operator defaults", "DeploymentConfig.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUnifiedpushDeploymentConfig.Name, "Found resource requirements", oauthProxyContainerTemplate.Resources, "Spec resource requirements", oauthProxyResourceRequirements)
+
+					oauthProxyContainerTemplate.Resources = oauthProxyResourceRequirements
+
+					// enqueue
+					err = operatorClient.Update(context.TODO(), foundUnifiedpushDeploymentConfig)
+					if err != nil {
+						reqLogger.Error(err, "Failed to update DeploymentConfig", "DeploymentConfig.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUnifiedpushDeploymentConfig.Name)
+						return reconcile.Result{}, err
+					}
+					return reconcile.Result{Requeue: true}, nil
+				}
+			}
+		}
 	}
 	//#endregion
 
@@ -731,6 +809,75 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	return reconcile.Result{}, nil
 }
 
+func getPostgresResourceRequirements(instance *pushv1alpha1.UnifiedPushServer) corev1.ResourceRequirements {
+	postgresDefaultResourceRequirements := corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			"memory": resource.MustParse(cfg.PostgresMemoryLimit),
+			"cpu":    resource.MustParse(cfg.PostgresCpuLimit),
+		},
+		Requests: corev1.ResourceList{
+			"memory": resource.MustParse(cfg.PostgresMemoryRequest),
+			"cpu":    resource.MustParse(cfg.PostgresCpuRequest),
+		},
+	}
+
+	return applyDefaultsToResourceRequirements(instance.Spec.PostgresResourceRequirements, postgresDefaultResourceRequirements)
+}
+
+func getUnifiedPushResourceRequirements(instance *pushv1alpha1.UnifiedPushServer) corev1.ResourceRequirements {
+	unifiedPushDefaultResourceRequirements := corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			"memory": resource.MustParse(cfg.UPSMemoryLimit),
+			"cpu":    resource.MustParse(cfg.UPSCpuLimit),
+		},
+		Requests: corev1.ResourceList{
+			"memory": resource.MustParse(cfg.UPSMemoryRequest),
+			"cpu":    resource.MustParse(cfg.UPSCpuRequest),
+		},
+	}
+
+	return applyDefaultsToResourceRequirements(instance.Spec.UnifiedPushResourceRequirements, unifiedPushDefaultResourceRequirements)
+}
+
+func getOauthProxyResourceRequirements(instance *pushv1alpha1.UnifiedPushServer) corev1.ResourceRequirements {
+	oauthProxyDefaultResourceRequirements := corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			"memory": resource.MustParse(cfg.OauthMemoryLimit),
+			"cpu":    resource.MustParse(cfg.OauthCpuLimit),
+		},
+		Requests: corev1.ResourceList{
+			"memory": resource.MustParse(cfg.OauthMemoryRequest),
+			"cpu":    resource.MustParse(cfg.OauthCpuRequest),
+		},
+	}
+
+	return applyDefaultsToResourceRequirements(instance.Spec.OAuthResourceRequirements, oauthProxyDefaultResourceRequirements)
+}
+
+func getPostgresPVCSize(instance *pushv1alpha1.UnifiedPushServer) string {
+	requiredPostgresPVCSize := instance.Spec.PostgresPVCSize
+	if requiredPostgresPVCSize == "" {
+		requiredPostgresPVCSize = cfg.PostgresPVCSize
+	}
+	return requiredPostgresPVCSize
+}
+
+func applyDefaultsToResourceRequirements(reqs corev1.ResourceRequirements, defs corev1.ResourceRequirements) corev1.ResourceRequirements {
+	for k, v := range defs.Requests {
+		if _, ok := reqs.Requests[k]; !ok {
+			reqs.Requests[k] = v
+		}
+	}
+
+	for k, v := range defs.Limits {
+		if _, ok := reqs.Limits[k]; !ok {
+			reqs.Limits[k] = v
+		}
+	}
+
+	return reqs
+}
+
 func containsCronJob(cronJobs []batchv1beta1.CronJob, candidate *batchv1beta1.CronJob) bool {
 	for _, cronJob := range cronJobs {
 		if candidate.Name == cronJob.Name {
@@ -738,64 +885,4 @@ func containsCronJob(cronJobs []batchv1beta1.CronJob, candidate *batchv1beta1.Cr
 		}
 	}
 	return false
-}
-
-func applySpecDefaultValues(instance *pushv1alpha1.UnifiedPushServer) {
-
-	if instance.Spec.UnifiedPushMemoryLimit == "" {
-		instance.Spec.UnifiedPushMemoryLimit = cfg.UPSMemoryLimit
-	}
-
-	if instance.Spec.UnifiedPushMemoryRequest == "" {
-		instance.Spec.UnifiedPushMemoryRequest = cfg.UPSMemoryRequest
-	}
-
-	if instance.Spec.UnifiedPushCpuLimit == "" {
-		instance.Spec.UnifiedPushCpuLimit = cfg.UPSCpuLimit
-	}
-
-	if instance.Spec.UnifiedPushCpuRequest == "" {
-		instance.Spec.UnifiedPushCpuRequest = cfg.UPSCpuRequest
-	}
-
-	//
-
-	if instance.Spec.OAuthMemoryLimit == "" {
-		instance.Spec.OAuthMemoryLimit = cfg.OauthMemoryLimit
-	}
-
-	if instance.Spec.OAuthMemoryRequest == "" {
-		instance.Spec.OAuthMemoryRequest = cfg.OauthMemoryRequest
-	}
-
-	if instance.Spec.OAuthCpuLimit == "" {
-		instance.Spec.OAuthCpuLimit = cfg.OauthCpuLimit
-	}
-
-	if instance.Spec.OAuthCpuRequest == "" {
-		instance.Spec.OAuthCpuRequest = cfg.OauthCpuRequest
-	}
-
-	//
-
-	if instance.Spec.PostgresMemoryLimit == "" {
-		instance.Spec.PostgresMemoryLimit = cfg.PostgresMemoryLimit
-	}
-
-	if instance.Spec.PostgresMemoryRequest == "" {
-		instance.Spec.PostgresMemoryRequest = cfg.PostgresMemoryRequest
-	}
-
-	if instance.Spec.PostgresCpuLimit == "" {
-		instance.Spec.PostgresCpuLimit = cfg.PostgresCpuLimit
-	}
-
-	if instance.Spec.PostgresCpuRequest == "" {
-		instance.Spec.PostgresCpuRequest = cfg.PostgresCpuRequest
-	}
-
-	if instance.Spec.PostgresPVCSize == "" {
-		instance.Spec.PostgresPVCSize = cfg.PostgresPVCSize
-	}
-
 }
