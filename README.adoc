@@ -327,62 +327,49 @@ Here are these variables:
 
 .Defaults for resource sizes, limits and requests
 |===
-|Variable |Default value | CR field
+|Variable |Default value
 
 
 |`UPS_MEMORY_LIMIT`
 |`2Gi`
-|`unifiedPushMemoryLimit`
 
 |`UPS_MEMORY_REQUEST`
 |`512Mi`
-|`unifiedPushMemoryRequest`
 
 |`UPS_CPU_LIMIT`
 |`1`
-|`unifiedPushCpuLimit`
 
 |`UPS_CPU_REQUEST`
 |`500m`
-|`unifiedPushCpuRequest`
 
 
 |`OAUTH_MEMORY_LIMIT`
 |`64Mi`
-|`oAuthMemoryLimit`
 
 |`OAUTH_MEMORY_REQUEST`
 |`32Mi`
-|`OauthMemoryRequest`
 
 |`OAUTH_CPU_LIMIT`
 |`20m`
-|`OauthCpuLimit`
 
 |`OAUTH_CPU_REQUEST`
 |`10m`
-|`OauthCpuRequest`
 
 
 |`POSTGRES_MEMORY_LIMIT`
 |`512Mi`
-|`PostgresMemoryLimit`
 
 |`POSTGRES_MEMORY_REQUEST`
 |`256Mi`
-|`PostgresMemoryRequest`
 
 |`POSTGRES_CPU_LIMIT`
 |`1`
-|`PostgresCpuLimit`
 
 |`POSTGRES_CPU_REQUEST`
 |`250m`
-|`PostgresCpuRequest`
 
 |`POSTGRES_PVC_SIZE`
 |`5Gi`
-|`PostgresPVCSize`
 
 |===
 
