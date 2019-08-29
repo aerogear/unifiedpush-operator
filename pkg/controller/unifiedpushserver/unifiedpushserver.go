@@ -3,8 +3,6 @@ package unifiedpushserver
 import (
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	imagev1 "github.com/openshift/api/image/v1"
@@ -272,16 +270,7 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 							Image:           cfg.UPSImageStreamName + ":" + cfg.UPSImageStreamTag,
 							ImagePullPolicy: corev1.PullAlways,
 							Env:             buildEnv(cr),
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"memory": resource.MustParse(cr.Spec.UnifiedPushMemoryLimit),
-									"cpu":    resource.MustParse(cr.Spec.UnifiedPushCpuLimit),
-								},
-								Requests: corev1.ResourceList{
-									"memory": resource.MustParse(cr.Spec.UnifiedPushMemoryRequest),
-									"cpu":    resource.MustParse(cr.Spec.UnifiedPushCpuRequest),
-								},
-							},
+							Resources:       getUnifiedPushResourceRequirements(cr),
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          cfg.UPSContainerName,
@@ -327,16 +316,7 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 									ContainerPort: 4180,
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"memory": resource.MustParse(cr.Spec.OAuthMemoryLimit),
-									"cpu":    resource.MustParse(cr.Spec.OAuthCpuLimit),
-								},
-								Requests: corev1.ResourceList{
-									"memory": resource.MustParse(cr.Spec.OAuthMemoryRequest),
-									"cpu":    resource.MustParse(cr.Spec.OAuthCpuRequest),
-								},
-							},
+							Resources: getOauthProxyResourceRequirements(cr),
 							Args: []string{
 								"--provider=openshift",
 								fmt.Sprintf("--openshift-service-account=%s", cr.Name),
