@@ -244,53 +244,45 @@ Here are all of the configurable fields in a UnifiedPushServer:
 |Can be set to true to use managed queues, if you are using enmasse.
 |false
 
-|unifiedPushMemoryLimit
-|Limit of Memory which will be available for the UnifiedPush Service container
-|Value of `UPS_MEMORY_LIMIT` environment variable passed to operator
+|unifiedPushResourceRequirements
+|Unified Push Service container resource requirements.
+a|
+[source,yaml]
+----
+limits:
+    memory: "<value of UPS_MEMORY_LIMIT passed to operator>"
+    cpu: "<value of UPS_CPU_LIMIT passed to operator>"
+requests:
+    memory: "<value of UPS_MEMORY_REQUEST passed to operator>"
+    cpu: "<value of UPS_CPU_REQUEST passed to operator>"
+----
 
-|unifiedPushMemoryRequest
-|Limit of Memory Request which will be available for the UnifiedPush Service container
-|Value of `UPS_MEMORY_REQUEST` environment variable passed to operator
+|oAuthResourceRequirements
+|OAuth Proxy container resource requirements.
+a|
+[source,yaml]
+----
+limits:
+    memory: "<value of OAUTH_MEMORY_LIMIT passed to operator>"
+    cpu: "<value of OAUTH_CPU_LIMIT passed to operator>"
+requests:
+    memory: "<value of OAUTH_MEMORY_REQUEST passed to operator>"
+    cpu: "<value of OAUTH_CPU_REQUEST passed to operator>"
+----
 
-|unifiedPushCpuLimit
-|Limit of CPU which will be available for the UnifiedPush Service container
-|Value of `UPS_CPU_LIMIT` environment variable passed to operator
+|postgresResourceRequirements
+|Postgres container resource requirements.
+a|
+[source,yaml]
+----
+limits:
+    memory: "<value of POSTGRES_MEMORY_LIMIT passed to operator>"
+    cpu: "<value of POSTGRES_CPU_LIMIT passed to operator>"
+requests:
+    memory: "<value of POSTGRES_MEMORY_REQUEST passed to operator>"
+    cpu: "<value of POSTGRES_CPU_REQUEST passed to operator>"
+----
 
-|unifiedPushCpuRequest
-|CPU resource which will be available for the UnifiedPush Service container
-|Value of `UPS_CPU_REQUEST` environment variable passed to operator
-
-|oAuthMemoryLimit
-|Limit of Memory which will be available for the OAuth container
-|Value of `OAUTH_MEMORY_LIMIT` environment variable passed to operator
-
-|oAuthMemoryRequest
-|Limit of Memory Request which will be available for the OAuth container
-|Value of `OAUTH_MEMORY_REQUEST` environment variable passed to operator
-
-|oAuthCpuLimit
-|Limit of CPU which will be available for the OAuth container
-|Value of `OAUTH_CPU_LIMIT` environment variable passed to operator
-
-|oAuthCpuRequest
-|CPU resource which will be available for the OAuth container
-|Value of `OAUTH_CPU_REQUEST` environment variable passed to operator
-
-|postgresMemoryLimit
-|Limit of Memory which will be available for the Postgres container
-|Value of `POSTGRES_MEMORY_LIMIT` environment variable passed to operator
-
-|postgresMemoryRequest
-|Limit of Memory Request which will be available for the Postgres container
-|Value of `UPS_MEMORY_LIMIT` environment variable passed to operator
-
-|postgresCpuLimit
-|Limit of CPU which will be available for the Postgres container
-|Value of `POSTGRES_CPU_LIMIT` environment variable passed to operator
-
-|postgresCpuRequest
-|CPU resource which will be available for the Postgres container
-|Value of `POSTGRES_CPU_REQUEST` environment variable passed to operator
 
 |postgresPVCSize
 |PVC size for Postgres service
