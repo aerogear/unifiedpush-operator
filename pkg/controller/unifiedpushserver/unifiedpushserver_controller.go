@@ -467,11 +467,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		containers := foundPostgresqlDeploymentConfig.Spec.Template.Spec.Containers
 		for i := range containers {
 			if containers[i].Name == cfg.PostgresContainerName {
-				postgresContainerTemplate := containers[i]
-				if reflect.DeepEqual(postgresContainerTemplate.Resources, postgresResourceRequirements) == false {
-					reqLogger.Info("Postgres container resource requirements are different than in the UnifiedPushServer spec or the operator defaults", "DeploymentConfig.Namespace", foundPostgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", foundPostgresqlDeploymentConfig.Name, "Found resource requirements", postgresContainerTemplate.Resources, "Spec resource requirements", postgresResourceRequirements)
+				if reflect.DeepEqual(containers[i].Resources, postgresResourceRequirements) == false {
+					reqLogger.Info("Postgres container resource requirements are different than in the UnifiedPushServer spec or the operator defaults", "DeploymentConfig.Namespace", foundPostgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", foundPostgresqlDeploymentConfig.Name, "Found resource requirements", containers[i].Resources, "Spec resource requirements", postgresResourceRequirements)
 
-					postgresContainerTemplate.Resources = postgresResourceRequirements
+					containers[i].Resources = postgresResourceRequirements
 
 					// enqueue
 					err = operatorClient.Update(context.TODO(), foundPostgresqlDeploymentConfig)
@@ -711,11 +710,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		containers := foundUnifiedpushDeploymentConfig.Spec.Template.Spec.Containers
 		for i := range containers {
 			if containers[i].Name == cfg.UPSContainerName {
-				unifiedPushContainerTemplate := containers[i]
-				if reflect.DeepEqual(unifiedPushContainerTemplate.Resources, unifiedPushResourceRequirements) == false {
-					reqLogger.Info("UnifiedPush container resource requirements are different than in the UnifiedPushServer spec or the operator defaults", "DeploymentConfig.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUnifiedpushDeploymentConfig.Name, "Found resource requirements", unifiedPushContainerTemplate.Resources, "Spec resource requirements", unifiedPushResourceRequirements)
+				if reflect.DeepEqual(containers[i].Resources, unifiedPushResourceRequirements) == false {
+					reqLogger.Info("UnifiedPush container resource requirements are different than in the UnifiedPushServer spec or the operator defaults", "DeploymentConfig.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUnifiedpushDeploymentConfig.Name, "Found resource requirements", containers[i].Resources, "Spec resource requirements", unifiedPushResourceRequirements)
 
-					unifiedPushContainerTemplate.Resources = unifiedPushResourceRequirements
+					containers[i].Resources = unifiedPushResourceRequirements
 
 					// enqueue
 					err = operatorClient.Update(context.TODO(), foundUnifiedpushDeploymentConfig)
@@ -726,11 +724,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 					return reconcile.Result{Requeue: true}, nil
 				}
 			} else if containers[i].Name == cfg.OauthProxyContainerName {
-				oauthProxyContainerTemplate := containers[i]
-				if reflect.DeepEqual(oauthProxyContainerTemplate.Resources, oauthProxyResourceRequirements) == false {
-					reqLogger.Info("OauthProxy container resource requirements are different than in the UnifiedPushServer spec or the operator defaults", "DeploymentConfig.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUnifiedpushDeploymentConfig.Name, "Found resource requirements", oauthProxyContainerTemplate.Resources, "Spec resource requirements", oauthProxyResourceRequirements)
+				if reflect.DeepEqual(containers[i].Resources, oauthProxyResourceRequirements) == false {
+					reqLogger.Info("OauthProxy container resource requirements are different than in the UnifiedPushServer spec or the operator defaults", "DeploymentConfig.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUnifiedpushDeploymentConfig.Name, "Found resource requirements", containers[i].Resources, "Spec resource requirements", oauthProxyResourceRequirements)
 
-					oauthProxyContainerTemplate.Resources = oauthProxyResourceRequirements
+					containers[i].Resources = oauthProxyResourceRequirements
 
 					// enqueue
 					err = operatorClient.Update(context.TODO(), foundUnifiedpushDeploymentConfig)
@@ -863,6 +860,14 @@ func getPostgresPVCSize(instance *pushv1alpha1.UnifiedPushServer) string {
 }
 
 func applyDefaultsToResourceRequirements(reqs corev1.ResourceRequirements, defs corev1.ResourceRequirements) corev1.ResourceRequirements {
+	if reqs.Requests == nil {
+		reqs.Requests = make(map[corev1.ResourceName]resource.Quantity)
+	}
+
+	if reqs.Limits == nil {
+		reqs.Limits = make(map[corev1.ResourceName]resource.Quantity)
+	}
+
 	for k, v := range defs.Requests {
 		if _, ok := reqs.Requests[k]; !ok {
 			reqs.Requests[k] = v
