@@ -8,9 +8,7 @@ import (
 	"github.com/aerogear/unifiedpush-operator/pkg/controller/util"
 	"github.com/aerogear/unifiedpush-operator/pkg/nspredicate"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -126,55 +124,51 @@ func (r *ReconcileIOSVariant) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	if foundVariant != "" {
-		// we don't do a full reconciliation (update push app on UPS server based on CR content) but we
-		// only do initial creation of push apps.
-		reqLogger.Info("Skip reconcile: IOS Variant already exists in UPS", "IOSVaraint.Name", instance.Name)
-		return reconcile.Result{}, nil
+	if foundVariant.VariantId == "" {
+
+		createdVariant, err := unifiedpushClient.CreateIOSVariant(instance)
+		if err != nil {
+			reqLogger.Error(err, "Error creating iOS variant in UPS.", "IOSVariant.Name", instance.Name)
+			return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+		}
+
+		if instance.ObjectMeta.Annotations == nil {
+			instance.ObjectMeta.Annotations = make(map[string]string)
+		}
+		instance.ObjectMeta.Annotations["variantId"] = createdVariant.VariantId
+		err = r.client.Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		reqLogger.Info("iOS Variant created", "Name", instance.Name, "VariantId", createdVariant.VariantId)
+		return reconcile.Result{Requeue: true}, nil
 	}
 
-	variantId, secret, err := unifiedpushClient.CreateIOSVariant(instance)
-	if err != nil {
-		reqLogger.Error(err, "Error creating iOS variant in UPS.", "IOSVaraint.Name", instance.Name)
-		return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+	if instance.ObjectMeta.Annotations["variantId"] != foundVariant.VariantId {
+		instance.ObjectMeta.Annotations["variantId"] = foundVariant.VariantId
+		err = r.client.Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
-	instance.Status.VariantId = variantId
-	instance.Status.Secret = secret
-	instance.Status.Ready = true
-	err = r.client.Status().Update(context.TODO(), instance)
-	if err != nil {
-		reqLogger.Error(err, "Error updating IOSVariant status", "IOSVariant.Name", instance.Name)
-		return reconcile.Result{}, err
+	// If either of these have diverged, fix both, so there's just a single status update
+	if instance.Status.VariantId != foundVariant.VariantId || instance.Status.Secret != foundVariant.Secret || instance.Status.Ready != true {
+		instance.Status.VariantId = foundVariant.VariantId
+		instance.Status.Secret = foundVariant.Secret
+		instance.Status.Ready = true
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			reqLogger.Error(err, "Error updating IOSVariant status", "Name", instance.Name)
+			return reconcile.Result{}, err
+		}
 	}
 
 	if err := util.AddFinalizer(r.client, reqLogger, instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("IOS Variant created", "IOSVariant.Name", instance.Name)
+	reqLogger.Info("IOS Variant reconciled", "Name", instance.Name, "VariantId", foundVariant.VariantId)
 	return reconcile.Result{}, nil
-}
-
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *pushv1alpha1.IOSVariant) *corev1.Pod {
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
-				},
-			},
-		},
-	}
 }

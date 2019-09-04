@@ -25,7 +25,7 @@ type variant struct {
 
 // androidVariant is an internal struct used for convenient JSON
 // unmarshalling of the response received from UPS
-type androidVariant struct {
+type AndroidVariant struct {
 	ProjectNumber string
 	GoogleKey     string
 	variant
@@ -33,16 +33,16 @@ type androidVariant struct {
 
 // iOSVariant is an internal struct used for convenient JSON
 // unmarshalling of the response received from UPS
-type iOSVariant struct {
+type IOSVariant struct {
 	Certificate []byte
 	Passphrase  string
 	Production  bool
 	variant
 }
 
-// pushApplication is an internal struct used for convenient JSON
-// unmarshalling of the response received from UPS
-type pushApplication struct {
+// pushApplication is used for convenient JSON unmarshalling of the
+// response received from UPS
+type PushApplication struct {
 	PushApplicationId string
 	MasterSecret      string
 }
@@ -54,30 +54,37 @@ type UnifiedpushClient struct {
 }
 
 // GetApplication does a GET for a given PushApplication based on the PushApplicationId
-func (c UnifiedpushClient) GetApplication(p *pushv1alpha1.PushApplication) (string, error) {
-	if p.Status.PushApplicationId == "" {
-		// We haven't created it yet
-		return "", nil
+func (c UnifiedpushClient) GetApplication(p *pushv1alpha1.PushApplication) (PushApplication, error) {
+	id := ""
+	if p.ObjectMeta.Annotations["pushApplicationId"] != "" {
+		id = p.ObjectMeta.Annotations["pushApplicationId"]
+	} else if p.Status.PushApplicationId != "" {
+		id = p.Status.PushApplicationId
 	}
 
-	url := fmt.Sprintf("%s/rest/applications/%s", c.Url, p.Status.PushApplicationId)
+	if id == "" {
+		// We haven't created it yet
+		return PushApplication{}, nil
+	}
+
+	url := fmt.Sprintf("%s/rest/applications/%s", c.Url, id)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	resp, err := doUPSRequest(req)
 	if err != nil {
-		return "", err
+		return PushApplication{}, err
 	}
 	defer resp.Body.Close()
 
-	var foundApplication pushApplication
+	var foundApplication PushApplication
 	b, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(b, &foundApplication)
 	fmt.Printf("Found app: %v\n", foundApplication)
 
-	return foundApplication.PushApplicationId, nil
+	return foundApplication, nil
 }
 
 // CreateApplication creates an application in UPS
-func (c UnifiedpushClient) CreateApplication(p *pushv1alpha1.PushApplication) (string, string, error) {
+func (c UnifiedpushClient) CreateApplication(p *pushv1alpha1.PushApplication) (PushApplication, error) {
 	url := fmt.Sprintf("%s/rest/applications/", c.Url)
 
 	params := map[string]string{
@@ -87,7 +94,7 @@ func (c UnifiedpushClient) CreateApplication(p *pushv1alpha1.PushApplication) (s
 
 	payload, err := json.Marshal(params)
 	if err != nil {
-		return "", "", errors.Wrap(err, "Failed to marshal push application params to json")
+		return PushApplication{}, errors.Wrap(err, "Failed to marshal push application params to json")
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
@@ -96,28 +103,28 @@ func (c UnifiedpushClient) CreateApplication(p *pushv1alpha1.PushApplication) (s
 
 	resp, err := doUPSRequest(req)
 	if err != nil {
-		return "", "", err
+		return PushApplication{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 201 {
-		return "", "", errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
+		return PushApplication{}, errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
 	}
 
-	var createdApplication pushApplication
+	var createdApplication PushApplication
 	b, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(b, &createdApplication)
 
-	return createdApplication.PushApplicationId, createdApplication.MasterSecret, nil
+	return createdApplication, nil
 }
 
 // DeleteApplication deletes a PushApplication in UPS
 func (c UnifiedpushClient) DeleteApplication(p *pushv1alpha1.PushApplication) error {
-	if p.Status.PushApplicationId == "" {
+	if p.ObjectMeta.Annotations["pushApplicationId"] == "" {
 		return errors.New("No PushApplicationId set in the PushApplication status")
 	}
 
-	url := fmt.Sprintf("%s/rest/applications/%s", c.Url, p.Status.PushApplicationId)
+	url := fmt.Sprintf("%s/rest/applications/%s", c.Url, p.ObjectMeta.Annotations["pushApplicationId"])
 
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	resp, err := doUPSRequest(req)
@@ -134,32 +141,38 @@ func (c UnifiedpushClient) DeleteApplication(p *pushv1alpha1.PushApplication) er
 }
 
 // GetAndroidVariant does a GET for a given Variant based on the VariantId
-func (c UnifiedpushClient) GetAndroidVariant(v *pushv1alpha1.AndroidVariant) (string, error) {
-	if v.Status.VariantId == "" {
-		// We haven't created it yet
-		return "", nil
+func (c UnifiedpushClient) GetAndroidVariant(v *pushv1alpha1.AndroidVariant) (AndroidVariant, error) {
+	id := ""
+	if v.ObjectMeta.Annotations["variantId"] != "" {
+		id = v.ObjectMeta.Annotations["variantId"]
+	} else if v.Status.VariantId != "" {
+		id = v.Status.VariantId
 	}
 
-	url := fmt.Sprintf("%s/rest/applications/%s/android/%s", c.Url, v.Spec.PushApplicationId, v.Status.VariantId)
+	if id == "" {
+		// We haven't created it yet
+		return AndroidVariant{}, nil
+	}
+
+	url := fmt.Sprintf("%s/rest/applications/%s/android/%s", c.Url, v.Spec.PushApplicationId, id)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	resp, err := doUPSRequest(req)
 	if err != nil {
-		return "", err
+		return AndroidVariant{}, err
 	}
 	defer resp.Body.Close()
 
-	var foundVariant androidVariant
+	var foundVariant AndroidVariant
 	b, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(b, &foundVariant)
 	fmt.Printf("Found app: %v\n", foundVariant)
 
-	// TODO: maybe now it's time to start using the "API types"
-	return foundVariant.VariantId, nil
+	return foundVariant, nil
 }
 
 // CreateAndroidVariant creates a Variant on an Application in UPS
-func (c UnifiedpushClient) CreateAndroidVariant(v *pushv1alpha1.AndroidVariant) (string, string, error) {
+func (c UnifiedpushClient) CreateAndroidVariant(v *pushv1alpha1.AndroidVariant) (AndroidVariant, error) {
 	url := fmt.Sprintf("%s/rest/applications/%s/android", c.Url, v.Spec.PushApplicationId)
 
 	params := map[string]string{
@@ -171,7 +184,7 @@ func (c UnifiedpushClient) CreateAndroidVariant(v *pushv1alpha1.AndroidVariant) 
 
 	payload, err := json.Marshal(params)
 	if err != nil {
-		return "", "", errors.Wrap(err, "Failed to marshal android variant params to json")
+		return AndroidVariant{}, errors.Wrap(err, "Failed to marshal android variant params to json")
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
@@ -180,29 +193,29 @@ func (c UnifiedpushClient) CreateAndroidVariant(v *pushv1alpha1.AndroidVariant) 
 
 	resp, err := doUPSRequest(req)
 	if err != nil {
-		return "", "", err
+		return AndroidVariant{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 201 {
-		return "", "", errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
+		return AndroidVariant{}, errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
 	}
 
-	var createdVariant androidVariant
+	var createdVariant AndroidVariant
 	b, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(b, &createdVariant)
 
-	return createdVariant.VariantId, createdVariant.Secret, nil
+	return createdVariant, nil
 }
 
 // DeleteAndroidVariant deletes an Android variant in UPS
 func (c UnifiedpushClient) DeleteAndroidVariant(v *pushv1alpha1.AndroidVariant) error {
-	if v.Status.VariantId == "" {
+	if v.ObjectMeta.Annotations["variantId"] == "" {
 		// We haven't created it yet
 		return nil
 	}
 
-	url := fmt.Sprintf("%s/rest/applications/%s/android/%s", c.Url, v.Spec.PushApplicationId, v.Status.VariantId)
+	url := fmt.Sprintf("%s/rest/applications/%s/android/%s", c.Url, v.Spec.PushApplicationId, v.ObjectMeta.Annotations["variantId"])
 
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	resp, err := doUPSRequest(req)
@@ -218,32 +231,38 @@ func (c UnifiedpushClient) DeleteAndroidVariant(v *pushv1alpha1.AndroidVariant) 
 }
 
 // GetIOSVariant does a GET for a given iOS Variant based on the VariantId
-func (c UnifiedpushClient) GetIOSVariant(v *pushv1alpha1.IOSVariant) (string, error) {
-	if v.Status.VariantId == "" {
-		// We haven't created it yet
-		return "", nil
+func (c UnifiedpushClient) GetIOSVariant(v *pushv1alpha1.IOSVariant) (IOSVariant, error) {
+	id := ""
+	if v.ObjectMeta.Annotations["variantId"] != "" {
+		id = v.ObjectMeta.Annotations["variantId"]
+	} else if v.Status.VariantId != "" {
+		id = v.Status.VariantId
 	}
 
-	url := fmt.Sprintf("%s/rest/applications/%s/ios/%s", c.Url, v.Spec.PushApplicationId, v.Status.VariantId)
+	if id == "" {
+		// We haven't created it yet
+		return IOSVariant{}, nil
+	}
+
+	url := fmt.Sprintf("%s/rest/applications/%s/ios/%s", c.Url, v.Spec.PushApplicationId, id)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	resp, err := doUPSRequest(req)
 	if err != nil {
-		return "", err
+		return IOSVariant{}, err
 	}
 	defer resp.Body.Close()
 
-	var foundVariant iOSVariant
+	var foundVariant IOSVariant
 	b, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(b, &foundVariant)
 	fmt.Printf("Found app: %v\n", foundVariant)
 
-	// TODO: maybe now it's time to start using the "API types"
-	return foundVariant.VariantId, nil
+	return foundVariant, nil
 }
 
 // CreateIOSVariant creates a Variant on an Application in UPS
-func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (string, string, error) {
+func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (IOSVariant, error) {
 	url := fmt.Sprintf("%s/rest/applications/%s/ios", c.Url, v.Spec.PushApplicationId)
 
 	params := map[string]string{
@@ -256,7 +275,7 @@ func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (string,
 	// We need to decode it before sending
 	decodedString, err := base64.StdEncoding.DecodeString(string(v.Spec.Certificate))
 	if err != nil {
-		return "", "", errors.Wrap(err, "Invalid cert - Please check this cert is in base64 encoded format: ")
+		return IOSVariant{}, errors.Wrap(err, "Invalid cert - Please check this cert is in base64 encoded format: ")
 	}
 
 	body := new(bytes.Buffer)
@@ -265,7 +284,7 @@ func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (string,
 
 	part, err := writer.CreateFormFile("certificate", "certificate")
 	if err != nil {
-		return "", "", errors.Wrap(err, "Failed to create form for UPS iOS variant request")
+		return IOSVariant{}, errors.Wrap(err, "Failed to create form for UPS iOS variant request")
 	}
 	part.Write(decodedString)
 
@@ -279,29 +298,29 @@ func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (string,
 
 	resp, err := doUPSRequest(req)
 	if err != nil {
-		return "", "", err
+		return IOSVariant{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 201 {
-		return "", "", errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
+		return IOSVariant{}, errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
 	}
 
-	var createdVariant iOSVariant
+	var createdVariant IOSVariant
 	b, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(b, &createdVariant)
 
-	return createdVariant.VariantId, createdVariant.Secret, nil
+	return createdVariant, nil
 }
 
 // DeleteIOSVariant deletes an IOS variant in UPS
 func (c UnifiedpushClient) DeleteIOSVariant(v *pushv1alpha1.IOSVariant) error {
-	if v.Status.VariantId == "" {
+	if v.ObjectMeta.Annotations["variantId"] == "" {
 		// We haven't created it yet
 		return nil
 	}
 
-	url := fmt.Sprintf("%s/rest/applications/%s/ios/%s", c.Url, v.Spec.PushApplicationId, v.Status.VariantId)
+	url := fmt.Sprintf("%s/rest/applications/%s/ios/%s", c.Url, v.Spec.PushApplicationId, v.ObjectMeta.Annotations["variantId"])
 
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	resp, err := doUPSRequest(req)
