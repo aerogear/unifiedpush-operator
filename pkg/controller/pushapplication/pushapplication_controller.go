@@ -122,32 +122,52 @@ func (r *ReconcilePushApplication) Reconcile(request reconcile.Request) (reconci
 		return reconcile.Result{}, err
 	}
 
-	if foundApp != "" {
-		// we don't do a full reconciliation (update push app on UPS server based on CR content) but we
-		// only do initial creation of push apps.
-		reqLogger.Info("Skip reconcile: Push app on UPS already exists", "PushApp.Name", instance.Name)
-		return reconcile.Result{}, nil
+	if foundApp.PushApplicationId == "" { // doesn't exist yet
+		createdApp, err := unifiedpushClient.CreateApplication(instance)
+		if err != nil {
+			reqLogger.Error(err, "Error creating push application.", "PushApp.Name", instance.Name)
+			return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+		}
+
+		if instance.ObjectMeta.Annotations == nil {
+			instance.ObjectMeta.Annotations = make(map[string]string)
+		}
+		instance.ObjectMeta.Annotations["pushApplicationId"] = createdApp.PushApplicationId
+		err = r.client.Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		reqLogger.Info("PushApplication created", "Name", instance.Name, "PushApplicationId", createdApp.PushApplicationId)
+		return reconcile.Result{Requeue: true}, nil
 	}
 
-	appId, secret, err := unifiedpushClient.CreateApplication(instance)
-	if err != nil {
-		reqLogger.Error(err, "Error creating push application.", "PushApp.Name", instance.Name)
-		return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+	if instance.ObjectMeta.Annotations["pushApplicationId"] != foundApp.PushApplicationId {
+		instance.ObjectMeta.Annotations["pushApplicationId"] = foundApp.PushApplicationId
+		err = r.client.Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
-	instance.Status.MasterSecret = secret
-	instance.Status.PushApplicationId = appId
+	// If either of these have diverged, fix both, so there's just a single status update
+	if instance.Status.MasterSecret != foundApp.MasterSecret || instance.Status.PushApplicationId != foundApp.PushApplicationId {
 
-	err = r.client.Status().Update(context.TODO(), instance)
-	if err != nil {
-		reqLogger.Error(err, "Error updating PushApplication status", "PushApp.Name", instance.Name)
-		return reconcile.Result{}, err
+		instance.Status.MasterSecret = foundApp.MasterSecret
+		instance.Status.PushApplicationId = foundApp.PushApplicationId
+
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			reqLogger.Error(err, "Error updating PushApplication status", "PushApp.Name", instance.Name)
+			return reconcile.Result{}, err
+		}
+
 	}
 
 	if err := util.AddFinalizer(r.client, reqLogger, instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("Push app created", "PushApp.Name", instance.Name, "PushApp.Id", appId, "PushApp.MasterSecret", secret)
+	reqLogger.Info("PushApplication reconciled", "Name", instance.Name, "PushApplicationId", foundApp.PushApplicationId)
 	return reconcile.Result{}, nil
 }

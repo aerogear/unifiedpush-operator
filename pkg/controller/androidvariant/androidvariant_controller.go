@@ -124,32 +124,51 @@ func (r *ReconcileAndroidVariant) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	if foundVariant != "" {
-		// we don't do a full reconciliation (update push app on UPS server based on CR content) but we
-		// only do initial creation of push apps.
-		reqLogger.Info("Skip reconcile: Android Variant already exists in UPS", "AndroidVaraint.Name", instance.Name)
-		return reconcile.Result{}, nil
+	if foundVariant.VariantId == "" {
+		createdVariant, err := unifiedpushClient.CreateAndroidVariant(instance)
+		if err != nil {
+			reqLogger.Error(err, "Error creating Android variant in UPS.", "AndroidVariant.Name", instance.Name)
+			return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+		}
+
+		if instance.ObjectMeta.Annotations == nil {
+			instance.ObjectMeta.Annotations = make(map[string]string)
+		}
+		instance.ObjectMeta.Annotations["variantId"] = createdVariant.VariantId
+		err = r.client.Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		reqLogger.Info("Android Variant created", "Name", instance.Name, "VariantId", createdVariant.VariantId)
+		return reconcile.Result{Requeue: true}, nil
+
 	}
 
-	variantId, secret, err := unifiedpushClient.CreateAndroidVariant(instance)
-	if err != nil {
-		reqLogger.Error(err, "Error creating Android variant in UPS.", "AndroidVaraint.Name", instance.Name)
-		return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+	if instance.ObjectMeta.Annotations["variantId"] != foundVariant.VariantId {
+		instance.ObjectMeta.Annotations["variantId"] = foundVariant.VariantId
+		err = r.client.Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
-	instance.Status.VariantId = variantId
-	instance.Status.Secret = secret
-	instance.Status.Ready = true
-	err = r.client.Status().Update(context.TODO(), instance)
-	if err != nil {
-		reqLogger.Error(err, "Error updating AndroidVariant status", "AndroidVariant.Name", instance.Name)
-		return reconcile.Result{}, err
+	// If either of these have diverged, fix both, so there's just a single status update
+	if instance.Status.VariantId != foundVariant.VariantId || instance.Status.Secret != foundVariant.Secret || instance.Status.Ready != true {
+		instance.Status.VariantId = foundVariant.VariantId
+		instance.Status.Secret = foundVariant.Secret
+		instance.Status.Ready = true
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			reqLogger.Error(err, "Error updating AndroidVariant status", "Name", instance.Name)
+			return reconcile.Result{}, err
+		}
 	}
 
 	if err := util.AddFinalizer(r.client, reqLogger, instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("Android Variant created", "AndroidVariant.Name", instance.Name)
+	reqLogger.Info("Android Variant reconciled", "Name", instance.Name, "VariantId", foundVariant.VariantId)
 	return reconcile.Result{}, nil
 }
