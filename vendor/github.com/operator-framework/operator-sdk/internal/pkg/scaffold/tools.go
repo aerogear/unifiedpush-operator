@@ -1,4 +1,4 @@
-// Copyright 2018 The Operator-SDK Authors
+// Copyright 2019 The Operator-SDK Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,31 +15,28 @@
 package scaffold
 
 import (
-	"path/filepath"
-
 	"github.com/operator-framework/operator-sdk/internal/pkg/scaffold/input"
 )
 
-const (
-	VersionDir  = "version"
-	VersionFile = "version.go"
-)
+const ToolsFile = "tools.go"
 
-type Version struct {
+type Tools struct {
 	input.Input
 }
 
-func (s *Version) GetInput() (input.Input, error) {
+func (s *Tools) GetInput() (input.Input, error) {
 	if s.Path == "" {
-		s.Path = filepath.Join(VersionDir, VersionFile)
+		s.Path = ToolsFile
 	}
-	s.TemplateBody = versionTemplate
+	s.TemplateBody = toolsTmpl
 	return s.Input, nil
 }
 
-const versionTemplate = `package version
+const toolsTmpl = `// +build tools
 
-var (
-	Version = "0.0.1"
+package tools
+
+import (
+	_ "sigs.k8s.io/controller-tools/pkg/crd/generator"
 )
 `

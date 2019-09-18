@@ -1,4 +1,4 @@
-// Copyright 2018 The Operator-SDK Authors
+// Copyright 2019 The Operator-SDK Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,31 +15,38 @@
 package scaffold
 
 import (
+	"io/ioutil"
 	"path/filepath"
 
 	"github.com/operator-framework/operator-sdk/internal/pkg/scaffold/input"
+
+	"github.com/spf13/afero"
 )
 
 const (
-	VersionDir  = "version"
-	VersionFile = "version.go"
+	BoilerplateFile = "boilerplate.go.txt"
+	HackDir         = "hack"
 )
 
-type Version struct {
+type Boilerplate struct {
 	input.Input
+
+	// BoilerplateSrcPath is the path to a file containing boilerplate text for
+	// generated Go files.
+	BoilerplateSrcPath string
 }
 
-func (s *Version) GetInput() (input.Input, error) {
+func (s *Boilerplate) GetInput() (input.Input, error) {
 	if s.Path == "" {
-		s.Path = filepath.Join(VersionDir, VersionFile)
+		s.Path = filepath.Join(HackDir, BoilerplateFile)
 	}
-	s.TemplateBody = versionTemplate
 	return s.Input, nil
 }
 
-const versionTemplate = `package version
+var _ CustomRenderer = &Boilerplate{}
 
-var (
-	Version = "0.0.1"
-)
-`
+func (s *Boilerplate) SetFS(_ afero.Fs) {}
+
+func (s *Boilerplate) CustomRender() ([]byte, error) {
+	return ioutil.ReadFile(s.BoilerplateSrcPath)
+}
