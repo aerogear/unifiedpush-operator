@@ -456,7 +456,7 @@
   version = "v3.9.0"
 
 [[projects]]
-  digest = "1:52aeeaa3646068c1d6e05befab6d182f1b04edfcc4ce3eb7779ea1a937b3fb5f"
+  digest = "1:d44846c5cd1892bb48f78d1dbff0921e9f25014d61700ccf8d8ab3422928a54e"
   name = "github.com/operator-framework/operator-sdk"
   packages = [
     "internal/pkg/scaffold",
@@ -467,9 +467,11 @@
     "internal/util/projutil",
     "internal/util/yamlutil",
     "pkg/k8sutil",
+    "pkg/kube-metrics",
     "pkg/leader",
     "pkg/log/zap",
     "pkg/metrics",
+    "pkg/restmapper",
     "pkg/test",
     "pkg/test/e2eutil",
     "version",
@@ -1079,6 +1081,18 @@
   revision = "c59034cc13d587f5ef4e85ca0ade0c1866ae8e1d"
 
 [[projects]]
+  digest = "1:584e35289f5869d56bea9469d4de6f96758a3276125bb3e7b2c41bd65cb5a226"
+  name = "k8s.io/kube-state-metrics"
+  packages = [
+    "pkg/collector",
+    "pkg/metric",
+    "pkg/metrics_store",
+  ]
+  pruneopts = "NUT"
+  revision = "de19ed4f12d471fccc79f9a9fee73f7c107ecd33"
+  version = "v1.6.0"
+
+[[projects]]
   digest = "1:f467a1933d5cbafd32eb126229e4629a099f4852e26b4be25db96f8f03b4101f"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
@@ -1154,9 +1168,11 @@
     "github.com/openshift/api/route/v1",
     "github.com/openshift/client-go/apps/clientset/versioned/typed/apps/v1",
     "github.com/operator-framework/operator-sdk/pkg/k8sutil",
+    "github.com/operator-framework/operator-sdk/pkg/kube-metrics",
     "github.com/operator-framework/operator-sdk/pkg/leader",
     "github.com/operator-framework/operator-sdk/pkg/log/zap",
     "github.com/operator-framework/operator-sdk/pkg/metrics",
+    "github.com/operator-framework/operator-sdk/pkg/restmapper",
     "github.com/operator-framework/operator-sdk/pkg/test",
     "github.com/operator-framework/operator-sdk/pkg/test/e2eutil",
     "github.com/operator-framework/operator-sdk/version",
