@@ -21,6 +21,8 @@ import (
 	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
 	messaginguserv1beta "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1"
 
+	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	monclientv1 "github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
@@ -31,6 +33,7 @@ import (
 	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -149,6 +152,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	operatorNamespace, err := k8sutil.GetOperatorNamespace()
+	if err != nil {
+		log.Error(err, "")
+	}
+
 	if err = serveCRMetrics(cfg); err != nil {
 		log.Info("Could not generate and serve custom resource metrics", "error", err.Error())
 	}
@@ -165,10 +173,12 @@ func main() {
 		log.Info("Could not create metrics Service", "error", err.Error())
 	}
 
-	// CreateServiceMonitors will automatically create the prometheus-operator ServiceMonitor resources
-	// necessary to configure Prometheus to scrape metrics from this operator.
-	services := []*v1.Service{service}
-	_, err = metrics.CreateServiceMonitors(cfg, namespace, services)
+	err = addMonitoringKeyLabelToService(cfg, operatorNamespace, service)
+	if err != nil {
+		log.Error(err, "Could not add monitoring-key label to operator metrics Service")
+	}
+
+	err = createServiceMonitor(cfg, operatorNamespace, service)
 	if err != nil {
 		log.Info("Could not create ServiceMonitor object", "error", err.Error())
 		// If this operator is deployed to a cluster without the prometheus-operator running, it will return
@@ -185,6 +195,46 @@ func main() {
 		log.Error(err, "Manager exited non-zero")
 		os.Exit(1)
 	}
+}
+
+func addMonitoringKeyLabelToService(cfg *rest.Config, ns string, service *v1.Service) error {
+	kclient, err := client.New(cfg, client.Options{})
+	if err != nil {
+		return err
+	}
+
+	updatedLabels := map[string]string{"monitoring-key": "middleware"}
+	for k, v := range service.ObjectMeta.Labels {
+		updatedLabels[k] = v
+	}
+	service.ObjectMeta.Labels = updatedLabels
+
+	err = kclient.Update(context.TODO(), service)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createServiceMonitor is a temporary fix until the version in the
+// operator-sdk is fixed to have the correct Path set on the Endpoints
+func createServiceMonitor(config *rest.Config, ns string, service *v1.Service) error {
+	mclient := monclientv1.NewForConfigOrDie(config)
+
+	sm := metrics.GenerateServiceMonitor(service)
+	eps := []monitoringv1.Endpoint{}
+	for _, ep := range sm.Spec.Endpoints {
+		eps = append(eps, monitoringv1.Endpoint{Port: ep.Port, Path: "/metrics"})
+	}
+	sm.Spec.Endpoints = eps
+
+	_, err := mclient.ServiceMonitors(ns).Create(sm)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // serveCRMetrics gets the Operator/CustomResource GVKs and generates metrics based on those types.
