@@ -25,6 +25,7 @@ rules:
   - ""
   resources:
   - services
+  - services/finalizers
   - persistentvolumeclaims
   - events
   - configmaps
@@ -123,3 +124,17 @@ rules:
   - replicasets
   verbs:
   - get
+
+# Needed to be able to create ServiceMonitor for operator & operands
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+    - servicemonitors
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
