@@ -59,7 +59,7 @@ func New() Config {
 
 		// these are used when the image stream does not exist and created for the first time by the operator
 		UPSImageStreamInitialImage:        getEnv("UPS_IMAGE_STREAM_INITIAL_IMAGE", "quay.io/aerogear/unifiedpush-configurable-container:2.3"),
-		OauthProxyImageStreamInitialImage: getEnv("OAUTH_PROXY_IMAGE_STREAM_INITIAL_IMAGE", "docker.io/openshift/oauth-proxy:v1.1.0"),
+		OauthProxyImageStreamInitialImage: getEnv("OAUTH_PROXY_IMAGE_STREAM_INITIAL_IMAGE", "quay.io/openshift/origin-oauth-proxy:4.2.0"),
 
 		BackupImage: getEnv("BACKUP_IMAGE", "quay.io/integreatly/backup-container:1.0.8"),
 
