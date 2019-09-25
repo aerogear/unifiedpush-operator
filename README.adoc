@@ -373,13 +373,9 @@ Here are these variables:
 
 |===
 
-=== Image Streams
+=== Images
 
-The operator uses 3 image streams and what image streams to use are configurable
-with environment variables.
-
-Unified Push Server and Oauth proxy image stream are created within the same namespace by the operator.
-However, for Postgres the image stream in `openshift` namespace is used.
+Images that the operator use to create containers are configurable with environment variables.
 
 The following table shows the available
 environment variable names, along with their default values:
@@ -388,41 +384,17 @@ environment variable names, along with their default values:
 |===
 |Name |Default |Purpose
 
-|`UPS_IMAGE_STREAM_NAME`
-|`ups-imagestream`
-| Name of the Unified Push image stream that will be created by the operator.
+|`UPS_IMAGE`
+|`quay.io/aerogear/unifiedpush-configurable-container:2.3`
+| Unified Push image that will be used by the operator.
 
-|`UPS_IMAGE_STREAM_TAG`
-|`latest`
-| Tag of the Unified Push image stream that will be created by the operator.
-
-|`UPS_IMAGE_STREAM_INITIAL_IMAGE`
-|`docker.io/aerogear/unifiedpush-wildfly-plain:2.2.1.Final`
-| Initial image for the Unified Push image stream that will be created by the operator.
-
-|`OAUTH_PROXY_IMAGE_STREAM_NAME`
-|`ups-oauth-proxy-imagestream`
-| Name of the Oauth proxy image stream that will be created by the operator.
-
-|`OAUTH_PROXY_IMAGE_STREAM_TAG`
-|`latest`
-| Tag of the Oauth proxy image stream that will be created by the operator.
-
-|`OAUTH_PROXY_IMAGE_STREAM_INITIAL_IMAGE`
+|`OAUTH_PROXY_IMAGE`
 |`quay.io/openshift/origin-oauth-proxy:4.2.0`
-| Initial image for the Oauth proxy image stream that will be created by the operator.
+| OAuth proxy image that will be used by the operator.
 
-|`POSTGRES_IMAGE_STREAM_NAMESPACE`
-|`openshift`
-| Namespace to look for the Postgres image stream.
-
-|`POSTGRES_IMAGE_STREAM_NAME`
-|`postgresql`
-| Name of the Postgres image stream to look for.
-
-|`OAUTH_PROXY_IMAGE_STREAM_TAG`
-|`10`
-| Tag of the Postgres image stream.
+|`POSTGRES_IMAGE`
+|`docker.io/centos/postgresql-96-centos7:9.6`
+| Postgres image that will be used by the operator.
 
 |===
 
@@ -680,7 +652,7 @@ NOTE: The link:./Makefile[Makefile] is implemented with tasks which you should u
 This operator was developed using the Kubernetes and Openshift APIs.
 
 Currently this project requires the usage of the https://docs.openshift.com/container-platform/3.11/rest_api/apis-route.openshift.io/v1.Route.html[v1.Route] to expose the service and https://github.com/openshift/oauth-proxy[OAuth-proxy] for authentication which make it unsupportable for Kubernetes.
-Also, it is using https://docs.openshift.com/enterprise/3.0/architecture/core_concepts/builds_and_image_streams.html[ImageStream] which is from the OpenShift API specifically. In this way, this project is not compatible with Kubernetes, however, in future we aim to make it work on vanilla Kubernetes also.
+In this way, this project is not compatible with Kubernetes, however, in future we aim to make it work on vanilla Kubernetes also.
 
 == Security Response
 

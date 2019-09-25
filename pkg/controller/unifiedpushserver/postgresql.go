@@ -46,7 +46,6 @@ func newPostgresqlSecret(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Secret, er
 			"POSTGRES_PASSWORD":  databasePassword,
 			"POSTGRES_HOST":      fmt.Sprintf("%s-postgresql.%s.svc", cr.Name, cr.Namespace),
 			"POSTGRES_SUPERUSER": "false",
-			"POSTGRES_VERSION":   cfg.PostgresImageStreamTag,
 		},
 	}, nil
 }
@@ -61,20 +60,6 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 			Strategy: openshiftappsv1.DeploymentStrategy{
 				Type: openshiftappsv1.DeploymentStrategyTypeRecreate,
 			},
-			Triggers: openshiftappsv1.DeploymentTriggerPolicies{
-				openshiftappsv1.DeploymentTriggerPolicy{
-					Type: openshiftappsv1.DeploymentTriggerOnImageChange,
-					ImageChangeParams: &openshiftappsv1.DeploymentTriggerImageChangeParams{
-						Automatic:      true,
-						ContainerNames: []string{cfg.PostgresContainerName},
-						From: corev1.ObjectReference{
-							Kind:      "ImageStreamTag",
-							Namespace: cfg.PostgresImageStreamNamespace,
-							Name:      cfg.PostgresImageStreamName + ":" + cfg.PostgresImageStreamTag,
-						},
-					},
-				},
-			},
 			Template: &corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels(cr, "postgresql"),
@@ -83,7 +68,7 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 					Containers: []corev1.Container{
 						{
 							Name:            cfg.PostgresContainerName,
-							Image:           cfg.PostgresImageStreamName + ":" + cfg.PostgresImageStreamTag,
+							Image:           cfg.PostgresImage,
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
 								{
@@ -153,7 +138,7 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 							},
 							Resources: getPostgresResourceRequirements(cr),
 							VolumeMounts: []corev1.VolumeMount{
-								corev1.VolumeMount{
+								{
 									Name:      fmt.Sprintf("%s-postgresql-data", cr.Name),
 									MountPath: "/var/lib/pgsql/data",
 								},
@@ -161,7 +146,7 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 						},
 					},
 					Volumes: []corev1.Volume{
-						corev1.Volume{
+						{
 							Name: fmt.Sprintf("%s-postgresql-data", cr.Name),
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{

@@ -428,7 +428,6 @@ data:
   POSTGRES_PASSWORD: NzM4NDQ1Mjg1Nzc2NDc4NmIxY2FmMjRlNjdkZDYyNzY=
   POSTGRES_SUPERUSER: ZmFsc2U=
   POSTGRES_USERNAME: dW5pZmllZHB1c2g=
-  POSTGRES_VERSION: MTA=
 kind: Secret
 ...
 ----
@@ -564,15 +563,6 @@ unifiedpush-operator-58c8877fd8-g6dvr          1/1       Running   6          12
 $ oc get secrets | grep postgresql
 example-unifiedpushserver-postgresql        Opaque                                6         12d
 ----
-. Check that the image streams for the Service and Oauth was created with success by running `oc get imagestream`.  The following is an example of the expected result.
-+
-[source,shell]
-----
-$ oc get imagestream
-NAME                          DOCKER REPO                                               TAGS      UPDATED
-ups-imagestream               172.30.1.1:5000/unifiedpush/ups-imagestream               latest    12 days ago
-ups-oauth-proxy-imagestream   172.30.1.1:5000/unifiedpush/ups-oauth-proxy-imagestream   latest    12 days ago
-----
 . Check that the route to expose the service was created successfully by running `oc get route | grep unifiedpush-proxy`.  The following is an example of the expected result.
 +
 [source,shell]
@@ -585,8 +575,8 @@ example-unifiedpushserver-unifiedpush-proxy   example-unifiedpushserver-unifiedp
 [source,shell]
 ----
 $ oc get deploymentconfig | grep unifiedpush
-example-unifiedpushserver              1          1         1         config,image(postgresql:postgresql:10),image(ups-imagestream:latest),image(ups-oauth-proxy-imagestream:latest)
-example-unifiedpushserver-postgresql   1          1         1         image(postgresql:10)
+example-unifiedpushserver              1          1         1         config
+example-unifiedpushserver-postgresql   1          1         1         config
 ----
 . Check that the Proxy Service which is required to allow the UPS Server persist data into its Database was created with success by running `oc get service | grep unifiedpush-proxy`
 +
@@ -639,12 +629,8 @@ NAME                                              DESIRED   CURRENT   READY     
 replicaset.apps/unifiedpush-operator-58c8877fd8   1         1         1         12d
 
 NAME                                                                      REVISION   DESIRED   CURRENT   TRIGGERED BY
-deploymentconfig.apps.openshift.io/example-unifiedpushserver              1          1         1         config,image(postgresql:postgresql:10),image(ups-imagestream:latest),image(ups-oauth-proxy-imagestream:latest)
-deploymentconfig.apps.openshift.io/example-unifiedpushserver-postgresql   1          1         1         image(postgresql:10)
-
-NAME                                                         DOCKER REPO                                               TAGS      UPDATED
-imagestream.image.openshift.io/ups-imagestream               172.30.1.1:5000/unifiedpush/ups-imagestream               latest    12 days ago
-imagestream.image.openshift.io/ups-oauth-proxy-imagestream   172.30.1.1:5000/unifiedpush/ups-oauth-proxy-imagestream   latest    12 days ago
+deploymentconfig.apps.openshift.io/example-unifiedpushserver              1          1         1         config
+deploymentconfig.apps.openshift.io/example-unifiedpushserver-postgresql   1          1         1         config
 
 NAME                                                                   HOST/PORT                                                                      PATH      SERVICES                                      PORT      TERMINATION   WILDCARD
 route.route.openshift.io/example-unifiedpushserver-unifiedpush-proxy   example-unifiedpushserver-unifiedpush-proxy-unifiedpush.192.168.64.27.nip.io             example-unifiedpushserver-unifiedpush-proxy   <all>     edge/None     None

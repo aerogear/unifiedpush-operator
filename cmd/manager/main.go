@@ -15,7 +15,6 @@ import (
 	"github.com/aerogear/unifiedpush-operator/pkg/controller"
 
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
 
 	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
@@ -136,12 +135,6 @@ func main() {
 
 	// Setup Scheme for OpenShift Apis
 	if err := openshiftappsv1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "")
-		os.Exit(1)
-	}
-
-	// Setup Scheme for OpenShift Image apis
-	if err := imagev1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}

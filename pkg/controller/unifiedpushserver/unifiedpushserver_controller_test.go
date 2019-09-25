@@ -3,7 +3,6 @@ package unifiedpushserver
 import (
 	"context"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -94,20 +93,6 @@ func TestReconcileUnifiedPushServer_Reconcile(t *testing.T) {
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-unifiedpush", Namespace: pushServerInstance.Namespace}, servicePush)
 	if err != nil {
 		t.Fatalf("get servicePush: (%v)", err)
-	}
-
-	// Check if imageStream has been created
-	oauthImageStream := &imagev1.ImageStream{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "ups-oauth-proxy-imagestream", Namespace: pushServerInstance.Namespace}, oauthImageStream)
-	if err != nil {
-		t.Fatalf("get oauthImageStream: (%v)", err)
-	}
-
-	// Check if imageStream has been created
-	upsImageStream := &imagev1.ImageStream{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "ups-imagestream", Namespace: pushServerInstance.Namespace}, upsImageStream)
-	if err != nil {
-		t.Fatalf("get upsImageStream: (%v)", err)
 	}
 
 	//TODO:Finish this test
