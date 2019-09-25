@@ -176,7 +176,7 @@ func (c UnifiedpushClient) CreateAndroidVariant(v *pushv1alpha1.AndroidVariant) 
 	url := fmt.Sprintf("%s/rest/applications/%s/android", c.Url, v.Spec.PushApplicationId)
 
 	params := map[string]string{
-		"projectNumber": "1",
+		"projectNumber": v.Spec.SenderId,
 		"name":          v.Name,
 		"googleKey":     v.Spec.ServerKey,
 		"description":   v.Spec.Description,
