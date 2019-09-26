@@ -409,7 +409,7 @@ environment variable names, along with their default values:
 | Tag of the Oauth proxy image stream that will be created by the operator.
 
 |`OAUTH_PROXY_IMAGE_STREAM_INITIAL_IMAGE`
-|`docker.io/openshift/oauth-proxy:v1.1.0`
+|`quay.io/openshift/origin-oauth-proxy:4.2.0`
 | Initial image for the Oauth proxy image stream that will be created by the operator.
 
 |`POSTGRES_IMAGE_STREAM_NAMESPACE`
