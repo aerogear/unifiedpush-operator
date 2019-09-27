@@ -2,6 +2,7 @@ package unifiedpushserver
 
 import (
 	"fmt"
+	"github.com/aerogear/unifiedpush-operator/pkg/constants"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -38,7 +39,7 @@ func backups(ups *pushv1alpha1.UnifiedPushServer) ([]batchv1beta1.CronJob, error
 								Containers: []corev1.Container{
 									{
 										Name:            upsBackup.Name + "-ups-backup",
-										Image:           cfg.BackupImage,
+										Image:           constants.BackupImage,
 										ImagePullPolicy: "Always",
 										Command:         buildBackupContainerCommand(upsBackup, ups.Namespace),
 										Env:             buildBackupCronJobEnvVars(upsBackup, ups.Name, ups.Namespace),

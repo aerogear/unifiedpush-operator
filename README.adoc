@@ -373,34 +373,6 @@ Here are these variables:
 
 |===
 
-=== Images
-
-Images that the operator use to create containers are configurable with environment variables.
-
-The following table shows the available
-environment variable names, along with their default values:
-
-.Environment Variables
-|===
-|Name |Default |Purpose
-
-|`UPS_IMAGE`
-|`quay.io/aerogear/unifiedpush-configurable-container:2.3`
-| Unified Push image that will be used by the operator.
-
-|`OAUTH_PROXY_IMAGE`
-|`quay.io/openshift/origin-oauth-proxy:4.2.0`
-| OAuth proxy image that will be used by the operator.
-
-|`POSTGRES_IMAGE`
-|`docker.io/centos/postgresql-96-centos7:9.6`
-| Postgres image that will be used by the operator.
-
-|===
-
-CAUTION: Re-deploying this operator with customized images will cause
-_all_ instances owned by the operator to be updated.
-
 === Container Names
 
 If you would like to modify the container names, you can use the following environment variables.
@@ -419,11 +391,6 @@ If you would like to modify the container names, you can use the following envir
 |`postgresql`
 
 |===
-
-=== Backups
-
-The `BACKUP_IMAGE` environment variable configures what image to use for backing up
-the custom resources created by this operator. Default value is `quay.io/integreatly/backup-container:1.0.8`.
 
 === Monitoring Service (Metrics)
 

@@ -2,6 +2,7 @@ package unifiedpushserver
 
 import (
 	"fmt"
+	"github.com/aerogear/unifiedpush-operator/pkg/constants"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
@@ -191,7 +192,7 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 					InitContainers: []corev1.Container{
 						{
 							Name:            cfg.PostgresContainerName,
-							Image:           cfg.PostgresImage,
+							Image:           constants.PostgresImage,
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
 								{
@@ -209,7 +210,7 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 					Containers: []corev1.Container{
 						{
 							Name:            cfg.UPSContainerName,
-							Image:           cfg.UPSImage,
+							Image:           constants.UPSImage,
 							ImagePullPolicy: corev1.PullAlways,
 							Env:             buildEnv(cr),
 							Resources:       getUnifiedPushResourceRequirements(cr),
@@ -249,7 +250,7 @@ func newUnifiedPushServerDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*
 						},
 						{
 							Name:            cfg.OauthProxyContainerName,
-							Image:           cfg.OauthProxyImage,
+							Image:           constants.OauthProxyImage,
 							ImagePullPolicy: corev1.PullAlways,
 							Ports: []corev1.ContainerPort{
 								{

@@ -2,6 +2,7 @@ package unifiedpushserver
 
 import (
 	"context"
+	"github.com/aerogear/unifiedpush-operator/pkg/constants"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"reflect"
 	"time"
@@ -473,7 +474,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			}
 		}
 
-		desiredImage := cfg.PostgresImage
+		desiredImage := constants.PostgresImage
 
 		containerSpec := findContainerSpec(foundPostgresqlDeploymentConfig, cfg.PostgresContainerName)
 		if containerSpec == nil {
@@ -700,8 +701,8 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			}
 		}
 
-		desiredUnifiedPushImage := cfg.UPSImage
-		desiredProxyImage := cfg.OauthProxyImage
+		desiredUnifiedPushImage := constants.UPSImage
+		desiredProxyImage := constants.OauthProxyImage
 
 		unifiedPushContainerSpec := findContainerSpec(foundUnifiedpushDeploymentConfig, cfg.UPSContainerName)
 		if unifiedPushContainerSpec == nil {

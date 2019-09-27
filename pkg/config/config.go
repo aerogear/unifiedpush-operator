@@ -7,12 +7,6 @@ type Config struct {
 	PostgresContainerName   string
 	OauthProxyContainerName string
 
-	UPSImage        string
-	PostgresImage   string
-	OauthProxyImage string
-
-	BackupImage string
-
 	UPSMemoryLimit   string
 	UPSMemoryRequest string
 	UPSCpuLimit      string
@@ -35,12 +29,6 @@ func New() Config {
 		UPSContainerName:        getEnv("UPS_CONTAINER_NAME", "ups"),
 		PostgresContainerName:   getEnv("POSTGRES_CONTAINER_NAME", "postgresql"),
 		OauthProxyContainerName: getEnv("OAUTH_PROXY_CONTAINER_NAME", "ups-oauth-proxy"),
-
-		UPSImage:        getEnv("UPS_IMAGE", "quay.io/aerogear/unifiedpush-configurable-container:2.3"),
-		PostgresImage:   getEnv("POSTGRES_IMAGE", "docker.io/centos/postgresql-96-centos7:9.6"),
-		OauthProxyImage: getEnv("OAUTH_PROXY_IMAGE", "quay.io/openshift/origin-oauth-proxy:4.2.0"),
-
-		BackupImage: getEnv("BACKUP_IMAGE", "quay.io/integreatly/backup-container:1.0.8"),
 
 		UPSMemoryLimit:   getEnv("UPS_MEMORY_LIMIT", "2Gi"),
 		UPSMemoryRequest: getEnv("UPS_MEMORY_REQUEST", "512Mi"),

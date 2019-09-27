@@ -2,6 +2,7 @@ package unifiedpushserver
 
 import (
 	"fmt"
+	"github.com/aerogear/unifiedpush-operator/pkg/constants"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
@@ -68,7 +69,7 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 					Containers: []corev1.Container{
 						{
 							Name:            cfg.PostgresContainerName,
-							Image:           cfg.PostgresImage,
+							Image:           constants.PostgresImage,
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
 								{
