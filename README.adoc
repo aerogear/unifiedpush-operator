@@ -199,6 +199,46 @@ Here are all of the configurable fields in an IOSVariant:
 kubectl apply -n unifiedpush-apps -f ./deploy/crds/examples/push_v1alpha1_iosvariant_cr.yaml
 ----
 
+=== Creating a WebPushVariant for your App
+
+After creating the PushApplication above, you should be able to get
+the `pushApplicationId` from the status, this will be needed to be
+able to create Variants:
+
+[source,shell]
+----
+kubectl get pushApplication example-pushapplication -n unifiedpush-apps -o jsonpath='{.status.pushApplicationId}'
+----
+
+Here are all of the configurable fields in a WebPushVariant:
+
+|===
+|Field Name |Description
+
+|pushApplicationId
+|ID of the PushApplication that this variant corresponds to
+
+|description
+|Human friendly description for the variant
+
+|alias
+|The alias to be used to identify this server.  Must be a url or mailto link
+
+|privateKey
+|The VAPID private key
+
+|publicKey
+|The VAPID public key
+|===
+
+* Apply an WebPushVariantCR based on the example a link:./deploy/crds/examples/push_v1alpha1_webpushvariant_cr.yaml[WebPushVariant CR]  as follows:
+
+[source,shell]
+----
+kubectl apply -n unifiedpush-apps -f ./deploy/crds/examples/push_v1alpha1_webpushvariant_cr.yaml
+----
+
+
 === Uninstalling
 
 Use the following command to delete all related configuration applied by the `make install` of this project.

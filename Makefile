@@ -123,6 +123,7 @@ cluster/prepare:
 	- kubectl create -n $(NAMESPACE) -f deploy/role_binding.yaml
 	- kubectl apply -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
 	- kubectl apply -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
+	- kubectl apply -f deploy/crds/push_v1alpha1_webpushvariant_crd.yaml
 	- kubectl apply -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
 	- kubectl apply -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
 
@@ -130,6 +131,7 @@ cluster/prepare:
 cluster/clean:
 	- kubectl delete -n $(NAMESPACE) iosVariant --all
 	- kubectl delete -n $(NAMESPACE) androidVariant --all
+	- kubectl delete -n $(NAMESPACE) webpushVariant --all
 	- kubectl delete -n $(NAMESPACE) pushApplication --all
 	- kubectl delete -n $(NAMESPACE) unifiedpushServer --all
 	- kubectl delete -f deploy/role.yaml
@@ -137,6 +139,7 @@ cluster/clean:
 	- kubectl delete -n $(NAMESPACE) -f deploy/service_account.yaml
 	- kubectl delete -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
 	- kubectl delete -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
+	- kubectl delete -f deploy/crds/push_v1alpha1_webpushvariant_crd.yaml
 	- kubectl delete -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
 	- kubectl delete -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
 	- make monitoring/uninstall
