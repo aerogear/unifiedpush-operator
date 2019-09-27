@@ -1,0 +1,232 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"apiVersion":"push.aerogear.org/v1alpha1","kind":"AndroidVariant","metadata":{"name":"example-androidvariant"},"spec":{"description":"My
+      super Android variant","pushApplicationId":"123456","senderId":"123456","serverKey":"somekeyinbase64=="}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"IOSVariant","metadata":{"name":"example-iosvariant"},"spec":{"certificate":"somekeyinbase64==","description":"My
+      super iOS variant","passphrase":"123456","production":false,"pushApplicationId":"123456"}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"PushApplication","metadata":{"name":"example-pushapplication"},"spec":{"description":"An
+      example push application to demonstrate the unifiedpush-operator"}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"example-unifiedpushserver"},"spec":{"useMessageBroker":false}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"example-ups-with-backups"},"spec":{"backups":[{"backendSecretName":"example-aws-key","backendSecretNamespace":"unifiedpush","encryptionKeySecretName":"example-encryption-key","encryptionKeySecretNamespace":"unifiedpush","name":"ups-daily-at-midnight","schedule":"0
+      0 * * *"}]}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"ups-with-enmasse"},"spec":{"useMessageBroker":true}}]'
+    capabilities: Basic Install
+    categories: Unified Push
+    description: The AeroGear UnifiedPush Server is a server that allows sending push notifications to different (mobile) platforms.
+    containerImage: quay.io/aerogear/unifiedpush-operator@sha256:abf93d615e9e9348985d67102104b86ac329295fcdc5960aa49e865d5ee38bb3
+    createdAt: 2019-09-17 16:24:00
+    support: "Red Hat, Inc."
+    certified: "false"  
+  name: unifiedpush-operator.v0.2.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions: 
+    owned:
+    - kind: UnifiedPushServer
+      name: unifiedpushservers.push.aerogear.org
+      version: v1alpha1
+      displayName: Unified Push Server
+      description: Represents an Unified Push Server Installation
+    - kind: AndroidVariant
+      name: androidvariants.push.aerogear.org
+      version: v1alpha1
+      displayName: Android Variant UPS
+      description: Represents an Android Variant UPS Installation
+    - kind: IOSVariant
+      name: iosvariants.push.aerogear.org
+      version: v1alpha1
+      displayName: IOS Variant UPS
+      description: Represents an IOS Variant UPS Installation
+    - kind: PushApplication
+      name: pushapplications.push.aerogear.org
+      version: v1alpha1
+      displayName: UPS Push Application
+      description: Represents an UPS Push Application Installation
+  description: The UnifiedPush Operator for Kubernetes provides an easy way to install and manage an AeroGear UnifiedPush Server on OpenShift.
+  displayName: Unifiedpush Operator
+  install:
+    spec:
+      clusterPermissions:
+      - serviceAccountName: unifiedpush-operator
+        rules:
+        - apiGroups:
+          - push.aerogear.org
+          resources:
+          - '*'
+          verbs:
+          - get
+          - list
+          - watch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        
+      permissions:
+      - serviceAccountName: unifiedpush-operator
+        rules:
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          - services/finalizers
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          - serviceaccounts
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - batch
+          resources:
+          - cronjobs
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - image.openshift.io
+          resources:
+          - imagestreams
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfigs
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resourceNames:
+          - unifiedpush-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          verbs:
+          - get
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          - servicemonitors/finalizers
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+      deployments:
+      - name: unifiedpush-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: unifiedpush-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: unifiedpush-operator
+            spec:
+              containers:
+              - command:
+                - unifiedpush-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: APP_NAMESPACES
+                  value: unifiedpush-apps
+                - name: SERVICE_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: unifiedpush-operator
+                image: quay.io/aerogear/unifiedpush-operator@sha256:abf93d615e9e9348985d67102104b86ac329295fcdc5960aa49e865d5ee38bb3
+                imagePullPolicy: Always
+                name: unifiedpush-operator
+                resources:
+                  limits:
+                    cpu: 60m
+                    memory: 128Mi
+                  requests:
+                    cpu: 30m
+                    memory: 64Mi
+              serviceAccountName: unifiedpush-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  maturity: alpha
+  provider: 
+    name: Aerogear
+  version: 0.2.0
