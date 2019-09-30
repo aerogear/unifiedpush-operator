@@ -47,7 +47,7 @@ func New() Config {
 		OauthProxyContainerName: getEnv("OAUTH_PROXY_CONTAINER_NAME", "ups-oauth-proxy"),
 
 		UPSImageStreamName: getEnv("UPS_IMAGE_STREAM_NAME", "ups-imagestream"),
-		UPSImageStreamTag:  getEnv("UPS_IMAGE_STREAM_TAG", "2.3"),
+		UPSImageStreamTag:  getEnv("UPS_IMAGE_STREAM_TAG", "2.4"),
 
 		OauthProxyImageStreamName: getEnv("OAUTH_PROXY_IMAGE_STREAM_NAME", "ups-oauth-proxy-imagestream"),
 		OauthProxyImageStreamTag:  getEnv("OAUTH_PROXY_IMAGE_STREAM_TAG", "latest"),
@@ -58,7 +58,7 @@ func New() Config {
 		PostgresImageStreamTag: getEnv("POSTGRES_IMAGE_STREAM_TAG", "10"),
 
 		// these are used when the image stream does not exist and created for the first time by the operator
-		UPSImageStreamInitialImage:        getEnv("UPS_IMAGE_STREAM_INITIAL_IMAGE", "quay.io/aerogear/unifiedpush-configurable-container:2.3"),
+		UPSImageStreamInitialImage:        getEnv("UPS_IMAGE_STREAM_INITIAL_IMAGE", "quay.io/aerogear/unifiedpush-configurable-container:2.4"),
 		OauthProxyImageStreamInitialImage: getEnv("OAUTH_PROXY_IMAGE_STREAM_INITIAL_IMAGE", "quay.io/openshift/origin-oauth-proxy:4.2.0"),
 
 		BackupImage: getEnv("BACKUP_IMAGE", "quay.io/integreatly/backup-container:1.0.8"),
