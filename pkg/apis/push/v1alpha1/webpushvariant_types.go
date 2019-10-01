@@ -25,7 +25,7 @@ type WebPushVariantSpec struct {
 	// uses it to verify messages were send by this server.
 	PublicKey string `json:"publicKey"`
 
-	// Alias is send to a web push push service and must be either
+	// Alias is sent to a web push push service and must be either
 	// a url or mailto link.  The purpose is to provide a way for the push service
 	// to identify the sender of the message.
 	Alias string `json:"alias"`
