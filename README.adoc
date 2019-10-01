@@ -231,7 +231,7 @@ Here are all of the configurable fields in a WebPushVariant:
 |The VAPID public key
 |===
 
-* Apply an WebPushVariantCR based on the example a link:./deploy/crds/examples/push_v1alpha1_webpushvariant_cr.yaml[WebPushVariant CR]  as follows:
+* Apply a WebPushVariantCR based on the example link:./deploy/crds/examples/push_v1alpha1_webpushvariant_cr.yaml[WebPushVariant CR] as follows:
 
 [source,shell]
 ----
