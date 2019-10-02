@@ -41,6 +41,7 @@ type WebPushVariantStatus struct {
 	Ready     bool   `json:"ready"`
 	VariantId string `json:"variantId,omitempty"`
 	Secret    string `json:"secret,omitempty"`
+	Message   string `json:"message,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

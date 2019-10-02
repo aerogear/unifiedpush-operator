@@ -30,7 +30,7 @@ spec:
         spec:
           properties:
             alias:
-              description: Alias is send to a web push push service and must be either
+              description: Alias is sent to a web push push service and must be either
                 a url or mailto link.  The purpose is to provide a way for the push
                 service to identify the sender of the message.
               type: string
@@ -59,6 +59,8 @@ spec:
           type: object
         status:
           properties:
+            message:
+              type: string
             ready:
               type: boolean
             secret:

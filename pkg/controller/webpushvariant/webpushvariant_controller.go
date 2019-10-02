@@ -128,7 +128,15 @@ func (r *ReconcileWebPushVariant) Reconcile(request reconcile.Request) (reconcil
 		createdVariant, err := unifiedpushClient.CreateWebPushVariant(instance)
 		if err != nil {
 			reqLogger.Error(err, "Error creating WebPush variant in UPS.", "WebPushVariant.Name", instance.Name)
+			instance.Status.Ready = false
+			instance.Status.Message = err.Error()
+			err = r.client.Status().Update(context.TODO(), instance)
+			if err != nil {
+				reqLogger.Error(err, "Error updating WebPushVariant status", "Name", instance.Name)
+				return reconcile.Result{RequeueAfter: time.Second * 5}, err
+			}
 			return reconcile.Result{RequeueAfter: time.Second * 5}, nil
+
 		}
 
 		if instance.ObjectMeta.Annotations == nil {
@@ -158,6 +166,7 @@ func (r *ReconcileWebPushVariant) Reconcile(request reconcile.Request) (reconcil
 		instance.Status.VariantId = foundVariant.VariantId
 		instance.Status.Secret = foundVariant.Secret
 		instance.Status.Ready = true
+		instance.Status.Message = ""
 		err = r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
 			reqLogger.Error(err, "Error updating WebPushVariant status", "Name", instance.Name)

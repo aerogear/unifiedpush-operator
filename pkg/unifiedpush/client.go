@@ -403,7 +403,15 @@ func (c UnifiedpushClient) CreateWebPushVariant(v *pushv1alpha1.WebPushVariant) 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 201 {
-		return WebPushVariant{}, errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
+		switch code := resp.StatusCode; code {
+		case 400:
+			errorMap := make(map[string]string)
+			json.NewDecoder(resp.Body).Decode(&errorMap)
+			return WebPushVariant{}, CreateError{Errors: errorMap, Message: resp.Status, StatusCode: code}
+		default:
+			return WebPushVariant{}, errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
+		}
+
 	}
 
 	var createdVariant WebPushVariant

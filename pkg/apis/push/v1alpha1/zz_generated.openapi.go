@@ -567,7 +567,7 @@ func schema_pkg_apis_push_v1alpha1_WebPushVariantSpec(ref common.ReferenceCallba
 					},
 					"alias": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Alias is send to a web push push service and must be either a url or mailto link.  The purpose is to provide a way for the push service to identify the sender of the message.",
+							Description: "Alias is sent to a web push push service and must be either a url or mailto link.  The purpose is to provide a way for the push service to identify the sender of the message.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -606,6 +606,12 @@ func schema_pkg_apis_push_v1alpha1_WebPushVariantStatus(ref common.ReferenceCall
 						},
 					},
 					"secret": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"message": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
