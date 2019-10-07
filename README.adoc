@@ -231,7 +231,11 @@ Here are all of the configurable fields in a WebPushVariant:
 |The VAPID public key
 |===
 
+* VAPID keys may be generated using an online tool such as link:https://tools.reactpwa.com/vapid[Secure VAPID key generator
+] or a command line tool such as link:https://www.npmjs.com/package/web-push[web-push]
+
 * Apply a WebPushVariantCR based on the example link:./deploy/crds/examples/push_v1alpha1_webpushvariant_cr.yaml[WebPushVariant CR] as follows:
+
 
 [source,shell]
 ----
