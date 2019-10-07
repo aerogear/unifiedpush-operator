@@ -31,6 +31,15 @@ type AndroidVariant struct {
 	variant
 }
 
+// webPushVariant is an internal struct used for convenient JSON
+// unmarshalling of the response received from UPS
+type WebPushVariant struct {
+	PrivateKey string
+	PublicKey  string
+	Alias      string
+	variant
+}
+
 // iOSVariant is an internal struct used for convenient JSON
 // unmarshalling of the response received from UPS
 type IOSVariant struct {
@@ -321,6 +330,105 @@ func (c UnifiedpushClient) DeleteIOSVariant(v *pushv1alpha1.IOSVariant) error {
 	}
 
 	url := fmt.Sprintf("%s/rest/applications/%s/ios/%s", c.Url, v.Spec.PushApplicationId, v.ObjectMeta.Annotations["variantId"])
+
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	resp, err := doUPSRequest(req)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != 204 && resp.StatusCode != 404 {
+		return errors.New(fmt.Sprintf("Expected a status code of 204 or 404 for variant deletion in UPS, but got %v", resp.StatusCode))
+	}
+
+	return nil
+}
+
+// GetWebPushVariant does a GET for a given Variant based on the VariantId
+func (c UnifiedpushClient) GetWebPushVariant(v *pushv1alpha1.WebPushVariant) (WebPushVariant, error) {
+	id := ""
+	if v.ObjectMeta.Annotations["variantId"] != "" {
+		id = v.ObjectMeta.Annotations["variantId"]
+	} else if v.Status.VariantId != "" {
+		id = v.Status.VariantId
+	}
+
+	if id == "" {
+		// We haven't created it yet
+		return WebPushVariant{}, nil
+	}
+
+	url := fmt.Sprintf("%s/rest/applications/%s/webpush/%s", c.Url, v.Spec.PushApplicationId, id)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	resp, err := doUPSRequest(req)
+	if err != nil {
+		return WebPushVariant{}, err
+	}
+	defer resp.Body.Close()
+
+	var foundVariant WebPushVariant
+	b, _ := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(b, &foundVariant)
+	fmt.Printf("Found app: %v\n", foundVariant)
+
+	return foundVariant, nil
+}
+
+// CreateWebPushVariant creates a Variant on an Application in UPS
+func (c UnifiedpushClient) CreateWebPushVariant(v *pushv1alpha1.WebPushVariant) (WebPushVariant, error) {
+	url := fmt.Sprintf("%s/rest/applications/%s/webpush", c.Url, v.Spec.PushApplicationId)
+
+	params := map[string]string{
+		"privateKey":  v.Spec.PrivateKey,
+		"publicKey":   v.Spec.PublicKey,
+		"alias":       v.Spec.Alias,
+		"name":        v.Name,
+		"description": v.Spec.Description,
+	}
+
+	payload, err := json.Marshal(params)
+	if err != nil {
+		return WebPushVariant{}, errors.Wrap(err, "Failed to marshal webpush variant params to json")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := doUPSRequest(req)
+	if err != nil {
+		return WebPushVariant{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 201 {
+		switch code := resp.StatusCode; code {
+		case 400:
+			errorMap := make(map[string]string)
+			json.NewDecoder(resp.Body).Decode(&errorMap)
+			return WebPushVariant{}, CreateError{Errors: errorMap, Message: resp.Status, StatusCode: code}
+		default:
+			return WebPushVariant{}, errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
+		}
+
+	}
+
+	var createdVariant WebPushVariant
+	b, _ := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(b, &createdVariant)
+
+	return createdVariant, nil
+}
+
+// DeleteWebPushVariant deletes a WebPush variant in UPS
+func (c UnifiedpushClient) DeleteWebPushVariant(v *pushv1alpha1.WebPushVariant) error {
+	if v.ObjectMeta.Annotations["variantId"] == "" {
+		// We haven't created it yet
+		return nil
+	}
+
+	url := fmt.Sprintf("%s/rest/applications/%s/webpush/%s", c.Url, v.Spec.PushApplicationId, v.ObjectMeta.Annotations["variantId"])
 
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	resp, err := doUPSRequest(req)

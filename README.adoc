@@ -96,7 +96,7 @@ IMPORTANT: It will install an example configuration setup for your Push Server. 
 
 NOTE: To install you need be logged in as a user with cluster privileges like the `system:admin` user. E.g. By using: `oc login -u system:admin`.
 
-=== Creating PushApplication
+=== Creating the PushApplication
 
 * Create a link:./deploy/crds/examples/push_v1alpha1_pushapplication_cr.yaml[PushApplication CR] as this example.
 +
@@ -121,6 +121,10 @@ $ make example-pushapplication/apply
 ----
 +
 NOTE: You can delete it by running `make example-pushapplication/delete`
+
+=== Creating a Variant
+
+In the folder link:./deploy/crds/examples[examples] you will find several crs for different variants.  *Before you create them, please update their values for your deployment*.  You will need the push application id from the push application you just made, as well as variant specific configuration which is described in the variant's specific section.
 
 === Creating an AndroidVariant for your App
 
@@ -198,6 +202,50 @@ Here are all of the configurable fields in an IOSVariant:
 ----
 kubectl apply -n unifiedpush-apps -f ./deploy/crds/examples/push_v1alpha1_iosvariant_cr.yaml
 ----
+
+=== Creating a WebPushVariant for your App
+
+After creating the PushApplication above, you should be able to get
+the `pushApplicationId` from the status, this will be needed to be
+able to create Variants:
+
+[source,shell]
+----
+kubectl get pushApplication example-pushapplication -n unifiedpush-apps -o jsonpath='{.status.pushApplicationId}'
+----
+
+Here are all of the configurable fields in a WebPushVariant:
+
+|===
+|Field Name |Description
+
+|pushApplicationId
+|ID of the PushApplication that this variant corresponds to
+
+|description
+|Human friendly description for the variant
+
+|alias
+|The alias to be used to identify this server.  Must be a url or mailto link
+
+|privateKey
+|The VAPID private key
+
+|publicKey
+|The VAPID public key
+|===
+
+* VAPID keys may be generated using an online tool such as link:https://tools.reactpwa.com/vapid[Secure VAPID key generator
+] or a command line tool such as link:https://www.npmjs.com/package/web-push[web-push]
+
+* Apply a WebPushVariantCR based on the example link:./deploy/crds/examples/push_v1alpha1_webpushvariant_cr.yaml[WebPushVariant CR] as follows:
+
+
+[source,shell]
+----
+kubectl apply -n unifiedpush-apps -f ./deploy/crds/examples/push_v1alpha1_webpushvariant_cr.yaml
+----
+
 
 === Uninstalling
 

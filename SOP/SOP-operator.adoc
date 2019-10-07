@@ -91,6 +91,8 @@ ups.gcmtokenbatchqueue                    GCMTokenBatchQueue                    
 ups.metricsqueue                          MetricsQueue                          true      Active    25m
 ups.triggermetriccollectionqueue          TriggerMetricCollectionQueue          true      Active    25m
 ups.triggervariantmetriccollectionqueue   TriggerVariantMetricCollectionQueue   true      Active    25m
+ups.webpushmessagequeue                   WebPushMessageQueue                   true      Active    25m
+ups.webtokenbatchqueue                    WebTokenBatchQueue                    true      Active    25m
 ups.wnspushmessagequeue                   WNSPushMessageQueue                   true      Active    25m
 ups.wnstokenbatchqueue                    WNSTokenBatchQueue                    true      Active    25m
 ```

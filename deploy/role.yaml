@@ -1,26 +1,19 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  creationTimestamp: null
   name: unifiedpush-operator
 rules:
-
-# The resources in this group are the CRs that the controllers in this
-# operator react to. Nothing in the operator is expected to create or
-# delete CRs, so those permissions are not given.
 - apiGroups:
   - push.aerogear.org
   resources:
   - '*'
+  - webpushvariants
   verbs:
   - get
   - list
   - watch
   - update
-
-# For "secondary resources", the operator needs to be able to do
-# pretty much everything. The "deletecollection" permission is the
-# only one not given here (if it needs to delete more than one
-# instance of a kind, it can do them one-by-one.
 - apiGroups:
   - ""
   resources:
@@ -87,16 +80,12 @@ rules:
   - update
   - patch
   - delete
-
-# Need to be able to check if a namespace is in APP_NAMESPACES
 - apiGroups:
   - ""
   resources:
   - namespaces
   verbs:
   - get
-
-# These are needed to be able to run the operator itself
 - apiGroups:
   - apps
   resources:
@@ -124,17 +113,15 @@ rules:
   - replicasets
   verbs:
   - get
-
-# Needed to be able to create ServiceMonitor for operator & operands
 - apiGroups:
   - monitoring.coreos.com
   resources:
-    - servicemonitors
+  - servicemonitors
   verbs:
-    - get
-    - list
-    - watch
-    - create
-    - update
-    - patch
-    - delete
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
