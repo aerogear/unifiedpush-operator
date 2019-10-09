@@ -18,7 +18,6 @@ import (
 	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
-	"k8s.io/client-go/rest"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -49,7 +48,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileUnifiedPushServer{config: mgr.GetConfig(), scheme: mgr.GetScheme()}
+	return &ReconcileUnifiedPushServer{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -185,7 +184,7 @@ var _ reconcile.Reconciler = &ReconcileUnifiedPushServer{}
 type ReconcileUnifiedPushServer struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	config *rest.Config
+	client client.Client
 	scheme *runtime.Scheme
 }
 
@@ -198,14 +197,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling UnifiedPushServer")
 
-	//Create new client; we want to avoid caching the enmasse resources we watch.
-	operatorClient, err := client.New(r.config, client.Options{})
-	if err != nil {
-		return reconcile.Result{}, err
-	}
 	// Fetch the UnifiedPushServer instance
 	instance := &pushv1alpha1.UnifiedPushServer{}
-	err = operatorClient.Get(context.TODO(), request.NamespacedName, instance)
+	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -225,7 +219,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		},
 	}
 	opts := &client.ListOptions{Namespace: instance.Namespace}
-	err = operatorClient.List(context.TODO(), opts, existingInstances)
+	err = r.client.List(context.TODO(), opts, existingInstances)
 	if err != nil {
 		reqLogger.Error(err, "Failed to list UnifiedPush resources", "UnifiedPush.Namespace", instance.Namespace)
 		return reconcile.Result{}, err
@@ -243,7 +237,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	if instance.Status.Phase == pushv1alpha1.PhaseEmpty {
 		instance.Status.Phase = pushv1alpha1.PhaseProvision
-		err = operatorClient.Status().Update(context.TODO(), instance)
+		err = r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update UnifiedPush resource status phase", "UnifiedPush.Namespace", instance.Namespace, "UnifiedPush.Name", instance.Name)
 			return reconcile.Result{}, err
@@ -261,10 +255,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 
 		foundAddressSpace := &enmassev1beta.AddressSpace{}
-		err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: addressSpace.Name, Namespace: addressSpace.Namespace}, foundAddressSpace)
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: addressSpace.Name, Namespace: addressSpace.Namespace}, foundAddressSpace)
 		if err != nil && errors.IsNotFound(err) {
 			reqLogger.Info("Creating a new Address Space", "AddressSpace.Namespace", addressSpace.Namespace, "AddressSpace.Name", addressSpace.Name)
-			err = operatorClient.Create(context.TODO(), addressSpace)
+			err = r.client.Create(context.TODO(), addressSpace)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -292,10 +286,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 
 		foundUser := &messaginguserv1beta.MessagingUser{}
-		err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: user.Name, Namespace: user.Namespace}, foundUser)
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: user.Name, Namespace: user.Namespace}, foundUser)
 		if err != nil && errors.IsNotFound(err) {
 			reqLogger.Info("Creating a new MessagingUser", "MessagingUser.Namespace", user.Namespace, "MessagingUser.Name", user.Name)
-			err = operatorClient.Create(context.TODO(), user)
+			err = r.client.Create(context.TODO(), user)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -312,10 +306,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				password := string(user.Spec.Authentication.Password)
 				secret := newAMQSecret(instance, password, addressSpaceURL)
 				foundSecret := &corev1.Secret{}
-				err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, foundSecret)
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, foundSecret)
 				if err != nil && errors.IsNotFound(err) {
 					reqLogger.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
-					err = operatorClient.Create(context.TODO(), secret)
+					err = r.client.Create(context.TODO(), secret)
 					if err != nil {
 						return reconcile.Result{}, err
 					}
@@ -338,10 +332,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				return reconcile.Result{}, err
 			}
 
-			err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: queue.Name, Namespace: queue.Namespace}, foundQueue)
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: queue.Name, Namespace: queue.Namespace}, foundQueue)
 			if err != nil && errors.IsNotFound(err) {
 				reqLogger.Info("Creating a new Queue", "Queue.Namespace", queue.Namespace, "Queue.Name", queue.Name)
-				err = operatorClient.Create(context.TODO(), queue)
+				err = r.client.Create(context.TODO(), queue)
 				if err != nil {
 					return reconcile.Result{}, err
 				}
@@ -373,10 +367,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				return reconcile.Result{}, err
 			}
 
-			err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: topic.Name, Namespace: topic.Namespace}, foundTopic)
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: topic.Name, Namespace: topic.Namespace}, foundTopic)
 			if err != nil && errors.IsNotFound(err) {
 				reqLogger.Info("Creating a new Topic", "Topic.Namespace", topic.Namespace, "Topic.Name", topic.Name)
-				err = operatorClient.Create(context.TODO(), topic)
+				err = r.client.Create(context.TODO(), topic)
 				if err != nil {
 					return reconcile.Result{}, err
 				}
@@ -410,10 +404,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	// Check if this PersistentVolumeClaim already exists
 	foundPersistentVolumeClaim := &corev1.PersistentVolumeClaim{}
-	err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: persistentVolumeClaim.Name, Namespace: persistentVolumeClaim.Namespace}, foundPersistentVolumeClaim)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: persistentVolumeClaim.Name, Namespace: persistentVolumeClaim.Namespace}, foundPersistentVolumeClaim)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new PersistentVolumeClaim", "PersistentVolumeClaim.Namespace", persistentVolumeClaim.Namespace, "PersistentVolumeClaim.Name", persistentVolumeClaim.Name)
-		err = operatorClient.Create(context.TODO(), persistentVolumeClaim)
+		err = r.client.Create(context.TODO(), persistentVolumeClaim)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -429,7 +423,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			foundPersistentVolumeClaim.Spec.Resources.Requests[corev1.ResourceStorage] = resource.MustParse(requiredPostgresPVCSize)
 
 			// enqueue
-			err = operatorClient.Update(context.TODO(), foundPersistentVolumeClaim)
+			err = r.client.Update(context.TODO(), foundPersistentVolumeClaim)
 			if err != nil {
 				reqLogger.Error(err, "Failed to update PersistentVolumeClaim", "PersistentVolumeClaim.Namespace", foundPersistentVolumeClaim.Namespace, "PersistentVolumeClaim.Name", foundPersistentVolumeClaim.Name)
 				return reconcile.Result{}, err
@@ -453,10 +447,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	// Check if this DeploymentConfig already exists
 	foundPostgresqlDeploymentConfig := &openshiftappsv1.DeploymentConfig{}
-	err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: postgresqlDeploymentConfig.Name, Namespace: postgresqlDeploymentConfig.Namespace}, foundPostgresqlDeploymentConfig)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlDeploymentConfig.Name, Namespace: postgresqlDeploymentConfig.Namespace}, foundPostgresqlDeploymentConfig)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new DeploymentConfig", "DeploymentConfig.Namespace", postgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", postgresqlDeploymentConfig.Name)
-		err = operatorClient.Create(context.TODO(), postgresqlDeploymentConfig)
+		err = r.client.Create(context.TODO(), postgresqlDeploymentConfig)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -474,7 +468,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 					containers[i].Resources = postgresResourceRequirements
 
 					// enqueue
-					err = operatorClient.Update(context.TODO(), foundPostgresqlDeploymentConfig)
+					err = r.client.Update(context.TODO(), foundPostgresqlDeploymentConfig)
 					if err != nil {
 						reqLogger.Error(err, "Failed to update DeploymentConfig", "DeploymentConfig.Namespace", foundPostgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", foundPostgresqlDeploymentConfig.Name)
 						return reconcile.Result{}, err
@@ -499,10 +493,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	// Check if this Service already exists
 	foundPostgresqlService := &corev1.Service{}
-	err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: postgresqlService.Name, Namespace: postgresqlService.Namespace}, foundPostgresqlService)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlService.Name, Namespace: postgresqlService.Namespace}, foundPostgresqlService)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Service", "Service.Namespace", postgresqlService.Namespace, "Service.Name", postgresqlService.Name)
-		err = operatorClient.Create(context.TODO(), postgresqlService)
+		err = r.client.Create(context.TODO(), postgresqlService)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -521,10 +515,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	// Check if this ServiceAccount already exists
 	foundServiceAccount := &corev1.ServiceAccount{}
-	err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: serviceAccount.Name, Namespace: serviceAccount.Namespace}, foundServiceAccount)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: serviceAccount.Name, Namespace: serviceAccount.Namespace}, foundServiceAccount)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new ServiceAccount", "ServiceAccount.Namespace", serviceAccount.Namespace, "ServiceAccount.Name", serviceAccount.Name)
-		err = operatorClient.Create(context.TODO(), serviceAccount)
+		err = r.client.Create(context.TODO(), serviceAccount)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -546,10 +540,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	// Check if this Secret already exists
 	foundPostgresqlSecret := &corev1.Secret{}
-	err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: postgresqlSecret.Name, Namespace: postgresqlSecret.Namespace}, foundPostgresqlSecret)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlSecret.Name, Namespace: postgresqlSecret.Namespace}, foundPostgresqlSecret)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Secret", "Secret.Namespace", postgresqlSecret.Namespace, "Secret.Name", postgresqlSecret.Name)
-		err = operatorClient.Create(context.TODO(), postgresqlSecret)
+		err = r.client.Create(context.TODO(), postgresqlSecret)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -571,10 +565,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	// Check if this Service already exists
 	foundOauthProxyService := &corev1.Service{}
-	err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: oauthProxyService.Name, Namespace: oauthProxyService.Namespace}, foundOauthProxyService)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: oauthProxyService.Name, Namespace: oauthProxyService.Namespace}, foundOauthProxyService)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Service", "Service.Namespace", oauthProxyService.Namespace, "Service.Name", oauthProxyService.Name)
-		err = operatorClient.Create(context.TODO(), oauthProxyService)
+		err = r.client.Create(context.TODO(), oauthProxyService)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -596,10 +590,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	// Check if this Service already exists
 	foundUnifiedpushService := &corev1.Service{}
-	err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: unifiedpushService.Name, Namespace: unifiedpushService.Namespace}, foundUnifiedpushService)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: unifiedpushService.Name, Namespace: unifiedpushService.Namespace}, foundUnifiedpushService)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Service", "Service.Namespace", unifiedpushService.Namespace, "Service.Name", unifiedpushService.Name)
-		err = operatorClient.Create(context.TODO(), unifiedpushService)
+		err = r.client.Create(context.TODO(), unifiedpushService)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -621,10 +615,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	// Check if this Route already exists
 	foundOauthProxyRoute := &routev1.Route{}
-	err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: oauthProxyRoute.Name, Namespace: oauthProxyRoute.Namespace}, foundOauthProxyRoute)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: oauthProxyRoute.Name, Namespace: oauthProxyRoute.Namespace}, foundOauthProxyRoute)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Route", "Route.Namespace", oauthProxyRoute.Namespace, "Route.Name", oauthProxyRoute.Name)
-		err = operatorClient.Create(context.TODO(), oauthProxyRoute)
+		err = r.client.Create(context.TODO(), oauthProxyRoute)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -646,10 +640,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	// Check if this ImageStream already exists
 	foundOauthProxyImageStream := &imagev1.ImageStream{}
-	err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: oauthProxyImageStream.Name, Namespace: oauthProxyImageStream.Namespace}, foundOauthProxyImageStream)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: oauthProxyImageStream.Name, Namespace: oauthProxyImageStream.Namespace}, foundOauthProxyImageStream)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new ImageStream", "ImageStream.Namespace", foundOauthProxyImageStream.Namespace, "ImageStream.Name", oauthProxyImageStream.Name)
-		err = operatorClient.Create(context.TODO(), oauthProxyImageStream)
+		err = r.client.Create(context.TODO(), oauthProxyImageStream)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -671,10 +665,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	// Check if this ImageStream already exists
 	foundUnifiedPushImageStream := &imagev1.ImageStream{}
-	err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: unifiedPushImageStream.Name, Namespace: unifiedPushImageStream.Namespace}, foundUnifiedPushImageStream)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: unifiedPushImageStream.Name, Namespace: unifiedPushImageStream.Namespace}, foundUnifiedPushImageStream)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new ImageStream", "ImageStream.Namespace", unifiedPushImageStream.Namespace, "ImageStream.Name", unifiedPushImageStream.Name)
-		err = operatorClient.Create(context.TODO(), unifiedPushImageStream)
+		err = r.client.Create(context.TODO(), unifiedPushImageStream)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -692,10 +686,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	// Check if this DeploymentConfig already exists
 	foundUnifiedpushDeploymentConfig := &openshiftappsv1.DeploymentConfig{}
-	err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: unifiedpushDeploymentConfig.Name, Namespace: unifiedpushDeploymentConfig.Namespace}, foundUnifiedpushDeploymentConfig)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: unifiedpushDeploymentConfig.Name, Namespace: unifiedpushDeploymentConfig.Namespace}, foundUnifiedpushDeploymentConfig)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new DeploymentConfig", "DeploymentConfig.Namespace", unifiedpushDeploymentConfig.Namespace, "DeploymentConfig.Name", unifiedpushDeploymentConfig.Name)
-		err = operatorClient.Create(context.TODO(), unifiedpushDeploymentConfig)
+		err = r.client.Create(context.TODO(), unifiedpushDeploymentConfig)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -717,7 +711,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 					containers[i].Resources = unifiedPushResourceRequirements
 
 					// enqueue
-					err = operatorClient.Update(context.TODO(), foundUnifiedpushDeploymentConfig)
+					err = r.client.Update(context.TODO(), foundUnifiedpushDeploymentConfig)
 					if err != nil {
 						reqLogger.Error(err, "Failed to update DeploymentConfig", "DeploymentConfig.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUnifiedpushDeploymentConfig.Name)
 						return reconcile.Result{}, err
@@ -731,7 +725,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 					containers[i].Resources = oauthProxyResourceRequirements
 
 					// enqueue
-					err = operatorClient.Update(context.TODO(), foundUnifiedpushDeploymentConfig)
+					err = r.client.Update(context.TODO(), foundUnifiedpushDeploymentConfig)
 					if err != nil {
 						reqLogger.Error(err, "Failed to update DeploymentConfig", "DeploymentConfig.Namespace", foundUnifiedpushDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUnifiedpushDeploymentConfig.Name)
 						return reconcile.Result{}, err
@@ -746,7 +740,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	//#region Backups
 	if len(instance.Spec.Backups) > 0 {
 		backupjobSA := &corev1.ServiceAccount{}
-		err = operatorClient.Get(context.TODO(), types.NamespacedName{Name: "backupjob", Namespace: instance.Namespace}, backupjobSA)
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: "backupjob", Namespace: instance.Namespace}, backupjobSA)
 		if err != nil {
 			reqLogger.Error(err, "A 'backupjob' ServiceAccount is required for the requested backup CronJob(s). Will check again in 10 seconds")
 			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
@@ -755,7 +749,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	existingCronJobs := &batchv1beta1.CronJobList{}
 	opts = client.InNamespace(instance.Namespace).MatchingLabels(labels(instance, "backup"))
-	err = operatorClient.List(context.TODO(), opts, existingCronJobs)
+	err = r.client.List(context.TODO(), opts, existingCronJobs)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -771,13 +765,13 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 
 		if exists := containsCronJob(existingCronJobs.Items, &desiredCronJob); exists {
-			err = operatorClient.Update(context.TODO(), &desiredCronJob)
+			err = r.client.Update(context.TODO(), &desiredCronJob)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
 		} else {
 			reqLogger.Info("Creating a new CronJob", "CronJob.Namespace", desiredCronJob.Namespace, "CronJob.Name", desiredCronJob.Name)
-			err = operatorClient.Create(context.TODO(), &desiredCronJob)
+			err = r.client.Create(context.TODO(), &desiredCronJob)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -789,7 +783,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		desired := containsCronJob(desiredCronJobs, &existingCronJob)
 		if !desired {
 			reqLogger.Info("Deleting backup CronJob since it was removed from CR", "CronJob.Namespace", existingCronJob.Namespace, "CronJob.Name", existingCronJob.Name)
-			err = operatorClient.Delete(context.TODO(), &existingCronJob)
+			err = r.client.Delete(context.TODO(), &existingCronJob)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -799,7 +793,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	if foundUnifiedpushDeploymentConfig.Status.ReadyReplicas > 0 && instance.Status.Phase != pushv1alpha1.PhaseComplete {
 		instance.Status.Phase = pushv1alpha1.PhaseComplete
-		operatorClient.Status().Update(context.TODO(), instance)
+		r.client.Status().Update(context.TODO(), instance)
 	}
 
 	// Resources already exist - don't requeue
