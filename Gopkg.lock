@@ -445,17 +445,6 @@
   version = "v3.9.0"
 
 [[projects]]
-  digest = "1:0013903bc1ee8dcb916043e7dd1ad9c1789e2023abc9c18a10d4b7d07ed8681b"
-  name = "github.com/openshift/client-go"
-  packages = [
-    "apps/clientset/versioned/scheme",
-    "apps/clientset/versioned/typed/apps/v1",
-  ]
-  pruneopts = "NUT"
-  revision = "1fa528d3be060e4c7178eb69e76d37cf7e699e3c"
-  version = "v3.9.0"
-
-[[projects]]
   digest = "1:d44846c5cd1892bb48f78d1dbff0921e9f25014d61700ccf8d8ab3422928a54e"
   name = "github.com/operator-framework/operator-sdk"
   packages = [
@@ -1158,6 +1147,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1",
+    "github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1",
     "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1",
     "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1",
     "github.com/go-logr/logr",
@@ -1166,7 +1157,6 @@
     "github.com/openshift/api/apps/v1",
     "github.com/openshift/api/image/v1",
     "github.com/openshift/api/route/v1",
-    "github.com/openshift/client-go/apps/clientset/versioned/typed/apps/v1",
     "github.com/operator-framework/operator-sdk/pkg/k8sutil",
     "github.com/operator-framework/operator-sdk/pkg/kube-metrics",
     "github.com/operator-framework/operator-sdk/pkg/leader",
@@ -1178,6 +1168,7 @@
     "github.com/operator-framework/operator-sdk/version",
     "github.com/pkg/errors",
     "github.com/spf13/pflag",
+    "k8s.io/api/apps/v1",
     "k8s.io/api/batch/v1",
     "k8s.io/api/batch/v1beta1",
     "k8s.io/api/core/v1",
@@ -1190,6 +1181,8 @@
     "k8s.io/apimachinery/pkg/types",
     "k8s.io/apimachinery/pkg/util/intstr",
     "k8s.io/apimachinery/pkg/util/wait",
+    "k8s.io/client-go/discovery",
+    "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/scheme",
     "k8s.io/client-go/plugin/pkg/client/auth",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",

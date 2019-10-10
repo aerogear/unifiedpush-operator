@@ -45,6 +45,18 @@ rules:
   - patch
   - delete
 - apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
   - route.openshift.io
   resources:
   - routes
@@ -84,12 +96,6 @@ rules:
   - ""
   resources:
   - namespaces
-  verbs:
-  - get
-- apiGroups:
-  - apps
-  resources:
-  - deployments
   verbs:
   - get
 - apiGroups:

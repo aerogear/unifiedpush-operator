@@ -78,43 +78,36 @@ unifiedpush-operator-58c8877fd8-g6dvr          1/1       Running   3          9d
 [source,shell]
 ----
  $ oc describe pods example-unifiedpushserver-postgresql-1-bw8mt
-Name:               example-unifiedpushserver-postgresql-1-bw8mt
+Name:               example-unifiedpushserver-postgresql-5d44cbb4f5-sxssg
 Namespace:          unifiedpush
 Priority:           0
 PriorityClassName:  <none>
-Node:               localhost/192.168.64.27
-Start Time:         Wed, 03 Jul 2019 21:45:02 -0300
+Node:               localhost/192.168.122.127
+Start Time:         Thu, 26 Sep 2019 11:48:32 +0300
 Labels:             app=example-unifiedpushserver
-                    deployment=example-unifiedpushserver-postgresql-1
-                    deploymentconfig=example-unifiedpushserver-postgresql
+                    pod-template-hash=1800766091
                     service=example-unifiedpushserver-postgresql
-Annotations:        openshift.io/deployment-config.latest-version=1
-                    openshift.io/deployment-config.name=example-unifiedpushserver-postgresql
-                    openshift.io/deployment.name=example-unifiedpushserver-postgresql-1
-                    openshift.io/scc=restricted
+Annotations:        openshift.io/scc: restricted
 Status:             Running
-IP:                 172.17.0.13
-Controlled By:      ReplicationController/example-unifiedpushserver-postgresql-1
+IP:                 172.17.0.9
+Controlled By:      ReplicaSet/example-unifiedpushserver-postgresql-5d44cbb4f5
 Containers:
   postgresql:
-    Container ID:   docker://16f6f7ea2ac25f72d308d4e89662dc5f4ccd1935db51374aedaed64edd104934
-    Image:          172.30.1.1:5000/openshift/postgresql@sha256:0c78f036478b50800913056c564147ec452214fd0b6d41f4eec4fb3b5c63d246
-    Image ID:       docker-pullable://172.30.1.1:5000/openshift/postgresql@sha256:0c78f036478b50800913056c564147ec452214fd0b6d41f4eec4fb3b5c63d246
+    Container ID:   docker://25372b0d08518630d16e9f9a9a49b051ed1eda57aa8b6602908396a43ca66b78
+    Image:          centos/postgresql-10-centos7:1
+    Image ID:       docker-pullable://docker.io/centos/postgresql-10-centos7@sha256:80894ff2dd64504acac207c6c050091698466291c9e0c8712e5edf473eb4e725
     Port:           5432/TCP
     Host Port:      0/TCP
     State:          Running
-      Started:      Fri, 12 Jul 2019 08:51:38 -0300
-    Last State:     Terminated
-      Reason:       Error
-      Exit Code:    255
-      Started:      Wed, 03 Jul 2019 21:45:05 -0300
-      Finished:     Fri, 12 Jul 2019 08:48:00 -0300
+      Started:      Thu, 26 Sep 2019 11:48:44 +0300
     Ready:          True
-    Restart Count:  1
+    Restart Count:  0
     Limits:
+      cpu:     1
       memory:  512Mi
     Requests:
-      memory:   512Mi
+      cpu:      250m
+      memory:   256Mi
     Liveness:   tcp-socket :5432 delay=0s timeout=1s period=10s #success=1 #failure=3
     Readiness:  exec [/bin/sh -i -c psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c 'SELECT 1'] delay=5s timeout=1s period=10s #success=1 #failure=3
     Environment:
@@ -123,7 +116,7 @@ Containers:
       POSTGRESQL_DATABASE:  <set to the key 'POSTGRES_DATABASE' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
     Mounts:
       /var/lib/pgsql/data from example-unifiedpushserver-postgresql-data (rw)
-      /var/run/secrets/kubernetes.io/serviceaccount from default-token-hkwgz (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-nmwvz (ro)
 Conditions:
   Type              Status
   Initialized       True
@@ -135,14 +128,22 @@ Volumes:
     Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
     ClaimName:  example-unifiedpushserver-postgresql
     ReadOnly:   false
-  default-token-hkwgz:
+  default-token-nmwvz:
     Type:        Secret (a volume populated by a Secret)
-    SecretName:  default-token-hkwgz
+    SecretName:  default-token-nmwvz
     Optional:    false
 QoS Class:       Burstable
 Node-Selectors:  <none>
 Tolerations:     node.kubernetes.io/memory-pressure:NoSchedule
-Events:          <none>
+Events:
+  Type     Reason     Age   From                Message
+  ----     ------     ----  ----                -------
+  Normal   Scheduled  22m   default-scheduler   Successfully assigned unifiedpush/example-unifiedpushserver-postgresql-5d44cbb4f5-sxssg to localhost
+  Normal   Pulling    22m   kubelet, localhost  pulling image "docker.io/centos/postgresql-10-centos7:1"
+  Normal   Pulled     22m   kubelet, localhost  Successfully pulled image "docker.io/centos/postgresql-10-centos7:1"
+  Normal   Created    22m   kubelet, localhost  Created container
+  Normal   Started    22m   kubelet, localhost  Started container
+  Warning  Unhealthy  21m   kubelet, localhost  Liveness probe failed: dial tcp 172.17.0.9:5432: connect: connection refused
 ----
 +
 NOTE: It can lead you to find the root cause of the issue faced.
@@ -154,28 +155,24 @@ NOTE: It can lead you to find the root cause of the issue faced.
 [source,shell]
 ----
 $ oc describe pods -l service=ups
-Name:               example-unifiedpushserver-1-dk8vm
+Name:               example-unifiedpushserver-78cdcd6589-2l2s5
 Namespace:          unifiedpush
 Priority:           0
 PriorityClassName:  <none>
-Node:               localhost/192.168.64.27
-Start Time:         Wed, 03 Jul 2019 21:45:05 -0300
+Node:               localhost/192.168.122.127
+Start Time:         Thu, 26 Sep 2019 12:09:48 +0300
 Labels:             app=example-unifiedpushserver
-                    deployment=example-unifiedpushserver-1
-                    deploymentconfig=example-unifiedpushserver
+                    pod-template-hash=3478782145
                     service=ups
-Annotations:        openshift.io/deployment-config.latest-version=1
-                    openshift.io/deployment-config.name=example-unifiedpushserver
-                    openshift.io/deployment.name=example-unifiedpushserver-1
-                    openshift.io/scc=restricted
+Annotations:        openshift.io/scc: restricted
 Status:             Running
-IP:                 172.17.0.4
-Controlled By:      ReplicationController/example-unifiedpushserver-1
+IP:                 172.17.0.10
+Controlled By:      ReplicaSet/example-unifiedpushserver-78cdcd6589
 Init Containers:
   postgresql:
-    Container ID:  docker://ba7061aa4b115367eb4e9354aec327162dca6f181dd11b36632e15d273e3037d
-    Image:         172.30.1.1:5000/openshift/postgresql@sha256:0c78f036478b50800913056c564147ec452214fd0b6d41f4eec4fb3b5c63d246
-    Image ID:      docker-pullable://172.30.1.1:5000/openshift/postgresql@sha256:0c78f036478b50800913056c564147ec452214fd0b6d41f4eec4fb3b5c63d246
+    Container ID:  docker://c4d3f1d6379e3c57bab1bf0b2b87342ff92393ba44513052dc774688d9a4ac15
+    Image:          centos/postgresql-10-centos7:1
+    Image ID:       docker-pullable://docker.io/centos/postgresql-10-centos7@sha256:80894ff2dd64504acac207c6c050091698466291c9e0c8712e5edf473eb4e725
     Port:          <none>
     Host Port:     <none>
     Command:
@@ -185,43 +182,44 @@ Init Containers:
     State:          Terminated
       Reason:       Completed
       Exit Code:    0
-      Started:      Fri, 12 Jul 2019 08:51:28 -0300
-      Finished:     Fri, 12 Jul 2019 08:51:53 -0300
+      Started:      Thu, 26 Sep 2019 12:09:52 +0300
+      Finished:     Thu, 26 Sep 2019 12:09:52 +0300
     Ready:          True
     Restart Count:  0
     Environment:
       POSTGRES_SERVICE_HOST:  example-unifiedpushserver-postgresql
     Mounts:
-      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-5cmlp (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-cszr4 (ro)
 Containers:
   ups:
-    Container ID:   docker://28fc71000c66d9223ab6e340a030491c4348a0b51979237de04488fe18282337
-    Image:          docker.io/aerogear/unifiedpush-wildfly-plain@sha256:62ecab1e74e3b1a7b2ef1d9eb7594f29bcf6b55702c269c9deebdadf8aea8a8a
-    Image ID:       docker-pullable://docker.io/aerogear/unifiedpush-wildfly-plain@sha256:62ecab1e74e3b1a7b2ef1d9eb7594f29bcf6b55702c269c9deebdadf8aea8a8a
+    Container ID:   docker://2cdc9c3703f274053e724b589ac24e1ba12db52a07158b68ffd7ddec328fcb51
+    Image:          quay.io/aerogear/unifiedpush-configurable-container:2.4
+    Image ID:       docker-pullable://quay.io/aerogear/unifiedpush-configurable-container@sha256:df467ea07730ad35d8255a2d0a65a1f1777a7937272ad9073953abbf3a4b8331
     Port:           8080/TCP
     Host Port:      0/TCP
     State:          Running
-      Started:      Fri, 12 Jul 2019 08:51:57 -0300
-    Last State:     Terminated
-      Reason:       Error
-      Exit Code:    255
-      Started:      Wed, 03 Jul 2019 21:45:20 -0300
-      Finished:     Fri, 12 Jul 2019 08:48:01 -0300
+      Started:      Thu, 26 Sep 2019 12:09:55 +0300
     Ready:          True
-    Restart Count:  1
-    Liveness:       http-get http://:8080/rest/applications delay=60s timeout=2s period=10s #success=1 #failure=3
-    Readiness:      http-get http://:8080/rest/applications delay=15s timeout=2s period=10s #success=1 #failure=3
+    Restart Count:  0
+    Limits:
+      cpu:     1
+      memory:  2Gi
+    Requests:
+      cpu:      500m
+      memory:   512Mi
+    Liveness:   http-get http://:8080/rest/applications delay=120s timeout=10s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/rest/applications delay=15s timeout=2s period=10s #success=1 #failure=3
     Environment:
-      POSTGRES_SERVICE_HOST:  example-unifiedpushserver-postgresql
+      POSTGRES_SERVICE_HOST:  <set to the key 'POSTGRES_HOST' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
       POSTGRES_SERVICE_PORT:  5432
       POSTGRES_USER:          <set to the key 'POSTGRES_USERNAME' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
       POSTGRES_PASSWORD:      <set to the key 'POSTGRES_PASSWORD' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
       POSTGRES_DATABASE:      <set to the key 'POSTGRES_DATABASE' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
     Mounts:
-      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-5cmlp (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-cszr4 (ro)
   ups-oauth-proxy:
-    Container ID:  docker://05f0d609bc3c9a2273db9b88a13cc26e4504e1bfed125e7c7dad59ba8a6c6712
-    Image:         docker.io/openshift/oauth-proxy@sha256:731c1fdad1de4bf68ae9eece5e99519f063fd8d9990da312082b4c995c4e4e33
+    Container ID:  docker://bdecada019bc6e2542b1f732f259a349fbb7651e6dd7d1227e42ee3c0c416630
+    Image:         docker.io/openshift/oauth-proxy:v1.1.0
     Image ID:      docker-pullable://docker.io/openshift/oauth-proxy@sha256:731c1fdad1de4bf68ae9eece5e99519f063fd8d9990da312082b4c995c4e4e33
     Port:          4180/TCP
     Host Port:     0/TCP
@@ -232,19 +230,20 @@ Containers:
       --http-address=0.0.0.0:4180
       --skip-auth-regex=/rest/sender,/rest/registry/device,/rest/prometheus/metrics,/rest/auth/config
       --https-address=
-      --cookie-secret=b3207b16503d491993e2057b9959951a
+      --cookie-secret=a509f22fa6224f8ea6ed663c8187cf49
     State:          Running
-      Started:      Fri, 12 Jul 2019 08:52:01 -0300
-    Last State:     Terminated
-      Reason:       Error
-      Exit Code:    255
-      Started:      Wed, 03 Jul 2019 21:45:23 -0300
-      Finished:     Fri, 12 Jul 2019 08:48:01 -0300
+      Started:      Thu, 26 Sep 2019 12:09:58 +0300
     Ready:          True
-    Restart Count:  1
-    Environment:    <none>
+    Restart Count:  0
+    Limits:
+      cpu:     20m
+      memory:  64Mi
+    Requests:
+      cpu:        10m
+      memory:     32Mi
+    Environment:  <none>
     Mounts:
-      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-5cmlp (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-cszr4 (ro)
 Conditions:
   Type              Status
   Initialized       True
@@ -252,14 +251,32 @@ Conditions:
   ContainersReady   True
   PodScheduled      True
 Volumes:
-  example-unifiedpushserver-token-5cmlp:
+  example-unifiedpushserver-token-cszr4:
     Type:        Secret (a volume populated by a Secret)
-    SecretName:  example-unifiedpushserver-token-5cmlp
+    SecretName:  example-unifiedpushserver-token-cszr4
     Optional:    false
-QoS Class:       BestEffort
+QoS Class:       Burstable
 Node-Selectors:  <none>
-Tolerations:     <none>
-Events:          <none>
+Tolerations:     node.kubernetes.io/memory-pressure:NoSchedule
+Events:
+  Type     Reason     Age                From                Message
+  ----     ------     ----               ----                -------
+  Normal   Scheduled  92s                default-scheduler   Successfully assigned unifiedpush/example-unifiedpushserver-78cdcd6589-2l2s5 to localhost
+  Normal   Pulling    91s                kubelet, localhost  pulling image "docker.io/centos/postgresql-10-centos7:1"
+  Normal   Pulled     89s                kubelet, localhost  Successfully pulled image "docker.io/centos/postgresql-10-centos7:1"
+  Normal   Created    89s                kubelet, localhost  Created container
+  Normal   Started    88s                kubelet, localhost  Started container
+  Normal   Pulling    87s                kubelet, localhost  pulling image "quay.io/aerogear/unifiedpush-configurable-container:2.4"
+  Normal   Pulling    85s                kubelet, localhost  pulling image "docker.io/openshift/oauth-proxy:v1.1.0"
+  Normal   Pulled     85s                kubelet, localhost  Successfully pulled image "quay.io/aerogear/unifiedpush-configurable-container:2.4"
+  Normal   Started    85s                kubelet, localhost  Started container
+  Normal   Created    85s                kubelet, localhost  Created container
+  Normal   Pulled     83s                kubelet, localhost  Successfully pulled image "docker.io/openshift/oauth-proxy:v1.1.0"
+  Normal   Created    83s                kubelet, localhost  Created container
+  Normal   Started    82s                kubelet, localhost  Started container
+  Warning  Unhealthy  48s (x3 over 68s)  kubelet, localhost  Readiness probe failed: Get http://172.17.0.10:8080/rest/applications: dial tcp 172.17.0.10:8080: connect: connection refused
+  Warning  Unhealthy  16s (x3 over 36s)  kubelet, localhost  Readiness probe failed: Get http://172.17.0.10:8080/rest/applications: net/http: request canceled (Client.Timeout exceeded while awaiting headers)
+
 ----
 +
 NOTE: It can lead you to find the root cause of the issue faced.
@@ -290,28 +307,24 @@ NOTE: Capture the logs are important to provide the required information for its
 [source,shell]
 ----
 $ oc describe pods -l service=ups
-Name:               example-unifiedpushserver-1-dk8vm
+Name:               example-unifiedpushserver-78cdcd6589-2l2s5
 Namespace:          unifiedpush
 Priority:           0
 PriorityClassName:  <none>
-Node:               localhost/192.168.64.27
-Start Time:         Wed, 03 Jul 2019 21:45:05 -0300
+Node:               localhost/192.168.122.127
+Start Time:         Thu, 26 Sep 2019 12:09:48 +0300
 Labels:             app=example-unifiedpushserver
-                    deployment=example-unifiedpushserver-1
-                    deploymentconfig=example-unifiedpushserver
+                    pod-template-hash=3478782145
                     service=ups
-Annotations:        openshift.io/deployment-config.latest-version=1
-                    openshift.io/deployment-config.name=example-unifiedpushserver
-                    openshift.io/deployment.name=example-unifiedpushserver-1
-                    openshift.io/scc=restricted
+Annotations:        openshift.io/scc: restricted
 Status:             Running
-IP:                 172.17.0.4
-Controlled By:      ReplicationController/example-unifiedpushserver-1
+IP:                 172.17.0.10
+Controlled By:      ReplicaSet/example-unifiedpushserver-78cdcd6589
 Init Containers:
   postgresql:
-    Container ID:  docker://ba7061aa4b115367eb4e9354aec327162dca6f181dd11b36632e15d273e3037d
-    Image:         172.30.1.1:5000/openshift/postgresql@sha256:0c78f036478b50800913056c564147ec452214fd0b6d41f4eec4fb3b5c63d246
-    Image ID:      docker-pullable://172.30.1.1:5000/openshift/postgresql@sha256:0c78f036478b50800913056c564147ec452214fd0b6d41f4eec4fb3b5c63d246
+    Container ID:  docker://c4d3f1d6379e3c57bab1bf0b2b87342ff92393ba44513052dc774688d9a4ac15
+    Image:          centos/postgresql-10-centos7:1
+    Image ID:       docker-pullable://docker.io/centos/postgresql-10-centos7@sha256:80894ff2dd64504acac207c6c050091698466291c9e0c8712e5edf473eb4e725
     Port:          <none>
     Host Port:     <none>
     Command:
@@ -321,43 +334,44 @@ Init Containers:
     State:          Terminated
       Reason:       Completed
       Exit Code:    0
-      Started:      Fri, 12 Jul 2019 08:51:28 -0300
-      Finished:     Fri, 12 Jul 2019 08:51:53 -0300
+      Started:      Thu, 26 Sep 2019 12:09:52 +0300
+      Finished:     Thu, 26 Sep 2019 12:09:52 +0300
     Ready:          True
     Restart Count:  0
     Environment:
       POSTGRES_SERVICE_HOST:  example-unifiedpushserver-postgresql
     Mounts:
-      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-5cmlp (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-cszr4 (ro)
 Containers:
   ups:
-    Container ID:   docker://28fc71000c66d9223ab6e340a030491c4348a0b51979237de04488fe18282337
-    Image:          docker.io/aerogear/unifiedpush-wildfly-plain@sha256:62ecab1e74e3b1a7b2ef1d9eb7594f29bcf6b55702c269c9deebdadf8aea8a8a
-    Image ID:       docker-pullable://docker.io/aerogear/unifiedpush-wildfly-plain@sha256:62ecab1e74e3b1a7b2ef1d9eb7594f29bcf6b55702c269c9deebdadf8aea8a8a
+    Container ID:   docker://2cdc9c3703f274053e724b589ac24e1ba12db52a07158b68ffd7ddec328fcb51
+    Image:          quay.io/aerogear/unifiedpush-configurable-container:2.4
+    Image ID:       docker-pullable://quay.io/aerogear/unifiedpush-configurable-container@sha256:df467ea07730ad35d8255a2d0a65a1f1777a7937272ad9073953abbf3a4b8331
     Port:           8080/TCP
     Host Port:      0/TCP
     State:          Running
-      Started:      Fri, 12 Jul 2019 08:51:57 -0300
-    Last State:     Terminated
-      Reason:       Error
-      Exit Code:    255
-      Started:      Wed, 03 Jul 2019 21:45:20 -0300
-      Finished:     Fri, 12 Jul 2019 08:48:01 -0300
+      Started:      Thu, 26 Sep 2019 12:09:55 +0300
     Ready:          True
-    Restart Count:  1
-    Liveness:       http-get http://:8080/rest/applications delay=60s timeout=2s period=10s #success=1 #failure=3
-    Readiness:      http-get http://:8080/rest/applications delay=15s timeout=2s period=10s #success=1 #failure=3
+    Restart Count:  0
+    Limits:
+      cpu:     1
+      memory:  2Gi
+    Requests:
+      cpu:      500m
+      memory:   512Mi
+    Liveness:   http-get http://:8080/rest/applications delay=120s timeout=10s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/rest/applications delay=15s timeout=2s period=10s #success=1 #failure=3
     Environment:
-      POSTGRES_SERVICE_HOST:  example-unifiedpushserver-postgresql
+      POSTGRES_SERVICE_HOST:  <set to the key 'POSTGRES_HOST' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
       POSTGRES_SERVICE_PORT:  5432
       POSTGRES_USER:          <set to the key 'POSTGRES_USERNAME' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
       POSTGRES_PASSWORD:      <set to the key 'POSTGRES_PASSWORD' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
       POSTGRES_DATABASE:      <set to the key 'POSTGRES_DATABASE' in secret 'example-unifiedpushserver-postgresql'>  Optional: false
     Mounts:
-      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-5cmlp (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-cszr4 (ro)
   ups-oauth-proxy:
-    Container ID:  docker://05f0d609bc3c9a2273db9b88a13cc26e4504e1bfed125e7c7dad59ba8a6c6712
-    Image:         docker.io/openshift/oauth-proxy@sha256:731c1fdad1de4bf68ae9eece5e99519f063fd8d9990da312082b4c995c4e4e33
+    Container ID:  docker://bdecada019bc6e2542b1f732f259a349fbb7651e6dd7d1227e42ee3c0c416630
+    Image:         docker.io/openshift/oauth-proxy:v1.1.0
     Image ID:      docker-pullable://docker.io/openshift/oauth-proxy@sha256:731c1fdad1de4bf68ae9eece5e99519f063fd8d9990da312082b4c995c4e4e33
     Port:          4180/TCP
     Host Port:     0/TCP
@@ -368,19 +382,20 @@ Containers:
       --http-address=0.0.0.0:4180
       --skip-auth-regex=/rest/sender,/rest/registry/device,/rest/prometheus/metrics,/rest/auth/config
       --https-address=
-      --cookie-secret=b3207b16503d491993e2057b9959951a
+      --cookie-secret=a509f22fa6224f8ea6ed663c8187cf49
     State:          Running
-      Started:      Fri, 12 Jul 2019 08:52:01 -0300
-    Last State:     Terminated
-      Reason:       Error
-      Exit Code:    255
-      Started:      Wed, 03 Jul 2019 21:45:23 -0300
-      Finished:     Fri, 12 Jul 2019 08:48:01 -0300
+      Started:      Thu, 26 Sep 2019 12:09:58 +0300
     Ready:          True
-    Restart Count:  1
-    Environment:    <none>
+    Restart Count:  0
+    Limits:
+      cpu:     20m
+      memory:  64Mi
+    Requests:
+      cpu:        10m
+      memory:     32Mi
+    Environment:  <none>
     Mounts:
-      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-5cmlp (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from example-unifiedpushserver-token-cszr4 (ro)
 Conditions:
   Type              Status
   Initialized       True
@@ -388,14 +403,31 @@ Conditions:
   ContainersReady   True
   PodScheduled      True
 Volumes:
-  example-unifiedpushserver-token-5cmlp:
+  example-unifiedpushserver-token-cszr4:
     Type:        Secret (a volume populated by a Secret)
-    SecretName:  example-unifiedpushserver-token-5cmlp
+    SecretName:  example-unifiedpushserver-token-cszr4
     Optional:    false
-QoS Class:       BestEffort
+QoS Class:       Burstable
 Node-Selectors:  <none>
-Tolerations:     <none>
-Events:          <none>
+Tolerations:     node.kubernetes.io/memory-pressure:NoSchedule
+Events:
+  Type     Reason     Age                From                Message
+  ----     ------     ----               ----                -------
+  Normal   Scheduled  2m24s              default-scheduler   Successfully assigned unifiedpush/example-unifiedpushserver-78cdcd6589-2l2s5 to localhost
+  Normal   Pulling    2m23s              kubelet, localhost  pulling image "docker.io/centos/postgresql-10-centos7:1"
+  Normal   Pulled     2m21s              kubelet, localhost  Successfully pulled image "docker.io/centos/postgresql-10-centos7:1"
+  Normal   Created    2m21s              kubelet, localhost  Created container
+  Normal   Started    2m20s              kubelet, localhost  Started container
+  Normal   Pulling    2m19s              kubelet, localhost  pulling image "quay.io/aerogear/unifiedpush-configurable-container:2.4"
+  Normal   Pulling    2m17s              kubelet, localhost  pulling image "docker.io/openshift/oauth-proxy:v1.1.0"
+  Normal   Pulled     2m17s              kubelet, localhost  Successfully pulled image "quay.io/aerogear/unifiedpush-configurable-container:2.4"
+  Normal   Started    2m17s              kubelet, localhost  Started container
+  Normal   Created    2m17s              kubelet, localhost  Created container
+  Normal   Pulled     2m15s              kubelet, localhost  Successfully pulled image "docker.io/openshift/oauth-proxy:v1.1.0"
+  Normal   Created    2m15s              kubelet, localhost  Created container
+  Normal   Started    2m14s              kubelet, localhost  Started container
+  Warning  Unhealthy  100s (x3 over 2m)  kubelet, localhost  Readiness probe failed: Get http://172.17.0.10:8080/rest/applications: dial tcp 172.17.0.10:8080: connect: connection refused
+  Warning  Unhealthy  68s (x3 over 88s)  kubelet, localhost  Readiness probe failed: Get http://172.17.0.10:8080/rest/applications: net/http: request canceled (Client.Timeout exceeded while awaiting headers)
 ----
 +
 NOTE: It can lead you to find the root cause of the issue faced.
@@ -428,12 +460,11 @@ data:
   POSTGRES_PASSWORD: NzM4NDQ1Mjg1Nzc2NDc4NmIxY2FmMjRlNjdkZDYyNzY=
   POSTGRES_SUPERUSER: ZmFsc2U=
   POSTGRES_USERNAME: dW5pZmllZHB1c2g=
-  POSTGRES_VERSION: MTA=
 kind: Secret
 ...
 ----
 +
-NOTE: The values described above should not be the same but should all data keys shoud be present with each respective value.
+NOTE: The values described above should not be the same but should all data keys should be present with each respective value.
 +
 . Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.2/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
 . In order to fix it, try to deploy it again by running `oc rollout --latest dc/unifiedpush`
@@ -564,15 +595,6 @@ unifiedpush-operator-58c8877fd8-g6dvr          1/1       Running   6          12
 $ oc get secrets | grep postgresql
 example-unifiedpushserver-postgresql        Opaque                                6         12d
 ----
-. Check that the image streams for the Service and Oauth was created with success by running `oc get imagestream`.  The following is an example of the expected result.
-+
-[source,shell]
-----
-$ oc get imagestream
-NAME                          DOCKER REPO                                               TAGS      UPDATED
-ups-imagestream               172.30.1.1:5000/unifiedpush/ups-imagestream               latest    12 days ago
-ups-oauth-proxy-imagestream   172.30.1.1:5000/unifiedpush/ups-oauth-proxy-imagestream   latest    12 days ago
-----
 . Check that the route to expose the service was created successfully by running `oc get route | grep unifiedpush-proxy`.  The following is an example of the expected result.
 +
 [source,shell]
@@ -580,13 +602,13 @@ ups-oauth-proxy-imagestream   172.30.1.1:5000/unifiedpush/ups-oauth-proxy-images
 $ oc get route | grep unifiedpush-proxy
 example-unifiedpushserver-unifiedpush-proxy   example-unifiedpushserver-unifiedpush-proxy-unifiedpush.192.168.64.27.nip.io             example-unifiedpushserver-unifiedpush-proxy   <all>     edge/None     None
 ----
-. Check that the DeploymentConfigs to deploy the Service and Database were created with success by running `oc get deploymentconfig | grep unifiedpush`.  The following is an example of the expected result.
+. Check that the Deployments to deploy the Service and Database were created with success by running `oc get deployment | grep unifiedpush`.  The following is an example of the expected result.
 +
 [source,shell]
 ----
-$ oc get deploymentconfig | grep unifiedpush
-example-unifiedpushserver              1          1         1         config,image(postgresql:postgresql:10),image(ups-imagestream:latest),image(ups-oauth-proxy-imagestream:latest)
-example-unifiedpushserver-postgresql   1          1         1         image(postgresql:10)
+$ oc get deployment | grep unifiedpush
+example-unifiedpushserver              1         1         1            1           3m
+example-unifiedpushserver-postgresql   1         1         1            1           25m
 ----
 . Check that the Proxy Service which is required to allow the UPS Server persist data into its Database was created with success by running `oc get service | grep unifiedpush-proxy`
 +
@@ -617,37 +639,29 @@ Following an example of an installation which has the UPS installed without the 
 [source,shell]
 ----
 $ oc get all
-NAME                                               READY     STATUS    RESTARTS   AGE
-pod/example-unifiedpushserver-1-dk8vm              2/2       Running   4          12d
-pod/example-unifiedpushserver-postgresql-1-bw8mt   1/1       Running   2          12d
-pod/unifiedpush-operator-58c8877fd8-g6dvr          1/1       Running   6          12d
+NAME                                                        READY   STATUS    RESTARTS   AGE
+pod/example-unifiedpushserver-78cdcd6589-2l2s5              2/2     Running   0          4m
+pod/example-unifiedpushserver-postgresql-5d44cbb4f5-sxssg   1/1     Running   0          25m
+pod/unifiedpush-operator-fccb9d9d8-h9cz4                    1/1     Running   0          26m
 
-NAME                                                           DESIRED   CURRENT   READY     AGE
-replicationcontroller/example-unifiedpushserver-1              1         1         1         12d
-replicationcontroller/example-unifiedpushserver-postgresql-1   1         1         1         12d
+NAME                                                  TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)             AGE
+service/example-unifiedpushserver-postgresql          ClusterIP   172.30.71.206    <none>        5432/TCP            25m
+service/example-unifiedpushserver-unifiedpush         ClusterIP   172.30.27.116    <none>        80/TCP              25m
+service/example-unifiedpushserver-unifiedpush-proxy   ClusterIP   172.30.10.53     <none>        80/TCP              25m
+service/unifiedpush-operator-metrics                  ClusterIP   172.30.131.190   <none>        8383/TCP,8686/TCP   26m
 
-NAME                                                  TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
-service/example-unifiedpushserver-postgresql          ClusterIP   172.30.67.199    <none>        5432/TCP   12d
-service/example-unifiedpushserver-unifiedpush         ClusterIP   172.30.90.23     <none>        80/TCP     12d
-service/example-unifiedpushserver-unifiedpush-proxy   ClusterIP   172.30.189.9     <none>        80/TCP     12d
-service/unifiedpush-operator                          ClusterIP   172.30.132.236   <none>        8383/TCP   12d
+NAME                                                   DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/example-unifiedpushserver              1         1         1            1           4m
+deployment.apps/example-unifiedpushserver-postgresql   1         1         1            1           25m
+deployment.apps/unifiedpush-operator                   1         1         1            1           26m
 
-NAME                                   DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/unifiedpush-operator   1         1         1            1           12d
+NAME                                                              DESIRED   CURRENT   READY   AGE
+replicaset.apps/example-unifiedpushserver-78cdcd6589              1         1         1       4m
+replicaset.apps/example-unifiedpushserver-postgresql-5d44cbb4f5   1         1         1       25m
+replicaset.apps/unifiedpush-operator-fccb9d9d8                    1         1         1       26m
 
-NAME                                              DESIRED   CURRENT   READY     AGE
-replicaset.apps/unifiedpush-operator-58c8877fd8   1         1         1         12d
-
-NAME                                                                      REVISION   DESIRED   CURRENT   TRIGGERED BY
-deploymentconfig.apps.openshift.io/example-unifiedpushserver              1          1         1         config,image(postgresql:postgresql:10),image(ups-imagestream:latest),image(ups-oauth-proxy-imagestream:latest)
-deploymentconfig.apps.openshift.io/example-unifiedpushserver-postgresql   1          1         1         image(postgresql:10)
-
-NAME                                                         DOCKER REPO                                               TAGS      UPDATED
-imagestream.image.openshift.io/ups-imagestream               172.30.1.1:5000/unifiedpush/ups-imagestream               latest    12 days ago
-imagestream.image.openshift.io/ups-oauth-proxy-imagestream   172.30.1.1:5000/unifiedpush/ups-oauth-proxy-imagestream   latest    12 days ago
-
-NAME                                                                   HOST/PORT                                                                      PATH      SERVICES                                      PORT      TERMINATION   WILDCARD
-route.route.openshift.io/example-unifiedpushserver-unifiedpush-proxy   example-unifiedpushserver-unifiedpush-proxy-unifiedpush.192.168.64.27.nip.io             example-unifiedpushserver-unifiedpush-proxy   <all>     edge/None     None
+NAME                                                                   HOST/PORT                                                                      PATH   SERVICES                                      PORT    TERMINATION   WILDCARD
+route.route.openshift.io/example-unifiedpushserver-unifiedpush-proxy   example-unifiedpushserver-unifiedpush-proxy-unifiedpush.192.168.42.58.nip.io          example-unifiedpushserver-unifiedpush-proxy   <all>   edge/None     None
 ----
 
 === Optional configurations

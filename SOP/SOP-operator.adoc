@@ -63,7 +63,7 @@ If the https://github.com/aerogear/unifiedpush-operator#monitoring-service-metri
 
 == AMQ Integration
 
-There is a variable that is responsable for switching AMQ usage in the unifiedpushserver custom resource:
+There is a variable that is responsible for switching AMQ usage in the unifiedpushserver custom resource:
 
 ```yaml
 apiVersion: push.aerogear.org/v1alpha1

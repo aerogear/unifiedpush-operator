@@ -2,11 +2,12 @@ package unifiedpushserver
 
 import (
 	"fmt"
+	"github.com/aerogear/unifiedpush-operator/pkg/constants"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
-	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,36 +47,24 @@ func newPostgresqlSecret(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Secret, er
 			"POSTGRES_PASSWORD":  databasePassword,
 			"POSTGRES_HOST":      fmt.Sprintf("%s-postgresql.%s.svc", cr.Name, cr.Namespace),
 			"POSTGRES_SUPERUSER": "false",
-			"POSTGRES_VERSION":   cfg.PostgresImageStreamTag,
 		},
 	}, nil
 }
 
-func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshiftappsv1.DeploymentConfig, error) {
+func newPostgresqlDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1.Deployment, error) {
+	replicas := int32(1)
 
-	return &openshiftappsv1.DeploymentConfig{
+	return &appsv1.Deployment{
 		ObjectMeta: objectMeta(cr, "postgresql"),
-		Spec: openshiftappsv1.DeploymentConfigSpec{
-			Replicas: 1,
-			Selector: labels(cr, "postgresql"),
-			Strategy: openshiftappsv1.DeploymentStrategy{
-				Type: openshiftappsv1.DeploymentStrategyTypeRecreate,
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas, // this is stupid! https://stackoverflow.com/questions/30716354/how-do-i-do-a-literal-int64-in-go
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels(cr, "postgresql"),
 			},
-			Triggers: openshiftappsv1.DeploymentTriggerPolicies{
-				openshiftappsv1.DeploymentTriggerPolicy{
-					Type: openshiftappsv1.DeploymentTriggerOnImageChange,
-					ImageChangeParams: &openshiftappsv1.DeploymentTriggerImageChangeParams{
-						Automatic:      true,
-						ContainerNames: []string{cfg.PostgresContainerName},
-						From: corev1.ObjectReference{
-							Kind:      "ImageStreamTag",
-							Namespace: cfg.PostgresImageStreamNamespace,
-							Name:      cfg.PostgresImageStreamName + ":" + cfg.PostgresImageStreamTag,
-						},
-					},
-				},
+			Strategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RecreateDeploymentStrategyType,
 			},
-			Template: &corev1.PodTemplateSpec{
+			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels(cr, "postgresql"),
 				},
@@ -83,7 +72,7 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 					Containers: []corev1.Container{
 						{
 							Name:            cfg.PostgresContainerName,
-							Image:           cfg.PostgresImageStreamName + ":" + cfg.PostgresImageStreamTag,
+							Image:           constants.PostgresImage,
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
 								{
@@ -153,7 +142,7 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 							},
 							Resources: getPostgresResourceRequirements(cr),
 							VolumeMounts: []corev1.VolumeMount{
-								corev1.VolumeMount{
+								{
 									Name:      fmt.Sprintf("%s-postgresql-data", cr.Name),
 									MountPath: "/var/lib/pgsql/data",
 								},
@@ -161,7 +150,7 @@ func newPostgresqlDeploymentConfig(cr *pushv1alpha1.UnifiedPushServer) (*openshi
 						},
 					},
 					Volumes: []corev1.Volume{
-						corev1.Volume{
+						{
 							Name: fmt.Sprintf("%s-postgresql-data", cr.Name),
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{

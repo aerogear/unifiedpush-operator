@@ -2,9 +2,8 @@ package unifiedpushserver
 
 import (
 	"context"
-	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -41,10 +40,10 @@ func TestReconcileUnifiedPushServer_Reconcile(t *testing.T) {
 	}
 
 	// Check if deployment has been created
-	dep := &openshiftappsv1.DeploymentConfig{}
+	dep := &appsv1.Deployment{}
 	err = r.client.Get(context.TODO(), req.NamespacedName, dep)
 	if err != nil {
-		t.Fatalf("get deployment config: (%v)", err)
+		t.Fatalf("get deployment: (%v)", err)
 	}
 
 	// Check if service has been created
@@ -94,20 +93,6 @@ func TestReconcileUnifiedPushServer_Reconcile(t *testing.T) {
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-unifiedpush", Namespace: pushServerInstance.Namespace}, servicePush)
 	if err != nil {
 		t.Fatalf("get servicePush: (%v)", err)
-	}
-
-	// Check if imageStream has been created
-	oauthImageStream := &imagev1.ImageStream{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "ups-oauth-proxy-imagestream", Namespace: pushServerInstance.Namespace}, oauthImageStream)
-	if err != nil {
-		t.Fatalf("get oauthImageStream: (%v)", err)
-	}
-
-	// Check if imageStream has been created
-	upsImageStream := &imagev1.ImageStream{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "ups-imagestream", Namespace: pushServerInstance.Namespace}, upsImageStream)
-	if err != nil {
-		t.Fatalf("get upsImageStream: (%v)", err)
 	}
 
 	//TODO:Finish this test
