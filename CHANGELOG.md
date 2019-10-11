@@ -10,9 +10,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Use Deployments instead of DeploymentConfigs
 - Use static image references instead of ImageStreams
+
+### Removed
 - Delete old resources that were created by the previous versions of the operator 
   (DeploymentConfig and ImageStreams)
-- Upgrade to use Postgres 10 and UPS 2.4
 
 ## [0.2.0] - 2019-09-05
 ### Added

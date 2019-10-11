@@ -485,6 +485,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			reqLogger.Info("Found a DeploymentConfig for UnifiedPush Server. Deleting it.", "DeploymentConfig.Namespace", foundUpsDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUpsDeploymentConfig.Name)
 			err = r.client.Delete(context.TODO(), foundUpsDeploymentConfig)
 			if err != nil {
+				reqLogger.Error(err, "Unable to delete the DeploymentConfig for UnifiedPush Server.", "DeploymentConfig.Namespace", foundUpsDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUpsDeploymentConfig.Name)
 				return reconcile.Result{}, err
 			}
 		}
@@ -502,6 +503,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			reqLogger.Info("Found a DeploymentConfig for Postgres. Deleting it.", "DeploymentConfig.Namespace", foundPostgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", foundPostgresqlDeploymentConfig.Name)
 			err = r.client.Delete(context.TODO(), foundPostgresqlDeploymentConfig)
 			if err != nil {
+				reqLogger.Error(err, "Unable to delete the DeploymentConfig for Postgres.", "DeploymentConfig.Namespace", foundPostgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", foundPostgresqlDeploymentConfig.Name)
 				return reconcile.Result{}, err
 			}
 		}
@@ -525,7 +527,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			reqLogger.Info("Found a ImageStream for OAuth Proxy. Deleting it.", "ImageStream.Namespace", foundOAuthProxyImageStream.Namespace, "ImageStream.Name", foundOAuthProxyImageStream.Name)
 			err = r.client.Delete(context.TODO(), foundOAuthProxyImageStream)
 			if err != nil {
-				return reconcile.Result{}, err
+				reqLogger.Error(err, "Unable to delete ImageStream. Skipping it.", "ImageStream.Namespace", foundOAuthProxyImageStream.Namespace, "ImageStream.Name", foundOAuthProxyImageStream.Name)
+				// don't do anything.
+				// we simply log this, and it should be ok to have some leftover ImageStreams
 			}
 		}
 		//#endregion
@@ -538,14 +542,17 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		foundUpsImageStream := &imagev1.ImageStream{}
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: upsImageStreamObjectMeta.Name, Namespace: upsImageStreamObjectMeta.Namespace}, foundUpsImageStream)
 		if err != nil && !errors.IsNotFound(err) {
-			// if there is another error than the DC not being found
+			// if there is another error than the ImageStream not being found
 			reqLogger.Error(err, "Unable to check if an ImageStream exists for UnifiedPush Server.", "ImageStream.Namespace", foundUpsImageStream.Namespace, "ImageStream.Name", foundUpsImageStream.Name)
-			return reconcile.Result{}, err
+			// don't do anything.
+			// we simply log this, and it should be ok to have some leftover ImageStreams
 		} else if err == nil {
 			reqLogger.Info("Found an ImageStream for UnifiedPush Server. Deleting it.", "ImageStream.Namespace", foundUpsImageStream.Namespace, "ImageStream.Name", foundUpsImageStream.Name)
 			err = r.client.Delete(context.TODO(), foundUpsImageStream)
 			if err != nil {
-				return reconcile.Result{}, err
+				reqLogger.Error(err, "Unable to delete ImageStream. Skipping it.", "ImageStream.Namespace", foundUpsImageStream.Namespace, "ImageStream.Name", foundUpsImageStream.Name)
+				// don't do anything.
+				// we simply log this, and it should be ok to have some leftover ImageStreams
 			}
 		}
 		//#endregion
