@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
-## [1.0.0] - 2019-10-10
+## [0.3.0] - 2019-10-10
 ### Changed
 - Use Deployments instead of DeploymentConfigs
 - Use static image references instead of ImageStreams
