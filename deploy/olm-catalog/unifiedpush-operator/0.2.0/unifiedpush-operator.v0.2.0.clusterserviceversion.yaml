@@ -6,25 +6,20 @@ metadata:
       super Android variant","pushApplicationId":"123456","senderId":"123456","serverKey":"somekeyinbase64=="}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"IOSVariant","metadata":{"name":"example-iosvariant"},"spec":{"certificate":"somekeyinbase64==","description":"My
       super iOS variant","passphrase":"123456","production":false,"pushApplicationId":"123456"}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"PushApplication","metadata":{"name":"example-pushapplication"},"spec":{"description":"An
       example push application to demonstrate the unifiedpush-operator"}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"example-unifiedpushserver"},"spec":{"useMessageBroker":false}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"example-ups-with-backups"},"spec":{"backups":[{"backendSecretName":"example-aws-key","backendSecretNamespace":"unifiedpush","encryptionKeySecretName":"example-encryption-key","encryptionKeySecretNamespace":"unifiedpush","name":"ups-daily-at-midnight","schedule":"0
-      0 * * *"}]}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"ups-with-enmasse"},"spec":{"useMessageBroker":true}}]'
+      0 * * *"}]}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"ups-with-enmasse"},"spec":{"useMessageBroker":true}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"example-unifiedpushserver"},"spec":{"oAuthResourceRequirements":{"limits":{"cpu":"100m","memory":"128Mi"},"requests":{"cpu":"50m","memory":"64Mi"}},"postgresPVCSize":"10Gi","postgresResourceRequirements":{"limits":{"cpu":"2","memory":"2Gi"},"requests":{"cpu":"1","memory":"1Gi"}},"unifiedPushResourceRequirements":{"limits":{"cpu":"2","memory":"3Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"WebPushVariant","metadata":{"name":"example-webpushvariant"},"spec":{"alias":"http://aerogear.org","description":"My
+      web push variant","privateKey":"pleaseGenerateAVAPIDKeyPair","publicKey":"pleaseGenerateAVAPIDKeyPair","pushApplicationId":"4f0ea481-0f80-4e13-9c58-ba1ddc58bb4c"}}]'
     capabilities: Basic Install
-    categories: Unified Push
-    description: The AeroGear UnifiedPush Server is a server that allows sending push notifications to different (mobile) platforms.
-    containerImage: quay.io/aerogear/unifiedpush-operator@sha256:abf93d615e9e9348985d67102104b86ac329295fcdc5960aa49e865d5ee38bb3
-    createdAt: 2019-09-17 16:24:00
-    support: "Red Hat, Inc."
-    certified: "false"  
   name: unifiedpush-operator.v0.2.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
-  customresourcedefinitions: 
+  customresourcedefinitions:
     owned:
-    - kind: UnifiedPushServer
-      name: unifiedpushservers.push.aerogear.org
+    - kind: PushApplication
+      name: pushapplications.push.aerogear.org
       version: v1alpha1
-      displayName: Unified Push Server
-      description: Represents an Unified Push Server Installation
+      displayName: UPS Push Application
+      description: Represents an UPS Push Application Installation
     - kind: AndroidVariant
       name: androidvariants.push.aerogear.org
       version: v1alpha1
@@ -35,37 +30,32 @@ spec:
       version: v1alpha1
       displayName: IOS Variant UPS
       description: Represents an IOS Variant UPS Installation
-    - kind: PushApplication
-      name: pushapplications.push.aerogear.org
+    - kind: UnifiedPushServer
+      name: unifiedpushservers.push.aerogear.org
       version: v1alpha1
-      displayName: UPS Push Application
-      description: Represents an UPS Push Application Installation
+      displayName: Unified Push Server
+      description: Represents an Unified Push Server Installation
+    - kind: WebPushVariant
+      name: webpushvariants.push.aerogear.org
+      version: v1alpha1
+      displayName: Web Push Variant UPS
+      description: Represents an Web Push Variant Installation
   description: The UnifiedPush Operator for Kubernetes provides an easy way to install and manage an AeroGear UnifiedPush Server on OpenShift.
   displayName: Unifiedpush Operator
   install:
     spec:
       clusterPermissions:
-      - serviceAccountName: unifiedpush-operator
-        rules:
+      - rules:
         - apiGroups:
           - push.aerogear.org
           resources:
           - '*'
+          - webpushvariants
           verbs:
           - get
           - list
           - watch
           - update
-        - apiGroups:
-          - ""
-          resources:
-          - namespaces
-          verbs:
-          - get
-        
-      permissions:
-      - serviceAccountName: unifiedpush-operator
-        rules:
         - apiGroups:
           - ""
           resources:
@@ -133,6 +123,12 @@ spec:
           - patch
           - delete
         - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
           - apps
           resources:
           - deployments
@@ -163,7 +159,6 @@ spec:
           - monitoring.coreos.com
           resources:
           - servicemonitors
-          - servicemonitors/finalizers
           verbs:
           - get
           - list
@@ -172,6 +167,21 @@ spec:
           - update
           - patch
           - delete
+        - apiGroups:
+          - enmasse.io
+          resources:
+          - messagingusers
+          - addressspaces
+          - addresses
+          verbs:
+          - list
+        - apiGroups:
+          - user.enmasse.io
+          resources:
+          - messagingusers
+          verbs:
+          - list
+        serviceAccountName: unifiedpush-operator
       deployments:
       - name: unifiedpush-operator
         spec:
@@ -190,9 +200,6 @@ spec:
                 - unifiedpush-operator
                 env:
                 - name: WATCH_NAMESPACE
-                  valueFrom:
-                    fieldRef:
-                      fieldPath: metadata.annotations['olm.targetNamespaces']
                 - name: APP_NAMESPACES
                   value: unifiedpush-apps
                 - name: SERVICE_NAMESPACE
