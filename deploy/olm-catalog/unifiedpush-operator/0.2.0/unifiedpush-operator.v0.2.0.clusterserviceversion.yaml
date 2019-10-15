@@ -2,12 +2,12 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"push.aerogear.org/v1alpha1","kind":"AndroidVariant","metadata":{"name":"example-androidvariant"},"spec":{"description":"My
-      super Android variant","pushApplicationId":"123456","senderId":"123456","serverKey":"somekeyinbase64=="}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"IOSVariant","metadata":{"name":"example-iosvariant"},"spec":{"certificate":"somekeyinbase64==","description":"My
-      super iOS variant","passphrase":"123456","production":false,"pushApplicationId":"123456"}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"PushApplication","metadata":{"name":"example-pushapplication"},"spec":{"description":"An
+    alm-examples: '[{"apiVersion":"push.aerogear.org/v1alpha1","kind":"PushApplication","metadata":{"name":"example-pushapplication"},"spec":{"description":"An
       example push application to demonstrate the unifiedpush-operator"}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"example-unifiedpushserver"},"spec":{"useMessageBroker":false}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"example-ups-with-backups"},"spec":{"backups":[{"backendSecretName":"example-aws-key","backendSecretNamespace":"unifiedpush","encryptionKeySecretName":"example-encryption-key","encryptionKeySecretNamespace":"unifiedpush","name":"ups-daily-at-midnight","schedule":"0
       0 * * *"}]}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"ups-with-enmasse"},"spec":{"useMessageBroker":true}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"example-unifiedpushserver"},"spec":{"oAuthResourceRequirements":{"limits":{"cpu":"100m","memory":"128Mi"},"requests":{"cpu":"50m","memory":"64Mi"}},"postgresPVCSize":"10Gi","postgresResourceRequirements":{"limits":{"cpu":"2","memory":"2Gi"},"requests":{"cpu":"1","memory":"1Gi"}},"unifiedPushResourceRequirements":{"limits":{"cpu":"2","memory":"3Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"WebPushVariant","metadata":{"name":"example-webpushvariant"},"spec":{"alias":"http://aerogear.org","description":"My
-      web push variant","privateKey":"pleaseGenerateAVAPIDKeyPair","publicKey":"pleaseGenerateAVAPIDKeyPair","pushApplicationId":"4f0ea481-0f80-4e13-9c58-ba1ddc58bb4c"}}]'
+      web push variant","privateKey":"pleaseGenerateAVAPIDKeyPair","publicKey":"pleaseGenerateAVAPIDKeyPair","pushApplicationId":"4f0ea481-0f80-4e13-9c58-ba1ddc58bb4c"}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"AndroidVariant","metadata":{"name":"example-androidvariant"},"spec":{"description":"My
+      super Android variant","pushApplicationId":"123456","senderId":"123456","serverKey":"somekeyinbase64=="}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"IOSVariant","metadata":{"name":"example-iosvariant"},"spec":{"certificate":"somekeyinbase64==","description":"My
+      super iOS variant","passphrase":"123456","production":false,"pushApplicationId":"123456"}}]'
     capabilities: Basic Install
   name: unifiedpush-operator.v0.2.0
   namespace: placeholder
@@ -87,6 +87,18 @@ spec:
           - patch
           - delete
         - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
           - route.openshift.io
           resources:
           - routes
@@ -130,12 +142,6 @@ spec:
           - get
         - apiGroups:
           - apps
-          resources:
-          - deployments
-          verbs:
-          - get
-        - apiGroups:
-          - apps
           resourceNames:
           - unifiedpush-operator
           resources:
@@ -170,17 +176,35 @@ spec:
         - apiGroups:
           - enmasse.io
           resources:
-          - messagingusers
-          - addressspaces
           - addresses
+          - addressspaces
           verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - enmasse.io
+          resources:
+          - addressspaceschemas
+          verbs:
+          - get
           - list
         - apiGroups:
           - user.enmasse.io
           resources:
           - messagingusers
           verbs:
+          - create
+          - delete
+          - get
           - list
+          - patch
+          - update
+          - watch
         serviceAccountName: unifiedpush-operator
       deployments:
       - name: unifiedpush-operator
@@ -234,6 +258,6 @@ spec:
   - supported: true
     type: AllNamespaces
   maturity: alpha
-  provider: 
+  provider:
     name: Aerogear
   version: 0.2.0
