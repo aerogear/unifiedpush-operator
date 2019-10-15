@@ -598,6 +598,8 @@ $ git push upstream 0.1.0
 +
 NOTE: The image with the tag will be created and pushed to the https://quay.io/repository/aerogear/unifiedpush-operator[unifiedpush-operator image hosting repository] by the Jenkins.
 
+. Create a release in Github so that it is picked up by some internal processes
+
 == Architecture
 
 This operator is `cluster-scoped`. For further information see the https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md#operator-scope[Operator Scope] section in the Operator Framework documentation. Also, check its roles in link:./deploy/[Deploy] directory.
