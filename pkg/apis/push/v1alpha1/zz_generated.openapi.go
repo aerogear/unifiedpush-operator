@@ -553,6 +553,7 @@ func schema_pkg_apis_push_v1alpha1_UnifiedPushServer(ref common.ReferenceCallbac
 						},
 					},
 				},
+				Required: []string{"externalDB"},
 			},
 		},
 		Dependencies: []string{
@@ -566,6 +567,48 @@ func schema_pkg_apis_push_v1alpha1_UnifiedPushServerSpec(ref common.ReferenceCal
 			SchemaProps: spec.SchemaProps{
 				Description: "UnifiedPushServerSpec defines the desired state of UnifiedPushServer",
 				Properties: map[string]spec.Schema{
+					"externalDB": {
+						SchemaProps: spec.SchemaProps{
+							Description: "When true, deployement wont be created, service with external db details will be passed to ups",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"databaseName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Database name for external database support",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"databasePassword": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Database password for external database support",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"databaseUser": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Database user for external database support",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"databaseHost": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Database host for external database support",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"databasePort": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Database port for external database support",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"backups": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Backups is an array of configs that will be used to create CronJob resource instances",

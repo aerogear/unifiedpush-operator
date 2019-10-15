@@ -69,6 +69,25 @@ spec:
                 - backendSecretName
                 type: object
               type: array
+            databaseHost:
+              description: Database host for external database support
+              type: string
+            databaseName:
+              description: Database name for external database support
+              type: string
+            databasePassword:
+              description: Database password for external database support
+              type: string
+            databasePort:
+              description: Database port for external database support
+              type: string
+            databaseUser:
+              description: Database user for external database support
+              type: string
+            externalDB:
+              description: When true, deployement wont be created, service with external
+                db details will be passed to ups
+              type: boolean
             oAuthResourceRequirements:
               type: object
             postgresPVCSize:
@@ -82,6 +101,8 @@ spec:
               description: UseMessageBroker can be set to true to use managed queues,
                 if you are using enmasse. Defaults to false.
               type: boolean
+          required:
+          - externalDB
           type: object
         status:
           properties:

@@ -13,6 +13,19 @@ type UnifiedPushServerSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
+	//When true, deployement wont be created, service with external db details will be passed to ups
+	ExternalDB bool `json:"externalDB"`
+	//Database name for external database support
+	DatabaseName string `json:"databaseName,omitempty"`
+	//Database password for external database support
+	DatabasePassword string `json:"databasePassword,omitempty"`
+	//Database user for external database support
+	DatabaseUser string `json:"databaseUser,omitempty"`
+	//Database host for external database support
+	DatabaseHost string `json:"databaseHost,omitempty"`
+	//Database port for external database support
+	DatabasePort string `json:"databasePort,omitempty"`
+
 	// Backups is an array of configs that will be used to create CronJob resource instances
 	Backups []UnifiedPushServerBackup `json:"backups,omitempty"`
 

@@ -4,3 +4,9 @@ metadata:
   name: example-unifiedpushserver
 spec:
   useMessageBroker: false
+  externalDB: false
+  databaseHost: example-host
+  databaseName: example-name
+  databasePassword: password
+  databaseUser: user
+  databasePort: '5432'
