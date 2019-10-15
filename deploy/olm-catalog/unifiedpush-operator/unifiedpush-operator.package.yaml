@@ -1,4 +1,5 @@
-packageName: integreatly-unifiedpush
 channels:
-- currentCSV: unifiedpush-operator.v0.2.0
-  name: integreatly
+- currentCSV: unifiedpush-operator.v0.3.0
+  name: stable
+defaultChannel: stable
+packageName: unifiedpush-operator

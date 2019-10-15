@@ -1,0 +1,268 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"example-unifiedpushserver"},"spec":{"useMessageBroker":false}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"example-ups-with-backups"},"spec":{"backups":[{"backendSecretName":"example-aws-key","backendSecretNamespace":"unifiedpush","encryptionKeySecretName":"example-encryption-key","encryptionKeySecretNamespace":"unifiedpush","name":"ups-daily-at-midnight","schedule":"0
+      0 * * *"}]}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"ups-with-enmasse"},"spec":{"useMessageBroker":true}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"UnifiedPushServer","metadata":{"name":"example-unifiedpushserver"},"spec":{"oAuthResourceRequirements":{"limits":{"cpu":"100m","memory":"128Mi"},"requests":{"cpu":"50m","memory":"64Mi"}},"postgresPVCSize":"10Gi","postgresResourceRequirements":{"limits":{"cpu":"2","memory":"2Gi"},"requests":{"cpu":"1","memory":"1Gi"}},"unifiedPushResourceRequirements":{"limits":{"cpu":"2","memory":"3Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"WebPushVariant","metadata":{"name":"example-webpushvariant"},"spec":{"alias":"http://aerogear.org","description":"My
+      web push variant","privateKey":"pleaseGenerateAVAPIDKeyPair","publicKey":"pleaseGenerateAVAPIDKeyPair","pushApplicationId":"4f0ea481-0f80-4e13-9c58-ba1ddc58bb4c"}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"AndroidVariant","metadata":{"name":"example-androidvariant"},"spec":{"description":"My
+      super Android variant","pushApplicationId":"123456","senderId":"123456","serverKey":"somekeyinbase64=="}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"IOSVariant","metadata":{"name":"example-iosvariant"},"spec":{"certificate":"somekeyinbase64==","description":"My
+      super iOS variant","passphrase":"123456","production":false,"pushApplicationId":"123456"}},{"apiVersion":"push.aerogear.org/v1alpha1","kind":"PushApplication","metadata":{"name":"example-pushapplication"},"spec":{"description":"An
+      example push application to demonstrate the unifiedpush-operator"}}]'
+    capabilities: Basic Install
+  name: unifiedpush-operator.v0.3.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Represents a UPS Android Variant
+      displayName: Android Variant
+      kind: AndroidVariant
+      name: androidvariants.push.aerogear.org
+      version: v1alpha1
+    - description: Represents a UPS iOS Variant
+      displayName: iOS Variant
+      kind: IOSVariant
+      name: iosvariants.push.aerogear.org
+      version: v1alpha1
+    - description: Represents a UPS Push Application
+      displayName: Push Application
+      kind: PushApplication
+      name: pushapplications.push.aerogear.org
+      version: v1alpha1
+    - description: Represents an AeroGear UnifiedPush Server
+      displayName: UnifiedPush Server
+      kind: UnifiedPushServer
+      name: unifiedpushservers.push.aerogear.org
+      version: v1alpha1
+    - description: Represents a UPS WebPush Variant
+      displayName: WebPush Variant
+      kind: WebPushVariant
+      name: webpushvariants.push.aerogear.org
+      version: v1alpha1
+  description: The UnifiedPush Operator for Kubernetes provides an easy way to install
+    and manage an AeroGear UnifiedPush Server on OpenShift.
+  displayName: UnifiedPush Operator
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - push.aerogear.org
+          resources:
+          - '*'
+          - webpushvariants
+          verbs:
+          - get
+          - list
+          - watch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          - services/finalizers
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          - serviceaccounts
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - batch
+          resources:
+          - cronjobs
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - image.openshift.io
+          resources:
+          - imagestreams
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfigs
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resourceNames:
+          - unifiedpush-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          verbs:
+          - get
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - enmasse.io
+          resources:
+          - addresses
+          - addressspaces
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - enmasse.io
+          resources:
+          - addressspaceschemas
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - user.enmasse.io
+          resources:
+          - messagingusers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        serviceAccountName: unifiedpush-operator
+      deployments:
+      - name: unifiedpush-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: unifiedpush-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: unifiedpush-operator
+            spec:
+              containers:
+              - command:
+                - unifiedpush-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: APP_NAMESPACES
+                  value: unifiedpush-apps
+                - name: SERVICE_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: unifiedpush-operator
+                image: quay.io/aerogear/unifiedpush-operator:0.3.0
+                imagePullPolicy: Always
+                name: unifiedpush-operator
+                resources:
+                  limits:
+                    cpu: 60m
+                    memory: 128Mi
+                  requests:
+                    cpu: 30m
+                    memory: 64Mi
+              serviceAccountName: unifiedpush-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  maturity: alpha
+  provider:
+    name: AeroGear
+  replaces: unifiedpush-operator.v0.2.0
+  version: 0.3.0
