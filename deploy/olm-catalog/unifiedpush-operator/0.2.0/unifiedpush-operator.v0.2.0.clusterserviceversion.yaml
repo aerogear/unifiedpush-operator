@@ -18,30 +18,30 @@ spec:
     - kind: PushApplication
       name: pushapplications.push.aerogear.org
       version: v1alpha1
-      displayName: UPS Push Application
-      description: Represents an UPS Push Application Installation
+      displayName: Push Application
+      description: Represents a UPS Push Application
     - kind: AndroidVariant
       name: androidvariants.push.aerogear.org
       version: v1alpha1
-      displayName: Android Variant UPS
-      description: Represents an Android Variant UPS Installation
+      displayName: Android Variant
+      description: Represents a UPS Android Variant
     - kind: IOSVariant
       name: iosvariants.push.aerogear.org
       version: v1alpha1
-      displayName: IOS Variant UPS
-      description: Represents an IOS Variant UPS Installation
+      displayName: iOS Variant
+      description: Represents a UPS iOS Variant
     - kind: UnifiedPushServer
       name: unifiedpushservers.push.aerogear.org
       version: v1alpha1
-      displayName: Unified Push Server
-      description: Represents an Unified Push Server Installation
+      displayName: UnifiedPush Server
+      description: Represents an AeroGear UnifiedPush Server
     - kind: WebPushVariant
       name: webpushvariants.push.aerogear.org
       version: v1alpha1
-      displayName: Web Push Variant UPS
-      description: Represents an Web Push Variant Installation
+      displayName: WebPush Variant
+      description: Represents a UPS WebPush Variant
   description: The UnifiedPush Operator for Kubernetes provides an easy way to install and manage an AeroGear UnifiedPush Server on OpenShift.
-  displayName: Unifiedpush Operator
+  displayName: UnifiedPush Operator
   install:
     spec:
       clusterPermissions:
@@ -259,5 +259,5 @@ spec:
     type: AllNamespaces
   maturity: alpha
   provider:
-    name: Aerogear
+    name: AeroGear
   version: 0.2.0
