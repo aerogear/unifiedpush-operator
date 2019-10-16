@@ -131,3 +131,35 @@ rules:
   - update
   - patch
   - delete
+- apiGroups:
+  - enmasse.io
+  resources:
+  - addresses
+  - addressspaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - enmasse.io
+  resources:
+  - addressspaceschemas
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - user.enmasse.io
+  resources:
+  - messagingusers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
