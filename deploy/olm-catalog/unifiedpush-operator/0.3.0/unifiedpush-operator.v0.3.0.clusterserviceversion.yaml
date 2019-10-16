@@ -225,11 +225,8 @@ spec:
                 - unifiedpush-operator
                 env:
                 - name: WATCH_NAMESPACE
-                  valueFrom:
-                    fieldRef:
-                      fieldPath: metadata.annotations['olm.targetNamespaces']
                 - name: APP_NAMESPACES
-                  value: unifiedpush-apps
+                  value: unifiedpush,mobile-developer-console,openshift-mobile-developer-console
                 - name: SERVICE_NAMESPACE
                   valueFrom:
                     fieldRef:

@@ -225,7 +225,7 @@ spec:
                 env:
                 - name: WATCH_NAMESPACE
                 - name: APP_NAMESPACES
-                  value: unifiedpush-apps
+                  value: unifiedpush,mobile-developer-console,openshift-mobile-developer-console
                 - name: SERVICE_NAMESPACE
                   valueFrom:
                     fieldRef:
