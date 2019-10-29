@@ -43,6 +43,27 @@ spec:
               description: Certificate defines the base64 encoded APNs certificate
                 that is needed to establish a connection to Apple's APNs Push Servers.
               type: string
+            privateKey:
+              description: PrivateKey is a key provided by APNs in p8 format that is used
+                to sign requests if you opt to use token based authentication for sending
+                UPS messages to APNS.
+              type: string
+            teamId:
+              description: TeamId is a 10 digit identifier for use with APNS token support.
+                  This value is provided by APNS.              
+              minLength: 10
+              maxLength: 10
+              type: string
+            keyId:
+              description: KeyId is a 10 digit identifier for use with APNS token support.
+                  This value is provided by APNS.
+              minLength: 10
+              maxLength: 10
+              type: string
+            bundleId:
+              description: BundleId is an identifier for use with APNS token support.  
+                  This value is provided by APNS.
+              type: string
             description:
               description: Description is a human friendly description for the variant.
               type: string
@@ -59,12 +80,21 @@ spec:
               description: PushApplicationId is the Id of the Application that this
                 Variant corresponds to in the UnifiedPush Server admin UI.
               type: string
-          required:
-          - certificate
-          - passphrase
-          - production
-          - pushApplicationId
-          type: object
+          oneOf:
+            - required:
+              - certificate
+              - passphrase
+              - production
+              - pushApplicationId
+              type: object
+            - required:
+              - teamId
+              - keyId
+              - bundleId
+              - privateKey
+              - production
+              - pushApplicationId
+              type: object
         status:
           properties:
             ready:

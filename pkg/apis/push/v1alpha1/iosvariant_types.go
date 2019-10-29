@@ -23,6 +23,23 @@ type IOSVariantSpec struct {
 	// establish a connection to any of Apple's APNs Push Servers.
 	Passphrase string `json:"passphrase"`
 
+	// TeamId is used if you are using APNs tokens as opposed
+	// to certificates.  Get this value from your APNS console.
+	TeamId string `json:"teamId"`
+
+	// KeyId is used if you are using APNs tokens as opposed
+	// to certificates.  Get this value from your APNS console.
+	KeyId string `json:"keyId"`
+
+	// BundleId is used if you are using APNs tokens as opposed
+	// to certificates.  Get this value from your APNS console.
+	BundleId string `json:"bundleId"`
+
+	// PrivateKey is used if you are using APNs tokens as opposed
+	// to certificates.  Get this value from your APNS console,
+	// and ensure it is in p8 format
+	PrivateKey string `json:"privateKey"`
+
 	// Production defines if a connection to production APNS
 	// server should be used. If false, a connection to Apple's
 	// Sandbox/Development APNs server will be established for
