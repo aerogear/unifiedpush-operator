@@ -46,6 +46,10 @@ type IOSVariant struct {
 	Certificate []byte
 	Passphrase  string
 	Production  bool
+	PrivateKey  string
+	TeamId      string
+	KeyId       string
+	BundleId    string
 	variant
 }
 
@@ -253,7 +257,12 @@ func (c UnifiedpushClient) GetIOSVariant(v *pushv1alpha1.IOSVariant) (IOSVariant
 		return IOSVariant{}, nil
 	}
 
-	url := fmt.Sprintf("%s/rest/applications/%s/ios/%s", c.Url, v.Spec.PushApplicationId, id)
+	var url string
+	if len(v.Spec.PrivateKey) > 0 {
+		url = fmt.Sprintf("%s/rest/applications/%s/ios_token/%s", c.Url, v.Spec.PushApplicationId, id)
+	} else {
+		url = fmt.Sprintf("%s/rest/applications/%s/ios/%s", c.Url, v.Spec.PushApplicationId, id)
+	}
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	resp, err := doUPSRequest(req)
@@ -270,8 +279,58 @@ func (c UnifiedpushClient) GetIOSVariant(v *pushv1alpha1.IOSVariant) (IOSVariant
 	return foundVariant, nil
 }
 
-// CreateIOSVariant creates a Variant on an Application in UPS
-func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (IOSVariant, error) {
+// CreateIOSTokenVariant creates a Variant on an Application in UPS
+func (c UnifiedpushClient) createIOSTokenVariant(v *pushv1alpha1.IOSVariant) (IOSVariant, error) {
+
+	url := fmt.Sprintf("%s/rest/applications/%s/ios_token", c.Url, v.Spec.PushApplicationId)
+
+	params := map[string]string{
+		"privateKey":  v.Spec.PrivateKey,
+		"teamId":      v.Spec.TeamId,
+		"bundleId":    v.Spec.BundleId,
+		"production":  strconv.FormatBool(v.Spec.Production),
+		"keyId":       v.Spec.KeyId,
+		"name":        v.Name,
+		"description": v.Spec.Description,
+	}
+
+	payload, err := json.Marshal(params)
+	if err != nil {
+		return IOSVariant{}, errors.Wrap(err, "Failed to marshal webpush variant params to json")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := doUPSRequest(req)
+	if err != nil {
+		return IOSVariant{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 201 {
+		switch code := resp.StatusCode; code {
+		case 400:
+			errorMap := make(map[string]string)
+			json.NewDecoder(resp.Body).Decode(&errorMap)
+			return IOSVariant{}, CreateError{Errors: errorMap, Message: resp.Status, StatusCode: code}
+		default:
+			return IOSVariant{}, errors.New(fmt.Sprintf("UPS responded with status code: %v, but expected 201", resp.StatusCode))
+		}
+
+	}
+
+	var createdVariant IOSVariant
+	b, _ := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(b, &createdVariant)
+
+	return createdVariant, nil
+}
+
+// CreateIOSCertificateVariant creates a Variant on an Application in UPS
+func (c UnifiedpushClient) createIOSCertificateVariant(v *pushv1alpha1.IOSVariant) (IOSVariant, error) {
+
 	url := fmt.Sprintf("%s/rest/applications/%s/ios", c.Url, v.Spec.PushApplicationId)
 
 	params := map[string]string{
@@ -322,6 +381,15 @@ func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (IOSVari
 	return createdVariant, nil
 }
 
+// CreateIOSVariant creates a Variant on an Application in UPS
+func (c UnifiedpushClient) CreateIOSVariant(v *pushv1alpha1.IOSVariant) (IOSVariant, error) {
+	if len(v.Spec.PrivateKey) > 0 {
+		return c.createIOSTokenVariant(v)
+	} else {
+		return c.createIOSCertificateVariant(v)
+	}
+}
+
 // DeleteIOSVariant deletes an IOS variant in UPS
 func (c UnifiedpushClient) DeleteIOSVariant(v *pushv1alpha1.IOSVariant) error {
 	if v.ObjectMeta.Annotations["variantId"] == "" {
@@ -329,7 +397,12 @@ func (c UnifiedpushClient) DeleteIOSVariant(v *pushv1alpha1.IOSVariant) error {
 		return nil
 	}
 
-	url := fmt.Sprintf("%s/rest/applications/%s/ios/%s", c.Url, v.Spec.PushApplicationId, v.ObjectMeta.Annotations["variantId"])
+	var url string
+	if len(v.Spec.PrivateKey) > 0 {
+		url = fmt.Sprintf("%s/rest/applications/%s/ios_token/%s", c.Url, v.Spec.PushApplicationId, v.ObjectMeta.Annotations["variantId"])
+	} else {
+		url = fmt.Sprintf("%s/rest/applications/%s/ios/%s", c.Url, v.Spec.PushApplicationId, v.ObjectMeta.Annotations["variantId"])
+	}
 
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	resp, err := doUPSRequest(req)
