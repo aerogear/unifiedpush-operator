@@ -125,11 +125,13 @@ cluster/prepare:
 	- kubectl apply -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
 	- kubectl apply -f deploy/crds/push_v1alpha1_webpushvariant_crd.yaml
 	- kubectl apply -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
+	- kubectl apply -f deploy/crds/push_v1alpha1_iostokenvariant_crd.yaml
 	- kubectl apply -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
 
 .PHONY: cluster/clean
 cluster/clean:
 	- kubectl delete -n $(NAMESPACE) iosVariant --all
+	- kubectl delete -n $(NAMESPACE) iosTokenVariant --all	
 	- kubectl delete -n $(NAMESPACE) androidVariant --all
 	- kubectl delete -n $(NAMESPACE) webpushVariant --all
 	- kubectl delete -n $(NAMESPACE) pushApplication --all
@@ -140,6 +142,7 @@ cluster/clean:
 	- kubectl delete -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
 	- kubectl delete -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
 	- kubectl delete -f deploy/crds/push_v1alpha1_webpushvariant_crd.yaml
+	- kubectl delete -f deploy/crds/push_v1alpha1_iostokenvariant_crd.yaml
 	- kubectl delete -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
 	- kubectl delete -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
 	- make monitoring/uninstall

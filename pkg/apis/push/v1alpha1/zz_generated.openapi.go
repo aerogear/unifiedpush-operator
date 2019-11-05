@@ -14,6 +14,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.AndroidVariant":          schema_pkg_apis_push_v1alpha1_AndroidVariant(ref),
 		"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.AndroidVariantSpec":      schema_pkg_apis_push_v1alpha1_AndroidVariantSpec(ref),
 		"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.AndroidVariantStatus":    schema_pkg_apis_push_v1alpha1_AndroidVariantStatus(ref),
+		"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSTokenVariant":         schema_pkg_apis_push_v1alpha1_IOSTokenVariant(ref),
+		"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSTokenVariantSpec":     schema_pkg_apis_push_v1alpha1_IOSTokenVariantSpec(ref),
+		"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSTokenVariantStatus":   schema_pkg_apis_push_v1alpha1_IOSTokenVariantStatus(ref),
 		"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSVariant":              schema_pkg_apis_push_v1alpha1_IOSVariant(ref),
 		"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSVariantSpec":          schema_pkg_apis_push_v1alpha1_IOSVariantSpec(ref),
 		"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSVariantStatus":        schema_pkg_apis_push_v1alpha1_IOSVariantStatus(ref),
@@ -34,7 +37,6 @@ func schema_pkg_apis_push_v1alpha1_AndroidVariant(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "AndroidVariant is the Schema for the androidvariants API",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -78,7 +80,6 @@ func schema_pkg_apis_push_v1alpha1_AndroidVariantSpec(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "AndroidVariantSpec defines the desired state of AndroidVariant",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"description": {
 						SchemaProps: spec.SchemaProps{
@@ -112,6 +113,7 @@ func schema_pkg_apis_push_v1alpha1_AndroidVariantSpec(ref common.ReferenceCallba
 				Required: []string{"serverKey", "senderId", "pushApplicationId"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -120,7 +122,6 @@ func schema_pkg_apis_push_v1alpha1_AndroidVariantStatus(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "AndroidVariantStatus defines the observed state of AndroidVariant",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"ready": {
 						SchemaProps: spec.SchemaProps{
@@ -144,15 +145,15 @@ func schema_pkg_apis_push_v1alpha1_AndroidVariantStatus(ref common.ReferenceCall
 				Required: []string{"ready"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
-func schema_pkg_apis_push_v1alpha1_IOSVariant(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkg_apis_push_v1alpha1_IOSTokenVariant(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "IOSVariant is the Schema for the iosvariants API",
-				Type:        []string{"object"},
+				Description: "IOSTokenVariant is the Schema for the iostokenvariants API",
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -175,46 +176,31 @@ func schema_pkg_apis_push_v1alpha1_IOSVariant(ref common.ReferenceCallback) comm
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSVariantSpec"),
+							Ref: ref("github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSTokenVariantSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSVariantStatus"),
+							Ref: ref("github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSTokenVariantStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSVariantSpec", "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSVariantStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSTokenVariantSpec", "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSTokenVariantStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
-func schema_pkg_apis_push_v1alpha1_IOSVariantSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkg_apis_push_v1alpha1_IOSTokenVariantSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "IOSVariantSpec defines the desired state of IOSVariant",
-				Type:        []string{"object"},
+				Description: "IOSTokenVariantSpec defines the desired state of IOSTokenVariant",
 				Properties: map[string]spec.Schema{
 					"description": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Description is a human friendly description for the variant.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"certificate": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Certificate defines the base64 encoded APNs certificate that is needed to establish a connection to Apple's APNs Push Servers.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"passphrase": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Passphrase defines the APNs passphrase that is needed to establish a connection to any of Apple's APNs Push Servers.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -262,18 +248,18 @@ func schema_pkg_apis_push_v1alpha1_IOSVariantSpec(ref common.ReferenceCallback) 
 						},
 					},
 				},
-				Required: []string{"certificate", "passphrase", "teamId", "keyId", "bundleId", "privateKey", "production", "pushApplicationId"},
+				Required: []string{"teamId", "keyId", "bundleId", "privateKey", "production", "pushApplicationId"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
-func schema_pkg_apis_push_v1alpha1_IOSVariantStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkg_apis_push_v1alpha1_IOSTokenVariantStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "IOSVariantStatus defines the observed state of IOSVariant",
-				Type:        []string{"object"},
+				Description: "IOSTokenVariantStatus defines the observed state of IOSTokenVariant",
 				Properties: map[string]spec.Schema{
 					"ready": {
 						SchemaProps: spec.SchemaProps{
@@ -297,6 +283,131 @@ func schema_pkg_apis_push_v1alpha1_IOSVariantStatus(ref common.ReferenceCallback
 				Required: []string{"ready"},
 			},
 		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_push_v1alpha1_IOSVariant(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "IOSVariant is the Schema for the iosvariants API",
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSVariantSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSVariantStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSVariantSpec", "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.IOSVariantStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_push_v1alpha1_IOSVariantSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "IOSVariantSpec defines the desired state of IOSVariant",
+				Properties: map[string]spec.Schema{
+					"description": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Description is a human friendly description for the variant.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"certificate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Certificate defines the base64 encoded APNs certificate that is needed to establish a connection to Apple's APNs Push Servers.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"passphrase": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Passphrase defines the APNs passphrase that is needed to establish a connection to any of Apple's APNs Push Servers.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"production": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Production defines if a connection to production APNS server should be used. If false, a connection to Apple's Sandbox/Development APNs server will be established for this iOS variant.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"pushApplicationId": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PushApplicationId is the Id of the Application that this Variant corresponds to in the UnifiedPush Server admin UI.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"certificate", "passphrase", "production", "pushApplicationId"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_push_v1alpha1_IOSVariantStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "IOSVariantStatus defines the observed state of IOSVariant",
+				Properties: map[string]spec.Schema{
+					"ready": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"variantId": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"secret": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"ready"},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 
@@ -305,7 +416,6 @@ func schema_pkg_apis_push_v1alpha1_PushApplication(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PushApplication is the Schema for the pushapplications API",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -349,7 +459,6 @@ func schema_pkg_apis_push_v1alpha1_PushApplicationSpec(ref common.ReferenceCallb
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PushApplicationSpec defines the desired state of PushApplication",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"description": {
 						SchemaProps: spec.SchemaProps{
@@ -362,6 +471,7 @@ func schema_pkg_apis_push_v1alpha1_PushApplicationSpec(ref common.ReferenceCallb
 				Required: []string{"description"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -370,7 +480,6 @@ func schema_pkg_apis_push_v1alpha1_PushApplicationStatus(ref common.ReferenceCal
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PushApplicationStatus defines the observed state of PushApplication",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"pushApplicationId": {
 						SchemaProps: spec.SchemaProps{
@@ -404,6 +513,7 @@ func schema_pkg_apis_push_v1alpha1_PushApplicationStatus(ref common.ReferenceCal
 				Required: []string{"pushApplicationId", "masterSecret"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -412,7 +522,6 @@ func schema_pkg_apis_push_v1alpha1_UnifiedPushServer(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "UnifiedPushServer is the Schema for the unifiedpushservers API",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -456,7 +565,6 @@ func schema_pkg_apis_push_v1alpha1_UnifiedPushServerSpec(ref common.ReferenceCal
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "UnifiedPushServerSpec defines the desired state of UnifiedPushServer",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"backups": {
 						SchemaProps: spec.SchemaProps{
@@ -513,7 +621,6 @@ func schema_pkg_apis_push_v1alpha1_UnifiedPushServerStatus(ref common.ReferenceC
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "UnifiedPushServerStatus defines the observed state of UnifiedPushServer",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"phase": {
 						SchemaProps: spec.SchemaProps{
@@ -525,6 +632,7 @@ func schema_pkg_apis_push_v1alpha1_UnifiedPushServerStatus(ref common.ReferenceC
 				Required: []string{"phase"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -533,7 +641,6 @@ func schema_pkg_apis_push_v1alpha1_WebPushVariant(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "WebPushVariant is the Schema for the webpushvariants API",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -577,7 +684,6 @@ func schema_pkg_apis_push_v1alpha1_WebPushVariantSpec(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "WebPushVariantSpec defines the desired state of WebPushVariant",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"description": {
 						SchemaProps: spec.SchemaProps{
@@ -618,6 +724,7 @@ func schema_pkg_apis_push_v1alpha1_WebPushVariantSpec(ref common.ReferenceCallba
 				Required: []string{"privateKey", "publicKey", "alias", "pushApplicationId"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -626,7 +733,6 @@ func schema_pkg_apis_push_v1alpha1_WebPushVariantStatus(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "WebPushVariantStatus defines the observed state of WebPushVariant",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"ready": {
 						SchemaProps: spec.SchemaProps{
@@ -656,5 +762,6 @@ func schema_pkg_apis_push_v1alpha1_WebPushVariantStatus(ref common.ReferenceCall
 				Required: []string{"ready"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }

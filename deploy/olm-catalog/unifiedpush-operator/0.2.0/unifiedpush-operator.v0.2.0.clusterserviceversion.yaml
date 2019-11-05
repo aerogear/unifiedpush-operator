@@ -25,6 +25,11 @@ spec:
       version: v1alpha1
       displayName: Android Variant
       description: Represents a UPS Android Variant
+    - kind: IOSTokenVariant
+      name: iostokenvariants.push.aerogear.org
+      version: v1alpha1
+      displayName: iOS Variant
+      description: Represents a UPS iOS Variant      
     - kind: IOSVariant
       name: iosvariants.push.aerogear.org
       version: v1alpha1

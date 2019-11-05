@@ -8,3 +8,5 @@ spec:
   passphrase: '123456'
   production: false
   pushApplicationId: '123456'
+  production: true
+  pushApplicationId: '6106048d-ffea-11e9-9d6c-525400031791'

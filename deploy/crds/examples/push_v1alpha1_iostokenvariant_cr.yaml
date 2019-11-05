@@ -1,0 +1,15 @@
+apiVersion: push.aerogear.org/v1alpha1
+kind: IOSTokenVariant
+metadata:
+  name: example-iostokenvariant
+spec:
+  description: 'My super iOS token variant'
+  teamId: '0123456789'
+  bundleId: 'org.aerogear.unifiedpush.replacement'
+  keyId: '0912345678'
+  privateKey: |
+    -----BEGIN PRIVATE KEY-----
+    Put your key here
+    -----END PRIVATE KEY-----
+  production: true
+  pushApplicationId: '49bd3279-bda1-4e31-b986-3402393b2071'
