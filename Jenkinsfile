@@ -9,7 +9,7 @@ pipeline {
         lib('fh-pipeline-library')
         lib('qe-pipeline-library')
     }
-    
+
     environment {
         GOPATH = "${env.WORKSPACE}/"
         PATH = "${env.PATH}:${env.WORKSPACE}/bin:/usr/local/go/bin"
@@ -40,10 +40,10 @@ pipeline {
                     echo "====++++'Trust' execution failed++++===="
                     echo "You are not authorized to run this job"
                 }
-        
+
             }
         }
-        
+
         stage("Run oc-cluster-up"){
             steps{
                 // qe-pipeline-library step
@@ -54,7 +54,7 @@ pipeline {
                     echo "====++++Run oc-cluster-up execution failed++++===="
                     echo "Try to rerun the job"
                 }
-        
+
             }
         }
 
@@ -93,6 +93,20 @@ pipeline {
             }
         }
 
+        stage("Run unit tests"){
+            steps{
+                dir("${env.CLONED_REPOSITORY_PATH}") {
+                    sh "make test/unit"
+                }
+            }
+            post{
+                failure{
+                    echo "====++++'Run unit tests' execution failed++++===="
+                    echo "Try to run 'make test/unit' locally and make sure it passes"
+                }
+            }
+        }
+
         stage("Build & push container image") {
             steps{
                 dir("${env.CLONED_REPOSITORY_PATH}") {
@@ -111,7 +125,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage("Build test binary"){
             steps{
                 dir("${env.CLONED_REPOSITORY_PATH}") {
