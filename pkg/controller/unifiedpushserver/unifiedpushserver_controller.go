@@ -2,16 +2,17 @@ package unifiedpushserver
 
 import (
 	"context"
-	"k8s.io/client-go/rest"
+	"os"
 	"reflect"
 	"time"
 
-	"github.com/aerogear/unifiedpush-operator/pkg/constants"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/config"
+	"github.com/aerogear/unifiedpush-operator/pkg/constants"
 	"github.com/aerogear/unifiedpush-operator/pkg/nspredicate"
 
 	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
@@ -52,7 +53,17 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileUnifiedPushServer{client: mgr.GetClient(), config: mgr.GetConfig(), scheme: mgr.GetScheme()}
+	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		log.Error(err, "Failed to get clientset")
+		os.Exit(1)
+	}
+	return &ReconcileUnifiedPushServer{
+		client:            mgr.GetClient(),
+		config:            mgr.GetConfig(),
+		scheme:            mgr.GetScheme(),
+		apiVersionChecker: getApiVersionChecker(clientset),
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -197,9 +208,10 @@ var _ reconcile.Reconciler = &ReconcileUnifiedPushServer{}
 type ReconcileUnifiedPushServer struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	config *rest.Config
-	scheme *runtime.Scheme
+	client            client.Client
+	config            *rest.Config
+	scheme            *runtime.Scheme
+	apiVersionChecker *apiVersionChecker
 }
 
 // Reconcile reads that state of the cluster for a UnifiedPushServer object and makes changes based on the state read
@@ -451,19 +463,17 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	//#region MIGRATION from old resources to new ones
 
 	// TODO: This migration block should be removed after a major release!
-	// TODO: in UPS operator version 0.x.x, we were using DCs and ImageStreams.
-	// TODO: in 1.0.0, we introduced this code block to migrate from old resources to new ones.
-	// TODO: in 2.0.0, we should get rid of this migration block, as well as unneeded permissions
-	// TODO: to access these old resources.
-	clientset, err := kubernetes.NewForConfig(r.config)
-
-	dcResourceExists, err := apiVersionExists(clientset.DiscoveryClient, "apps.openshift.io/v1")
+	// TODO: in UPS operator version <0.3.0, we were using DCs and ImageStreams.
+	// TODO: in 0.3.0, we introduced this code block to migrate from old resources to new ones.
+	// TODO: in a future version we should get rid of this migration block, as well as
+	// TODO: unneeded permissions to access these old resources.
+	dcResourceExists, err := r.apiVersionChecker.check("apps.openshift.io/v1")
 	if err != nil {
 		reqLogger.Error(err, "Unable to check if a OpenShift's apps.openshift.io/v1 api version is available.")
 		return reconcile.Result{}, err
 	}
 
-	imageStreamResourceExists, err := apiVersionExists(clientset.DiscoveryClient, "image.openshift.io/v1")
+	imageStreamResourceExists, err := r.apiVersionChecker.check("image.openshift.io/v1")
 	if err != nil {
 		reqLogger.Error(err, "Unable to check if a OpenShift's image.openshift.io/v1 api version is available.")
 		return reconcile.Result{}, err
