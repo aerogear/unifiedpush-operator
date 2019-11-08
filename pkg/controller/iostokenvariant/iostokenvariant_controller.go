@@ -104,7 +104,7 @@ func (r *ReconcileIOSTokenVariant) Reconcile(request reconcile.Request) (reconci
 		// First delete from UPS
 		err := unifiedpushClient.DeleteIOSTokenVariant(instance)
 		if err != nil {
-			reqLogger.Error(err, "Failed to delete IOSTokenVariant from UPS", "IOSTokenVaraint.Name", instance.Name)
+			reqLogger.Error(err, "Failed to delete IOSTokenVariant from UPS", "IOSTokenVariant.Name", instance.Name)
 			return reconcile.Result{}, err
 		}
 
