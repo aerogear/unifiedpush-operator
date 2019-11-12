@@ -293,7 +293,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			if existingInstance.Name == instance.Name {
 				continue
 			}
-			if existingInstance.Status.Phase == pushv1alpha1.PhaseProvision || existingInstance.Status.Phase == pushv1alpha1.PhaseComplete {
+			if existingInstance.Status.Phase == pushv1alpha1.PhaseInitializing || existingInstance.Status.Phase == pushv1alpha1.PhaseReconciling || existingInstance.Status.Phase == pushv1alpha1.PhaseFailing {
 				reqLogger.Info("There is already a UnifiedPush resource in Complete phase. Doing nothing for this CR.", "UnifiedPush.Namespace", instance.Namespace, "UnifiedPush.Name", instance.Name)
 				return reconcile.Result{}, nil
 			}
@@ -301,7 +301,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	}
 
 	if instance.Status.Phase == pushv1alpha1.PhaseEmpty {
-		instance.Status.Phase = pushv1alpha1.PhaseProvision
+		instance.Status.Phase = pushv1alpha1.PhaseInitializing
 		err = r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update UnifiedPush resource status phase", "UnifiedPush.Namespace", instance.Namespace, "UnifiedPush.Name", instance.Name)
@@ -1031,8 +1031,8 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	//## endregion GrafanaDasboard
 	//#endregion
 
-	if foundUnifiedpushDeployment.Status.ReadyReplicas > 0 && instance.Status.Phase != pushv1alpha1.PhaseComplete {
-		instance.Status.Phase = pushv1alpha1.PhaseComplete
+	if foundUnifiedpushDeployment.Status.ReadyReplicas > 0 && instance.Status.Phase != pushv1alpha1.PhaseReconciling {
+		instance.Status.Phase = pushv1alpha1.PhaseReconciling
 		r.client.Status().Update(context.TODO(), instance)
 	}
 

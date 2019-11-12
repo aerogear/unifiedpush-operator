@@ -636,12 +636,48 @@ func schema_pkg_apis_push_v1alpha1_UnifiedPushServerStatus(ref common.ReferenceC
 				Properties: map[string]spec.Schema{
 					"phase": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "Phase indicates whether the CR is reconciling(good), failing(bad), or initializing.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"message": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Message is a more human-readable message indicating details about current phase or error.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"ready": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ready is True if all resources are in a ready state and all work is done (phase should be \"reconciling\").",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"secondaryResources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SecondaryResources is a map of all the secondary resources types and names created for this CR.  e.g \"Deployment\": [ \"DeploymentName1\", \"DeploymentName2\" ]",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type: []string{"array"},
+										Items: &spec.SchemaOrArray{
+											Schema: &spec.Schema{
+												SchemaProps: spec.SchemaProps{
+													Type:   []string{"string"},
+													Format: "",
+												},
+											},
+										},
+									},
+								},
+							},
 						},
 					},
 				},
-				Required: []string{"phase"},
+				Required: []string{"phase", "message", "ready"},
 			},
 		},
 		Dependencies: []string{},
