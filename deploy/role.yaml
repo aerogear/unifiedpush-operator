@@ -9,6 +9,7 @@ rules:
   resources:
   - '*'
   - webpushvariants
+  - iostokenvariants
   verbs:
   - get
   - list
