@@ -2,10 +2,10 @@ package unifiedpushserver
 
 import (
 	"fmt"
-	"k8s.io/client-go/discovery"
 	"strings"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -61,21 +61,4 @@ func updateContainerSpecImage(deployment *appsv1.Deployment, name string, image 
 			deployment.Spec.Template.Spec.Containers[idx].Image = image
 		}
 	}
-}
-
-// apiVersionExists checks if a given API version exists in Kubernetes cluster.
-// Modified from https://github.com/operator-framework/operator-sdk/blob/947a464dbe968b8af147049e76e40f787ccb0847/pkg/k8sutil/k8sutil.go#L93
-// The Operator Framework one checks a specific resource exists, but this function checks if an API version exists.
-// Theoretically, there can be 2 resources in an API version, 1 exists and 1 not.
-func apiVersionExists(dc discovery.DiscoveryInterface, apiGroupVersion string) (bool, error) {
-	apiLists, err := dc.ServerResources()
-	if err != nil {
-		return false, err
-	}
-	for _, apiList := range apiLists {
-		if apiList.GroupVersion == apiGroupVersion {
-			return true, nil
-		}
-	}
-	return false, nil
 }

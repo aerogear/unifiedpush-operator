@@ -1,6 +1,8 @@
 package unifiedpushserver
 
 import (
+	"testing"
+
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	imagev1 "github.com/openshift/api/image/v1"
@@ -9,7 +11,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 //buildReconcileWithFakeClientWithMocks return reconcile with fake client, schemes and mock objects
@@ -21,12 +22,12 @@ func buildReconcileWithFakeClientWithMocks(objs []runtime.Object, t *testing.T) 
 		t.Fatalf("Unable to add route scheme: (%v)", err)
 	}
 
-	// Add route Openshift appsv1
+	// Add apps Openshift scheme
 	if err := openshiftappsv1.AddToScheme(s); err != nil {
 		t.Fatalf("Unable to add appsv1 scheme: (%v)", err)
 	}
 
-	// Add route Openshift appsv1
+	// Add image Openshift scheme
 	if err := imagev1.AddToScheme(s); err != nil {
 		t.Fatalf("Unable to add imagev1 scheme: (%v)", err)
 	}
@@ -37,6 +38,9 @@ func buildReconcileWithFakeClientWithMocks(objs []runtime.Object, t *testing.T) 
 	// create a fake client to mock API calls with the mock objects
 	cl := fake.NewFakeClient(objs...)
 
-	// create a ReconcileMobileSecurityService object with the scheme and fake client
-	return &ReconcileUnifiedPushServer{client: cl, scheme: s}
+	fakeApiVersionChecker := &apiVersionChecker{
+		check: func(apiGroupVersion string) (bool, error) { return true, nil },
+	}
+
+	return &ReconcileUnifiedPushServer{client: cl, scheme: s, apiVersionChecker: fakeApiVersionChecker}
 }

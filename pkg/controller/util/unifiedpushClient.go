@@ -31,5 +31,5 @@ func UnifiedpushClient(kclient client.Client, reqLogger logr.Logger) (unifiedpus
 	}
 
 	upsUrl := fmt.Sprintf("http://%s", foundServices.Items[0].Name)
-	return unifiedpush.UnifiedpushClient{upsUrl}, nil
+	return unifiedpush.UnifiedpushClient{Url: upsUrl}, nil
 }
