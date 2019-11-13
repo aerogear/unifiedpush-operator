@@ -1036,15 +1036,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	//## endregion GrafanaDasboard
 	//#endregion
 
-	if foundUnifiedpushDeployment.Status.ReadyReplicas > 0 && instance.Status.Phase != pushv1alpha1.PhaseReconciling {
-		instance.Status.Phase = pushv1alpha1.PhaseReconciling
-		instance.Status.Message = ""
-		r.client.Status().Update(context.TODO(), instance)
-	}
-
-	// Resources already exist - don't requeue
-	reqLogger.Info("Skip reconcile: Resources already exist")
-	return reconcile.Result{}, nil
+	return r.manageSuccess(instance)
 }
 
 func (r *ReconcileUnifiedPushServer) manageError(instance *pushv1alpha1.UnifiedPushServer, issue error) (reconcile.Result, error) {
@@ -1056,13 +1048,38 @@ func (r *ReconcileUnifiedPushServer) manageError(instance *pushv1alpha1.UnifiedP
 
 	err := r.client.Status().Update(context.TODO(), instance)
 	if err != nil {
-		log.Error(err, "unable to update status")
+		log.Error(err, "Unable to update status")
 	}
 
 	return reconcile.Result{
 		RequeueAfter: requeueErrorDelay,
 		Requeue:      true,
 	}, nil
+}
+
+func (r *ReconcileUnifiedPushServer) manageSuccess(instance *pushv1alpha1.UnifiedPushServer) (reconcile.Result, error) {
+	resourcesReady := true
+	instance.Status.Ready = resourcesReady
+	instance.Status.Message = ""
+
+	// If resources are ready and we have not errored before now, we are in a reconciling phase
+	if resourcesReady {
+		instance.Status.Phase = pushv1alpha1.PhaseReconciling
+	} else {
+		instance.Status.Phase = pushv1alpha1.PhaseInitializing
+	}
+
+	err := r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		log.Error(err, "Unable to update status")
+		return reconcile.Result{
+			RequeueAfter: requeueErrorDelay,
+			Requeue:      true,
+		}, nil
+	}
+
+	log.Info("Reconcile successful", "UnifiedPushServer.Namespace", instance.Namespace, "UnifiedPushServer.Name", instance.Name)
+	return reconcile.Result{RequeueAfter: requeueDelay}, nil
 }
 
 func getPostgresResourceRequirements(instance *pushv1alpha1.UnifiedPushServer) corev1.ResourceRequirements {
