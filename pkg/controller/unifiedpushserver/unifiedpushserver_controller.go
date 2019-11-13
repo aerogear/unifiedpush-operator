@@ -2,17 +2,20 @@ package unifiedpushserver
 
 import (
 	"context"
+
 	"os"
 	"reflect"
 	"time"
 
+	"k8s.io/client-go/rest"
+
+	"github.com/aerogear/unifiedpush-operator/pkg/constants"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/config"
-	"github.com/aerogear/unifiedpush-operator/pkg/constants"
 	"github.com/aerogear/unifiedpush-operator/pkg/nspredicate"
 
 	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
@@ -23,6 +26,8 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 
+	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	integreatlyv1alpha1 "github.com/integr8ly/grafana-operator/pkg/apis/integreatly/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -40,9 +45,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+const (
+	ControllerName = "unifiedpushserver-controller"
+)
+
 var (
 	cfg = config.New()
-	log = logf.Log.WithName("controller_unifiedpushserver")
+	log = logf.Log.WithName(ControllerName)
 )
 
 // Add creates a new UnifiedPushServer Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -60,8 +69,8 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	}
 	return &ReconcileUnifiedPushServer{
 		client:            mgr.GetClient(),
-		config:            mgr.GetConfig(),
 		scheme:            mgr.GetScheme(),
+		config:            mgr.GetConfig(),
 		apiVersionChecker: getApiVersionChecker(clientset),
 	}
 }
@@ -69,7 +78,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("unifiedpushserver-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
@@ -199,6 +208,36 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	// Watch for changes to secondary resource ServiceMonitor and requeue the owner UnifiedPushServer
+	err = c.Watch(&source.Kind{Type: &monitoringv1.ServiceMonitor{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
+	})
+	// If the problem is just a missing kind, don't worry about it
+	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
+		return err
+	}
+
+	// Watch for changes to secondary resource PrometheusRule and requeue the owner UnifiedPushServer
+	err = c.Watch(&source.Kind{Type: &monitoringv1.PrometheusRule{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
+	})
+	// If the problem is just a missing kind, don't worry about it
+	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
+		return err
+	}
+
+	// Watch for changes to secondary resource GrafanaDashboard and requeue the owner UnifiedPushServer
+	err = c.Watch(&source.Kind{Type: &integreatlyv1alpha1.GrafanaDashboard{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
+	})
+	// If the problem is just a missing kind, don't worry about it
+	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
+		return err
+	}
+
 	return nil
 }
 
@@ -209,12 +248,12 @@ type ReconcileUnifiedPushServer struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client            client.Client
-	config            *rest.Config
 	scheme            *runtime.Scheme
+	config            *rest.Config
 	apiVersionChecker *apiVersionChecker
 }
 
-// Reconcile reads that state of the cluster for a UnifiedPushServer object and makes changes based on the state read
+// Reconcile reads the state of the cluster for a UnifiedPushServer object and makes changes based on the state read
 // and what is in the UnifiedPushServer.Spec
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
@@ -937,6 +976,50 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			}
 		}
 	}
+	//#endregion
+
+	//#region Monitoring
+	//## region ServiceMonitor
+	serviceMonitor := &monitoringv1.ServiceMonitor{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush", Namespace: instance.Namespace}}
+	op, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, serviceMonitor, func(ignore runtime.Object) error {
+		reconcileServiceMonitor(serviceMonitor)
+		return nil
+	})
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if op != controllerutil.OperationResultNone {
+		reqLogger.Info("ServiceMonitor reconciled:", "ServiceMonitor.Name", serviceMonitor.Name, "ServiceMonitor.Namespace", serviceMonitor.Namespace, "Operation", op)
+	}
+	//## endregion ServiceMonitor
+
+	//## region PrometheusRule
+	prometheusRule := &monitoringv1.PrometheusRule{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush", Namespace: instance.Namespace}}
+	op, err = controllerutil.CreateOrUpdate(context.TODO(), r.client, prometheusRule, func(ignore runtime.Object) error {
+		reconcilePrometheusRule(prometheusRule, instance)
+		return nil
+	})
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if op != controllerutil.OperationResultNone {
+		reqLogger.Info("PrometheusRule reconciled:", "PrometheusRule.Name", prometheusRule.Name, "PrometheusRule.Namespace", prometheusRule.Namespace, "Operation", op)
+	}
+	//## endregion PrometheusRule
+
+	//## region GrafanaDasboard
+	grafanaDashboard := &integreatlyv1alpha1.GrafanaDashboard{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpushserver-dashboard", Namespace: instance.Namespace}}
+	op, err = controllerutil.CreateOrUpdate(context.TODO(), r.client, grafanaDashboard, func(ignore runtime.Object) error {
+		reconcileGrafanaDashboard(grafanaDashboard, instance)
+		return nil
+	})
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if op != controllerutil.OperationResultNone {
+		reqLogger.Info("GrafanaDashboard reconciled:", "GrafanaDashboard.Name", grafanaDashboard.Name, "GrafanaDashboard.Namespace", grafanaDashboard.Namespace, "Operation", op)
+	}
+	//## endregion GrafanaDasboard
 	//#endregion
 
 	if foundUnifiedpushDeployment.Status.ReadyReplicas > 0 && instance.Status.Phase != pushv1alpha1.PhaseComplete {
