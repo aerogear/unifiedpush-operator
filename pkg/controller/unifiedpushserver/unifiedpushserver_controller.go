@@ -7,13 +7,14 @@ import (
 	"reflect"
 	"time"
 
-	"k8s.io/client-go/rest"
-
 	"github.com/aerogear/unifiedpush-operator/pkg/constants"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 
+	"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/config"
 	"github.com/aerogear/unifiedpush-operator/pkg/nspredicate"
@@ -46,12 +47,14 @@ import (
 )
 
 const (
-	ControllerName = "unifiedpushserver-controller"
+	controllerName    = "unifiedpushserver-controller"
+	requeueDelay      = 30 * time.Second
+	requeueErrorDelay = 5 * time.Second
 )
 
 var (
 	cfg = config.New()
-	log = logf.Log.WithName(ControllerName)
+	log = logf.Log.WithName(controllerName)
 )
 
 // Add creates a new UnifiedPushServer Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -72,13 +75,14 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 		scheme:            mgr.GetScheme(),
 		config:            mgr.GetConfig(),
 		apiVersionChecker: getApiVersionChecker(clientset),
+		recorder:          mgr.GetRecorder(controllerName),
 	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: r})
+	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
@@ -251,6 +255,7 @@ type ReconcileUnifiedPushServer struct {
 	scheme            *runtime.Scheme
 	config            *rest.Config
 	apiVersionChecker *apiVersionChecker
+	recorder          record.EventRecorder
 }
 
 // Reconcile reads the state of the cluster for a UnifiedPushServer object and makes changes based on the state read
@@ -273,7 +278,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	// look for other unifiedPush resources and don't provision a new one if there is another one with Phase=Complete
@@ -287,7 +292,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	err = r.client.List(context.TODO(), opts, existingInstances)
 	if err != nil {
 		reqLogger.Error(err, "Failed to list UnifiedPush resources", "UnifiedPush.Namespace", instance.Namespace)
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	} else if len(existingInstances.Items) > 1 { // check if > 1 since there's the current one already in that list.
 		for _, existingInstance := range existingInstances.Items {
 			if existingInstance.Name == instance.Name {
@@ -305,7 +310,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		err = r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update UnifiedPush resource status phase", "UnifiedPush.Namespace", instance.Namespace, "UnifiedPush.Name", instance.Name)
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 	}
 
@@ -316,7 +321,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 		// Set UnifiedPushServer instance as the owner and controller
 		if err := controllerutil.SetControllerReference(instance, addressSpace, r.scheme); err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 
 		foundAddressSpace := &enmassev1beta.AddressSpace{}
@@ -325,12 +330,12 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			reqLogger.Info("Creating a new Address Space", "AddressSpace.Namespace", addressSpace.Namespace, "AddressSpace.Name", addressSpace.Name)
 			err = r.client.Create(context.TODO(), addressSpace)
 			if err != nil {
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 			reqLogger.Info("Requeuing, AddressSpace not ready.", "AddressSpace.Namespace", addressSpace.Namespace, "AddressSpace.Name", addressSpace.Name)
 			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
 		} else if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		} else if !foundAddressSpace.Status.IsReady {
 			reqLogger.Info("Requeuing, AddressSpace not ready.", "AddressSpace.Namespace", foundAddressSpace.Namespace, "AddressSpace.Name", foundAddressSpace.Name)
 			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
@@ -342,12 +347,12 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		//#region check that user exists
 		user, err := newMessagingUser(instance)
 		if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 
 		// Set UnifiedPushServer instance as the owner and controller
 		if err := controllerutil.SetControllerReference(instance, user, r.scheme); err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 
 		foundUser := &messaginguserv1beta.MessagingUser{}
@@ -356,11 +361,11 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			reqLogger.Info("Creating a new MessagingUser", "MessagingUser.Namespace", user.Namespace, "MessagingUser.Name", user.Name)
 			err = r.client.Create(context.TODO(), user)
 			if err != nil {
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 
 		} else if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 		//#endregion
 
@@ -376,10 +381,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 					reqLogger.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
 					err = r.client.Create(context.TODO(), secret)
 					if err != nil {
-						return reconcile.Result{}, err
+						return r.manageError(instance, err)
 					}
 				} else if err != nil {
-					return reconcile.Result{}, err
+					return r.manageError(instance, err)
 				}
 				break
 			}
@@ -394,7 +399,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			foundQueue := &enmassev1beta.Address{}
 			// Set UnifiedPushServer instance as the owner and controller
 			if err := controllerutil.SetControllerReference(instance, queue, r.scheme); err != nil {
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 
 			err = r.client.Get(context.TODO(), types.NamespacedName{Name: queue.Name, Namespace: queue.Namespace}, foundQueue)
@@ -402,12 +407,12 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				reqLogger.Info("Creating a new Queue", "Queue.Namespace", queue.Namespace, "Queue.Name", queue.Name)
 				err = r.client.Create(context.TODO(), queue)
 				if err != nil {
-					return reconcile.Result{}, err
+					return r.manageError(instance, err)
 				}
 				requeueCreate = true
 			} else if err != nil {
 				reqLogger.Info("Queue Error")
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			} else if !foundQueue.Status.IsReady {
 				reqLogger.Info("Queue Not ready", "Queue.Name", foundQueue.Name)
 				requeueCreate = true
@@ -429,7 +434,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			foundTopic := &enmassev1beta.Address{}
 			// Set UnifiedPushServer instance as the owner and controller
 			if err := controllerutil.SetControllerReference(instance, topic, r.scheme); err != nil {
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 
 			err = r.client.Get(context.TODO(), types.NamespacedName{Name: topic.Name, Namespace: topic.Namespace}, foundTopic)
@@ -437,11 +442,11 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				reqLogger.Info("Creating a new Topic", "Topic.Namespace", topic.Namespace, "Topic.Name", topic.Name)
 				err = r.client.Create(context.TODO(), topic)
 				if err != nil {
-					return reconcile.Result{}, err
+					return r.manageError(instance, err)
 				}
 				requeueCreate = true
 			} else if err != nil {
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 		}
 
@@ -466,13 +471,13 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	dcResourceExists, err := r.apiVersionChecker.check("apps.openshift.io/v1")
 	if err != nil {
 		reqLogger.Error(err, "Unable to check if a OpenShift's apps.openshift.io/v1 api version is available.")
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	imageStreamResourceExists, err := r.apiVersionChecker.check("image.openshift.io/v1")
 	if err != nil {
 		reqLogger.Error(err, "Unable to check if a OpenShift's image.openshift.io/v1 api version is available.")
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	if dcResourceExists {
@@ -486,13 +491,13 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		if err != nil && !errors.IsNotFound(err) {
 			// if there is another error than the DC not being found
 			reqLogger.Error(err, "Unable to check if a DeploymentConfig exists for UnifiedPush Server.", "DeploymentConfig.Namespace", foundUpsDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUpsDeploymentConfig.Name)
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		} else if err == nil {
 			reqLogger.Info("Found a DeploymentConfig for UnifiedPush Server. Deleting it.", "DeploymentConfig.Namespace", foundUpsDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUpsDeploymentConfig.Name)
 			err = r.client.Delete(context.TODO(), foundUpsDeploymentConfig)
 			if err != nil {
 				reqLogger.Error(err, "Unable to delete the DeploymentConfig for UnifiedPush Server.", "DeploymentConfig.Namespace", foundUpsDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUpsDeploymentConfig.Name)
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 		}
 		//#endregion
@@ -504,13 +509,13 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		if err != nil && !errors.IsNotFound(err) {
 			// if there is another error than the DC not being found
 			reqLogger.Error(err, "Unable to check if a DeploymentConfig exists for Postgres.", "DeploymentConfig.Namespace", foundPostgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", foundPostgresqlDeploymentConfig.Name)
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		} else if err == nil {
 			reqLogger.Info("Found a DeploymentConfig for Postgres. Deleting it.", "DeploymentConfig.Namespace", foundPostgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", foundPostgresqlDeploymentConfig.Name)
 			err = r.client.Delete(context.TODO(), foundPostgresqlDeploymentConfig)
 			if err != nil {
 				reqLogger.Error(err, "Unable to delete the DeploymentConfig for Postgres.", "DeploymentConfig.Namespace", foundPostgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", foundPostgresqlDeploymentConfig.Name)
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 		}
 		//#endregion
@@ -571,12 +576,12 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		//#region Postgres PVC
 		persistentVolumeClaim, err := newPostgresqlPersistentVolumeClaim(instance)
 		if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 
 		// Set UnifiedPushServer instance as the owner and controller
 		if err := controllerutil.SetControllerReference(instance, persistentVolumeClaim, r.scheme); err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 
 		// Check if this PersistentVolumeClaim already exists
@@ -586,10 +591,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			reqLogger.Info("Creating a new PersistentVolumeClaim", "PersistentVolumeClaim.Namespace", persistentVolumeClaim.Namespace, "PersistentVolumeClaim.Name", persistentVolumeClaim.Name)
 			err = r.client.Create(context.TODO(), persistentVolumeClaim)
 			if err != nil {
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 		} else if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		} else {
 			requiredPostgresPVCSize := getPostgresPVCSize(instance)
 
@@ -603,7 +608,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				err = r.client.Update(context.TODO(), foundPersistentVolumeClaim)
 				if err != nil {
 					reqLogger.Error(err, "Failed to update PersistentVolumeClaim", "PersistentVolumeClaim.Namespace", foundPersistentVolumeClaim.Namespace, "PersistentVolumeClaim.Name", foundPersistentVolumeClaim.Name)
-					return reconcile.Result{}, err
+					return r.manageError(instance, err)
 				}
 				return reconcile.Result{Requeue: true}, nil
 			}
@@ -614,12 +619,12 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		//#region Postgres Deployment
 		postgresqlDeployment, err := newPostgresqlDeployment(instance)
 		if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 
 		// Set UnifiedPushServer instance as the owner and controller
 		if err := controllerutil.SetControllerReference(instance, postgresqlDeployment, r.scheme); err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 
 		// Check if this Deployment already exists
@@ -629,10 +634,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			reqLogger.Info("Creating a new Deployment", "Deployment.Namespace", postgresqlDeployment.Namespace, "Deployment.Name", postgresqlDeployment.Name)
 			err = r.client.Create(context.TODO(), postgresqlDeployment)
 			if err != nil {
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 		} else if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		} else {
 			postgresResourceRequirements := getPostgresResourceRequirements(instance)
 
@@ -648,7 +653,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 						err = r.client.Update(context.TODO(), foundPostgresqlDeployment)
 						if err != nil {
 							reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name)
-							return reconcile.Result{}, err
+							return r.manageError(instance, err)
 						}
 						return reconcile.Result{Requeue: true}, nil
 					}
@@ -671,7 +676,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				err = r.client.Update(context.TODO(), foundPostgresqlDeployment)
 				if err != nil {
 					reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name)
-					return reconcile.Result{}, err
+					return r.manageError(instance, err)
 				}
 				return reconcile.Result{Requeue: true}, nil
 			}
@@ -682,12 +687,12 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 		postgresqlService, err := newPostgresqlService(instance)
 		if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 
 		// Set UnifiedPushServer instance as the owner and controller
 		if err := controllerutil.SetControllerReference(instance, postgresqlService, r.scheme); err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 
 		// Check if this Service already exists
@@ -697,10 +702,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			reqLogger.Info("Creating a new Service", "Service.Namespace", postgresqlService.Namespace, "Service.Name", postgresqlService.Name)
 			err = r.client.Create(context.TODO(), postgresqlService)
 			if err != nil {
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 		} else if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 		//#endregion
 	}
@@ -709,7 +714,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	// Set UnifiedPushServer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, serviceAccount, r.scheme); err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	// Check if this ServiceAccount already exists
@@ -719,22 +724,22 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		reqLogger.Info("Creating a new ServiceAccount", "ServiceAccount.Namespace", serviceAccount.Namespace, "ServiceAccount.Name", serviceAccount.Name)
 		err = r.client.Create(context.TODO(), serviceAccount)
 		if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 	} else if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 	//#endregion
 
 	//#region Postgres Secret
 	postgresqlSecret, err := newPostgresqlSecret(instance)
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	// Set UnifiedPushServer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, postgresqlSecret, r.scheme); err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	// Check if this Secret already exists
@@ -744,22 +749,22 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		reqLogger.Info("Creating a new Secret", "Secret.Namespace", postgresqlSecret.Namespace, "Secret.Name", postgresqlSecret.Name)
 		err = r.client.Create(context.TODO(), postgresqlSecret)
 		if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 	} else if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 	//#endregion
 
 	//#region OauthProxy Service
 	oauthProxyService, err := newOauthProxyService(instance)
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	// Set UnifiedPushServer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, oauthProxyService, r.scheme); err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	// Check if this Service already exists
@@ -769,22 +774,22 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		reqLogger.Info("Creating a new Service", "Service.Namespace", oauthProxyService.Namespace, "Service.Name", oauthProxyService.Name)
 		err = r.client.Create(context.TODO(), oauthProxyService)
 		if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 	} else if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 	//#endregion
 
 	//#region UPS Service
 	unifiedpushService, err := newUnifiedPushServerService(instance)
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	// Set UnifiedPushServer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, unifiedpushService, r.scheme); err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	// Check if this Service already exists
@@ -794,22 +799,22 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		reqLogger.Info("Creating a new Service", "Service.Namespace", unifiedpushService.Namespace, "Service.Name", unifiedpushService.Name)
 		err = r.client.Create(context.TODO(), unifiedpushService)
 		if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 	} else if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 	//#endregion
 
 	//#region OauthProxy Route
 	oauthProxyRoute, err := newOauthProxyRoute(instance)
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	// Set UnifiedPushServer instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, oauthProxyRoute, r.scheme); err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	// Check if this Route already exists
@@ -819,10 +824,10 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		reqLogger.Info("Creating a new Route", "Route.Namespace", oauthProxyRoute.Namespace, "Route.Name", oauthProxyRoute.Name)
 		err = r.client.Create(context.TODO(), oauthProxyRoute)
 		if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 	} else if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 	//#endregion
 
@@ -830,7 +835,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	unifiedpushDeployment, err := newUnifiedPushServerDeployment(instance)
 
 	if err := controllerutil.SetControllerReference(instance, unifiedpushDeployment, r.scheme); err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	// Check if this Deployment already exists
@@ -840,13 +845,13 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		reqLogger.Info("Creating a new Deployment", "Deployment.Namespace", unifiedpushDeployment.Namespace, "Deployment.Name", unifiedpushDeployment.Name)
 		err = r.client.Create(context.TODO(), unifiedpushDeployment)
 		if err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 
 		// Deployment created successfully - don't requeue
 		return reconcile.Result{}, nil
 	} else if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	} else {
 		unifiedPushResourceRequirements := getUnifiedPushResourceRequirements(instance)
 		oauthProxyResourceRequirements := getOauthProxyResourceRequirements(instance)
@@ -863,7 +868,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 					err = r.client.Update(context.TODO(), foundUnifiedpushDeployment)
 					if err != nil {
 						reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundUnifiedpushDeployment.Namespace, "Deployment.Name", foundUnifiedpushDeployment.Name)
-						return reconcile.Result{}, err
+						return r.manageError(instance, err)
 					}
 					return reconcile.Result{Requeue: true}, nil
 				}
@@ -877,7 +882,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 					err = r.client.Update(context.TODO(), foundUnifiedpushDeployment)
 					if err != nil {
 						reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundUnifiedpushDeployment.Namespace, "Deployment.Name", foundUnifiedpushDeployment.Name)
-						return reconcile.Result{}, err
+						return r.manageError(instance, err)
 					}
 					return reconcile.Result{Requeue: true}, nil
 				}
@@ -901,7 +906,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			err = r.client.Update(context.TODO(), foundUnifiedpushDeployment)
 			if err != nil {
 				reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundUnifiedpushDeployment.Namespace, "Deployment.Name", foundUnifiedpushDeployment.Name)
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 			return reconcile.Result{Requeue: true}, nil
 		}
@@ -920,7 +925,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			err = r.client.Update(context.TODO(), foundUnifiedpushDeployment)
 			if err != nil {
 				reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundUnifiedpushDeployment.Namespace, "Deployment.Name", foundUnifiedpushDeployment.Name)
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 			return reconcile.Result{Requeue: true}, nil
 		}
@@ -941,29 +946,29 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	opts = client.InNamespace(instance.Namespace).MatchingLabels(labels(instance, "backup"))
 	err = r.client.List(context.TODO(), opts, existingCronJobs)
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	desiredCronJobs, err := backups(instance)
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 
 	for _, desiredCronJob := range desiredCronJobs {
 		if err := controllerutil.SetControllerReference(instance, &desiredCronJob, r.scheme); err != nil {
-			return reconcile.Result{}, err
+			return r.manageError(instance, err)
 		}
 
 		if exists := containsCronJob(existingCronJobs.Items, &desiredCronJob); exists {
 			err = r.client.Update(context.TODO(), &desiredCronJob)
 			if err != nil {
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 		} else {
 			reqLogger.Info("Creating a new CronJob", "CronJob.Namespace", desiredCronJob.Namespace, "CronJob.Name", desiredCronJob.Name)
 			err = r.client.Create(context.TODO(), &desiredCronJob)
 			if err != nil {
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 			return reconcile.Result{}, nil
 		}
@@ -975,7 +980,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			reqLogger.Info("Deleting backup CronJob since it was removed from CR", "CronJob.Namespace", existingCronJob.Namespace, "CronJob.Name", existingCronJob.Name)
 			err = r.client.Delete(context.TODO(), &existingCronJob)
 			if err != nil {
-				return reconcile.Result{}, err
+				return r.manageError(instance, err)
 			}
 		}
 	}
@@ -991,7 +996,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return err
 	})
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 	if op != controllerutil.OperationResultNone {
 		reqLogger.Info("ServiceMonitor reconciled:", "ServiceMonitor.Name", serviceMonitor.Name, "ServiceMonitor.Namespace", serviceMonitor.Namespace, "Operation", op)
@@ -1007,7 +1012,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return err
 	})
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 	if op != controllerutil.OperationResultNone {
 		reqLogger.Info("PrometheusRule reconciled:", "PrometheusRule.Name", prometheusRule.Name, "PrometheusRule.Namespace", prometheusRule.Namespace, "Operation", op)
@@ -1023,7 +1028,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return err
 	})
 	if err != nil {
-		return reconcile.Result{}, err
+		return r.manageError(instance, err)
 	}
 	if op != controllerutil.OperationResultNone {
 		reqLogger.Info("GrafanaDashboard reconciled:", "GrafanaDashboard.Name", grafanaDashboard.Name, "GrafanaDashboard.Namespace", grafanaDashboard.Namespace, "Operation", op)
@@ -1033,12 +1038,31 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	if foundUnifiedpushDeployment.Status.ReadyReplicas > 0 && instance.Status.Phase != pushv1alpha1.PhaseReconciling {
 		instance.Status.Phase = pushv1alpha1.PhaseReconciling
+		instance.Status.Message = ""
 		r.client.Status().Update(context.TODO(), instance)
 	}
 
 	// Resources already exist - don't requeue
 	reqLogger.Info("Skip reconcile: Resources already exist")
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileUnifiedPushServer) manageError(instance *pushv1alpha1.UnifiedPushServer, issue error) (reconcile.Result, error) {
+	r.recorder.Event(instance, "Warning", "ReconcileFailed", issue.Error())
+
+	instance.Status.Message = issue.Error()
+	instance.Status.Ready = false
+	instance.Status.Phase = v1alpha1.PhaseFailing
+
+	err := r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		log.Error(err, "unable to update status")
+	}
+
+	return reconcile.Result{
+		RequeueAfter: requeueErrorDelay,
+		Requeue:      true,
+	}, nil
 }
 
 func getPostgresResourceRequirements(instance *pushv1alpha1.UnifiedPushServer) corev1.ResourceRequirements {
