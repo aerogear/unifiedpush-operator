@@ -14,13 +14,15 @@ import (
 	"github.com/aerogear/unifiedpush-operator/pkg/apis"
 	"github.com/aerogear/unifiedpush-operator/pkg/controller"
 
-	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	imagev1 "github.com/openshift/api/image/v1"
-	routev1 "github.com/openshift/api/route/v1"
-
 	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
 	messaginguserv1beta "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1"
 	integreatlyv1alpha1 "github.com/integr8ly/grafana-operator/pkg/apis/integreatly/v1alpha1"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
+	imagev1 "github.com/openshift/api/image/v1"
+	routev1 "github.com/openshift/api/route/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/aerogear/unifiedpush-operator/version"
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
@@ -205,6 +207,21 @@ func main() {
 		}
 	}
 
+	client := mgr.GetClient()
+	prometheusRule := &monitoringv1.PrometheusRule{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush-operator", Namespace: operatorNamespace}}
+
+	controllerutil.CreateOrUpdate(ctx, client, prometheusRule, func(ignore k8sruntime.Object) error {
+		reconcilePrometheusRule(prometheusRule)
+		return nil
+	})
+
+	grafanaDashboard := &integreatlyv1alpha1.GrafanaDashboard{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush-operator", Namespace: operatorNamespace}}
+
+	controllerutil.CreateOrUpdate(ctx, client, grafanaDashboard, func(ignore k8sruntime.Object) error {
+		reconcileGrafanaDashboard(grafanaDashboard)
+		return nil
+	})
+
 	log.Info("Starting the Cmd.")
 
 	// Start the Cmd
@@ -276,4 +293,457 @@ func serveCRMetrics(cfg *rest.Config) error {
 		return err
 	}
 	return nil
+}
+
+func reconcilePrometheusRule(promethuesRule *monitoringv1.PrometheusRule) {
+	labels := map[string]string{
+		"monitoring-key": "middleware",
+		"prometheus":     "application-monitoring",
+		"role":           "alert-rules",
+	}
+	critical := map[string]string{
+		"severity": "critical",
+	}
+	sop_url := fmt.Sprintf("https://github.com/aerogear/unifiedpush-operator/blob/%s/SOP/SOP-operator.adoc", version.Version)
+	upsPushOperatorDown := map[string]string{
+		"description": "The UnifiedPush Operator has been down for more than 5 minutes.",
+		"summary":     "The UnifiedPush Operator is down.",
+		"sop_url":     sop_url,
+	}
+	operatorName, err := k8sutil.GetOperatorName()
+	if err != nil {
+		log.Error(err, "")
+	}
+	promethuesRule.ObjectMeta.Labels = labels
+	job := fmt.Sprintf("%s-metrics", operatorName)
+	promethuesRule.Spec = monitoringv1.PrometheusRuleSpec{
+		Groups: []monitoringv1.RuleGroup{
+			{
+				Name: "general.rules",
+				Rules: []monitoringv1.Rule{
+					{
+						Alert: "UnifiedPushOperatorDown",
+						Expr: intstr.IntOrString{
+							Type:   intstr.String,
+							StrVal: fmt.Sprintf("absent(up{service=\"%s\"} == 1)", job),
+						},
+						For:         "5m",
+						Labels:      critical,
+						Annotations: upsPushOperatorDown,
+					},
+				},
+			},
+		},
+	}
+}
+
+func reconcileGrafanaDashboard(grafanaDashboard *integreatlyv1alpha1.GrafanaDashboard) {
+	operatorNamespace, err := k8sutil.GetOperatorNamespace()
+	if err != nil {
+		log.Error(err, "")
+	}
+	labels := map[string]string{
+		"monitoring-key": "middleware",
+		"prometheus":     "application-monitoring",
+	}
+	operatorName, err := k8sutil.GetOperatorName()
+	if err != nil {
+		log.Error(err, "")
+	}
+	service := fmt.Sprintf("%s-metrics", operatorName)
+
+	grafanaDashboard.ObjectMeta.Labels = labels
+	grafanaDashboard.Spec = integreatlyv1alpha1.GrafanaDashboardSpec{
+		Name: "unifiedpushoperator.json",
+		Json: `
+		{
+			"__requires": [
+			  {
+				"type": "grafana",
+				"id": "grafana",
+				"name": "Grafana",
+				"version": "4.3.2"
+			  },
+			  {
+				"type": "panel",
+				"id": "graph",
+				"name": "Graph",
+				"version": ""
+			  },
+			  {
+				"type": "datasource",
+				"id": "prometheus",
+				"name": "Prometheus",
+				"version": "1.0.0"
+			  },
+			  {
+				"type": "panel",
+				"id": "singlestat",
+				"name": "Singlestat",
+				"version": ""
+			  }
+			],
+			"annotations": {
+			  "list": [
+				{
+				  "builtIn": 1,
+				  "datasource": "-- Grafana --",
+				  "enable": true,
+				  "hide": true,
+				  "iconColor": "rgba(0, 211, 255, 1)",
+				  "name": "Annotations & Alerts",
+				  "type": "dashboard"
+				}
+			  ]
+			},
+			"description": "Operator metrics",
+			"editable": true,
+			"gnetId": null,
+			"graphTooltip": 0,
+			"links": [],
+			"panels": [
+			  {
+				"collapsed": false,
+				"gridPos": {
+				  "h": 1,
+				  "w": 24,
+				  "x": 0,
+				  "y": 0
+				},
+				"id": 9,
+				"panels": [],
+				"repeat": null,
+				"title": "Uptime",
+				"type": "row"
+			  },
+			  {
+				"aliasColors": {},
+				"bars": true,
+				"dashLength": 10,
+				"dashes": false,
+				"datasource": "Prometheus",
+				"fill": 1,
+				"gridPos": {
+				  "h": 8,
+				  "w": 24,
+				  "x": 3,
+				  "y": 1
+				},
+				"id": 1,
+				"legend": {
+				  "avg": false,
+				  "current": false,
+				  "max": false,
+				  "min": false,
+				  "show": true,
+				  "total": false,
+				  "values": false
+				},
+				"lines": true,
+				"linewidth": 1,
+				"links": [
+				  {
+					"type": "dashboard"
+				  }
+				],
+				"nullPointMode": "null",
+				"percentage": true,
+				"pointradius": 5,
+				"points": false,
+				"renderer": "flot",
+				"seriesOverrides": [],
+				"spaceLength": 10,
+				"stack": false,
+				"steppedLine": false,
+				"targets": [
+				  {
+					"expr": "kube_endpoint_address_available{namespace='` + operatorNamespace + `',endpoint='` + service + `'}",
+					"format": "time_series",
+					"hide": false,
+					"intervalFactor": 2,
+					"legendFormat": "{{ '{{' }}service{{ '}}' }} - Uptime",
+					"metric": "",
+					"refId": "A",
+					"step": 2
+				  }
+				],
+				"thresholds": [],
+				"timeFrom": null,
+				"timeRegions": [],
+				"timeShift": null,
+				"title": "Uptime",
+				"tooltip": {
+				  "shared": true,
+				  "sort": 0,
+				  "value_type": "individual"
+				},
+				"type": "graph",
+				"xaxis": {
+				  "buckets": null,
+				  "mode": "time",
+				  "name": null,
+				  "show": true,
+				  "values": []
+				},
+				"yaxes": [
+				  {
+					"format": "none",
+					"label": null,
+					"logBase": null,
+					"max": 1.5,
+					"min": 0,
+					"show": true
+				  },
+				  {
+					"format": "short",
+					"label": null,
+					"logBase": null,
+					"max": 2,
+					"min": 0,
+					"show": true
+				  }
+				],
+				"yaxis": {
+				  "align": false,
+				  "alignLevel": null
+				}
+			  },
+			  {
+				"collapsed": false,
+				"gridPos": {
+				  "h": 1,
+				  "w": 24,
+				  "x": 0,
+				  "y": 9
+				},
+				"id": 10,
+				"panels": [],
+				"repeat": null,
+				"title": "Resources",
+				"type": "row"
+			  },
+			  {
+				"aliasColors": {},
+				"bars": false,
+				"dashLength": 10,
+				"dashes": false,
+				"datasource": "Prometheus",
+				"fill": 1,
+				"gridPos": {
+				  "h": 8,
+				  "w": 24,
+				  "x": 0,
+				  "y": 10
+				},
+				"id": 4,
+				"legend": {
+				  "avg": false,
+				  "current": false,
+				  "max": false,
+				  "min": false,
+				  "show": true,
+				  "total": false,
+				  "values": false
+				},
+				"lines": true,
+				"linewidth": 1,
+				"links": [],
+				"nullPointMode": "null",
+				"percentage": false,
+				"pointradius": 5,
+				"points": false,
+				"renderer": "flot",
+				"seriesOverrides": [],
+				"spaceLength": 10,
+				"stack": false,
+				"steppedLine": false,
+				"targets": [
+				  {
+					"expr": "process_virtual_memory_bytes{namespace='` + operatorNamespace + `',service='` + service + `'}",
+					"format": "time_series",
+					"intervalFactor": 1,
+					"legendFormat": "Virtual Memory",
+					"refId": "A"
+				  },
+				  {
+					"expr": "process_resident_memory_bytes{namespace='` + operatorNamespace + `',service='` + service + `'}",
+					"format": "time_series",
+					"intervalFactor": 2,
+					"legendFormat": "Memory Usage",
+					"refId": "B",
+					"step": 2
+				  }
+				],
+				"thresholds": [],
+				"timeFrom": null,
+				"timeRegions": [],
+				"timeShift": null,
+				"title": "Memory Usage",
+				"tooltip": {
+				  "shared": true,
+				  "sort": 0,
+				  "value_type": "individual"
+				},
+				"type": "graph",
+				"xaxis": {
+				  "buckets": null,
+				  "mode": "time",
+				  "name": null,
+				  "show": true,
+				  "values": []
+				},
+				"yaxes": [
+				  {
+					"format": "bytes",
+					"label": null,
+					"logBase": 2,
+					"max": null,
+					"min": 0,
+					"show": true
+				  },
+				  {
+					"format": "short",
+					"label": null,
+					"logBase": 1,
+					"max": null,
+					"min": null,
+					"show": true
+				  }
+				],
+				"yaxis": {
+				  "align": false,
+				  "alignLevel": null
+				}
+			  },
+			  {
+				"aliasColors": {},
+				"bars": false,
+				"dashLength": 10,
+				"dashes": false,
+				"datasource": "Prometheus",
+				"fill": 1,
+				"gridPos": {
+				  "h": 8,
+				  "w": 24,
+				  "x": 0,
+				  "y": 18
+				},
+				"id": 2,
+				"legend": {
+				  "avg": false,
+				  "current": false,
+				  "max": false,
+				  "min": false,
+				  "show": true,
+				  "total": false,
+				  "values": false
+				},
+				"lines": true,
+				"linewidth": 1,
+				"links": [],
+				"nullPointMode": "null",
+				"percentage": false,
+				"pointradius": 5,
+				"points": false,
+				"renderer": "flot",
+				"seriesOverrides": [],
+				"spaceLength": 10,
+				"stack": false,
+				"steppedLine": false,
+				"targets": [
+				  {
+					"expr": "sum(rate(process_cpu_seconds_total{namespace='` + operatorNamespace + `',service='` + service + `'}[1m]))*1000",
+					"format": "time_series",
+					"interval": "",
+					"intervalFactor": 2,
+					"legendFormat": "UnifiedPush Operator- CPU Usage in Millicores",
+					"refId": "A",
+					"step": 2
+				  }
+				],
+				"thresholds": [],
+				"timeFrom": null,
+				"timeRegions": [],
+				"timeShift": null,
+				"title": "CPU Usage",
+				"tooltip": {
+				  "shared": true,
+				  "sort": 0,
+				  "value_type": "individual"
+				},
+				"transparent": false,
+				"type": "graph",
+				"xaxis": {
+				  "buckets": null,
+				  "mode": "time",
+				  "name": null,
+				  "show": true,
+				  "values": []
+				},
+				"yaxes": [
+				  {
+					"format": "short",
+					"label": "Millicores",
+					"logBase": 10,
+					"max": null,
+					"min": null,
+					"show": true
+				  },
+				  {
+					"format": "short",
+					"label": null,
+					"logBase": 1,
+					"max": null,
+					"min": null,
+					"show": true
+				  }
+				],
+				"yaxis": {
+				  "align": false,
+				  "alignLevel": null
+				}
+			  }
+			],
+			"refresh": "10s",
+			"schemaVersion": 16,
+			"style": "dark",
+			"tags": [],
+			"templating": {
+			  "list": []
+			},
+			"time": {
+			  "from": "now/d",
+			  "to": "now"
+			},
+			"timepicker": {
+			  "refresh_intervals": [
+				"5s",
+				"10s",
+				"30s",
+				"1m",
+				"5m",
+				"15m",
+				"30m",
+				"1h",
+				"2h",
+				"1d"
+			  ],
+			  "time_options": [
+				"5m",
+				"15m",
+				"1h",
+				"6h",
+				"12h",
+				"24h",
+				"2d",
+				"7d",
+				"30d"
+			  ]
+			},
+			"timezone": "browser",
+			"title": "UnifiedPush Operator",
+			"version": 2
+		  }
+		`,
+	}
 }
