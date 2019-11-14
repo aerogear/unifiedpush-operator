@@ -267,6 +267,8 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling UnifiedPushServer")
 
+	secondaryResources := resources{}
+
 	// Fetch the UnifiedPushServer instance
 	instance := &pushv1alpha1.UnifiedPushServer{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
@@ -342,6 +344,8 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		} else {
 			reqLogger.Info("Found AddressSpace for UPS")
 		}
+
+		secondaryResources.add("AddressSpace", addressSpace.Name)
 		//#endregion
 
 		//#region check that user exists
@@ -367,6 +371,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		} else if err != nil {
 			return r.manageError(instance, err)
 		}
+		secondaryResources.add("MessagingUser", user.Name)
 		//#endregion
 
 		//#region create secret for user password and artemis url
@@ -386,6 +391,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				} else if err != nil {
 					return r.manageError(instance, err)
 				}
+				secondaryResources.add("Secret", secret.Name)
 				break
 			}
 		}
@@ -417,6 +423,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				reqLogger.Info("Queue Not ready", "Queue.Name", foundQueue.Name)
 				requeueCreate = true
 			}
+			secondaryResources.add("Address", queue.Name)
 		}
 
 		if requeueCreate {
@@ -448,6 +455,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			} else if err != nil {
 				return r.manageError(instance, err)
 			}
+			secondaryResources.add("Address", topic.Name)
 		}
 
 		if requeueCreate {
@@ -612,8 +620,8 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				}
 				return reconcile.Result{Requeue: true}, nil
 			}
-
 		}
+		secondaryResources.add("PersistentVolumeClaim", persistentVolumeClaim.Name)
 		//#endregion
 
 		//#region Postgres Deployment
@@ -680,11 +688,11 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				}
 				return reconcile.Result{Requeue: true}, nil
 			}
-
-			//#endregion
 		}
-		//#region Postgres Service
+		secondaryResources.add("Deployment", postgresqlDeployment.Name)
+		//#endregion
 
+		//#region Postgres Service
 		postgresqlService, err := newPostgresqlService(instance)
 		if err != nil {
 			return r.manageError(instance, err)
@@ -707,8 +715,11 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		} else if err != nil {
 			return r.manageError(instance, err)
 		}
+
+		secondaryResources.add("Service", postgresqlService.Name)
 		//#endregion
 	}
+
 	//#region ServiceAccount
 	serviceAccount, err := newUnifiedPushServiceAccount(instance)
 
@@ -729,6 +740,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return r.manageError(instance, err)
 	}
+	secondaryResources.add("ServiceAccount", serviceAccount.Name)
 	//#endregion
 
 	//#region Postgres Secret
@@ -754,6 +766,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return r.manageError(instance, err)
 	}
+	secondaryResources.add("Secret", postgresqlSecret.Name)
 	//#endregion
 
 	//#region OauthProxy Service
@@ -779,6 +792,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return r.manageError(instance, err)
 	}
+	secondaryResources.add("Service", oauthProxyService.Name)
 	//#endregion
 
 	//#region UPS Service
@@ -804,6 +818,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return r.manageError(instance, err)
 	}
+	secondaryResources.add("Service", unifiedpushService.Name)
 	//#endregion
 
 	//#region OauthProxy Route
@@ -829,6 +844,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return r.manageError(instance, err)
 	}
+	secondaryResources.add("Route", oauthProxyRoute.Name)
 	//#endregion
 
 	//#region UPS Deployment
@@ -930,6 +946,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			return reconcile.Result{Requeue: true}, nil
 		}
 	}
+	secondaryResources.add("Deployment", unifiedpushDeployment.Name)
 	//#endregion
 
 	//#region Backups
@@ -972,6 +989,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			}
 			return reconcile.Result{}, nil
 		}
+		secondaryResources.add("CronJob", desiredCronJob.Name)
 	}
 
 	for _, existingCronJob := range existingCronJobs.Items {
@@ -982,6 +1000,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			if err != nil {
 				return r.manageError(instance, err)
 			}
+			secondaryResources.remove("CronJob", existingCronJob.Name)
 		}
 	}
 	//#endregion
@@ -1036,7 +1055,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	//## endregion GrafanaDasboard
 	//#endregion
 
-	return r.manageSuccess(instance)
+	return r.manageSuccess(instance, secondaryResources)
 }
 
 func (r *ReconcileUnifiedPushServer) manageError(instance *pushv1alpha1.UnifiedPushServer, issue error) (reconcile.Result, error) {
@@ -1057,10 +1076,11 @@ func (r *ReconcileUnifiedPushServer) manageError(instance *pushv1alpha1.UnifiedP
 	}, nil
 }
 
-func (r *ReconcileUnifiedPushServer) manageSuccess(instance *pushv1alpha1.UnifiedPushServer) (reconcile.Result, error) {
+func (r *ReconcileUnifiedPushServer) manageSuccess(instance *pushv1alpha1.UnifiedPushServer, secondaryResources resources) (reconcile.Result, error) {
 	resourcesReady := true
 	instance.Status.Ready = resourcesReady
 	instance.Status.Message = ""
+	instance.Status.SecondaryResources = secondaryResources
 
 	// If resources are ready and we have not errored before now, we are in a reconciling phase
 	if resourcesReady {
