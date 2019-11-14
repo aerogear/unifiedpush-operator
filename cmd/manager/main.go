@@ -26,7 +26,7 @@ import (
 
 	"github.com/aerogear/unifiedpush-operator/version"
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
-	monclientv1 "github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
+
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
@@ -36,8 +36,8 @@ import (
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
+	kruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -163,15 +163,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Setup all Controllers
-	if err := controller.AddToManager(mgr); err != nil {
+	// Setup Scheme for Prometheus Monitoring apis
+	if err := monitoringv1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}
 
-	operatorNamespace, err := k8sutil.GetOperatorNamespace()
-	if err != nil {
+	// Setup all Controllers
+	if err := controller.AddToManager(mgr); err != nil {
 		log.Error(err, "")
+		os.Exit(1)
 	}
 
 	if err = serveCRMetrics(cfg); err != nil {
@@ -191,12 +192,30 @@ func main() {
 	}
 
 	if service != nil {
-		err = addMonitoringKeyLabelToService(cfg, operatorNamespace, service)
-		if err != nil {
-			log.Error(err, "Could not add monitoring-key label to operator metrics Service")
-		}
 
-		err = createServiceMonitor(cfg, operatorNamespace, service)
+		serviceMonitor := &monitoringv1.ServiceMonitor{
+			ObjectMeta: metav1.ObjectMeta{Name: service.Name, Namespace: service.Namespace},
+		}
+		op, err := controllerutil.CreateOrUpdate(context.TODO(), mgr.GetClient(), serviceMonitor, func(ignore kruntime.Object) error {
+
+			// Set defaults
+			defaultServiceMonitor := metrics.GenerateServiceMonitor(service)
+			serviceMonitor.Spec.Endpoints = defaultServiceMonitor.Spec.Endpoints
+			serviceMonitor.ObjectMeta.Labels = defaultServiceMonitor.ObjectMeta.Labels
+			// This needs to be deepcopied because it's the same object in memory as the
+			// ObjectMeta.Labels that will be modified below!
+			serviceMonitor.Spec.Selector = *defaultServiceMonitor.Spec.Selector.DeepCopy()
+
+			// Set additional labels for prometheus to match
+			monitoringLabels := map[string]string{"monitoring-key": "middleware"}
+			for k, v := range monitoringLabels {
+				serviceMonitor.ObjectMeta.Labels[k] = v
+			}
+
+			// Set owner reference to be the Service
+			controllerutil.SetControllerReference(service, serviceMonitor, mgr.GetScheme())
+			return nil
+		})
 		if err != nil {
 			log.Info("Could not create ServiceMonitor object", "error", err.Error())
 			// If this operator is deployed to a cluster without the prometheus-operator running, it will return
@@ -205,8 +224,14 @@ func main() {
 				log.Info("Install prometheus-operator in you cluster to create ServiceMonitor objects", "error", err.Error())
 			}
 		}
+		log.Info("Create or Update", "ServiceMonitor", serviceMonitor, "Operation Result", op)
 	}
 
+	operatorNamespace, err := k8sutil.GetOperatorNamespace()
+	if err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
 	client := mgr.GetClient()
 	prometheusRule := &monitoringv1.PrometheusRule{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush-operator", Namespace: operatorNamespace}}
 
@@ -229,46 +254,6 @@ func main() {
 		log.Error(err, "Manager exited non-zero")
 		os.Exit(1)
 	}
-}
-
-func addMonitoringKeyLabelToService(cfg *rest.Config, ns string, service *v1.Service) error {
-	kclient, err := client.New(cfg, client.Options{})
-	if err != nil {
-		return err
-	}
-
-	updatedLabels := map[string]string{"monitoring-key": "middleware"}
-	for k, v := range service.ObjectMeta.Labels {
-		updatedLabels[k] = v
-	}
-	service.ObjectMeta.Labels = updatedLabels
-
-	err = kclient.Update(context.TODO(), service)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// createServiceMonitor is a temporary fix until the version in the
-// operator-sdk is fixed to have the correct Path set on the Endpoints
-func createServiceMonitor(config *rest.Config, ns string, service *v1.Service) error {
-	mclient := monclientv1.NewForConfigOrDie(config)
-
-	sm := metrics.GenerateServiceMonitor(service)
-	eps := []monitoringv1.Endpoint{}
-	for _, ep := range sm.Spec.Endpoints {
-		eps = append(eps, monitoringv1.Endpoint{Port: ep.Port, Path: "/metrics"})
-	}
-	sm.Spec.Endpoints = eps
-
-	_, err := mclient.ServiceMonitors(ns).Create(sm)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // serveCRMetrics gets the Operator/CustomResource GVKs and generates metrics based on those types.
