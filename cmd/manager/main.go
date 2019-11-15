@@ -225,27 +225,27 @@ func main() {
 			}
 		}
 		log.Info("Create or Update", "ServiceMonitor", serviceMonitor, "Operation Result", op)
+
+		operatorNamespace, err := k8sutil.GetOperatorNamespace()
+		if err != nil {
+			log.Error(err, "")
+			os.Exit(1)
+		}
+		client := mgr.GetClient()
+		prometheusRule := &monitoringv1.PrometheusRule{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush-operator", Namespace: operatorNamespace}}
+
+		controllerutil.CreateOrUpdate(ctx, client, prometheusRule, func(ignore k8sruntime.Object) error {
+			reconcilePrometheusRule(prometheusRule)
+			return nil
+		})
+
+		grafanaDashboard := &integreatlyv1alpha1.GrafanaDashboard{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush-operator", Namespace: operatorNamespace}}
+
+		controllerutil.CreateOrUpdate(ctx, client, grafanaDashboard, func(ignore k8sruntime.Object) error {
+			reconcileGrafanaDashboard(grafanaDashboard)
+			return nil
+		})
 	}
-
-	operatorNamespace, err := k8sutil.GetOperatorNamespace()
-	if err != nil {
-		log.Error(err, "")
-		os.Exit(1)
-	}
-	client := mgr.GetClient()
-	prometheusRule := &monitoringv1.PrometheusRule{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush-operator", Namespace: operatorNamespace}}
-
-	controllerutil.CreateOrUpdate(ctx, client, prometheusRule, func(ignore k8sruntime.Object) error {
-		reconcilePrometheusRule(prometheusRule)
-		return nil
-	})
-
-	grafanaDashboard := &integreatlyv1alpha1.GrafanaDashboard{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush-operator", Namespace: operatorNamespace}}
-
-	controllerutil.CreateOrUpdate(ctx, client, grafanaDashboard, func(ignore k8sruntime.Object) error {
-		reconcileGrafanaDashboard(grafanaDashboard)
-		return nil
-	})
 
 	log.Info("Starting the Cmd.")
 
