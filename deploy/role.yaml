@@ -121,18 +121,6 @@ rules:
   verbs:
   - get
 - apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - servicemonitors
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
   - enmasse.io
   resources:
   - addresses
@@ -164,3 +152,28 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+    - monitoring.coreos.com
+  resources:
+    - servicemonitors
+    - prometheusrules
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+- apiGroups:
+    - integreatly.org
+  resources:
+    - grafanadashboards
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete

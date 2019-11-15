@@ -444,28 +444,13 @@ If you would like to modify the container names, you can use the following envir
 
 The application-monitoring stack provisioned by the
 {application_monitoring_operator} on https://github.com/integr8ly[Integr8ly]
-can be used to gather metrics from this operator and the UnifiedPush Server. These metrics can be used by Integr8ly's application monitoring to generate Prometheus metrics, AlertManager alerts and a Grafana dashboard.
+can be used to gather metrics from this operator and the UnifiedPush Server. These metrics can be used by Integr8ly's application monitoring to generate Prometheus metrics, AlertManager alerts and a dashboard in Grafana.
 
 It is required that the https://github.com/integr8ly/grafana-operator[integr8ly/Grafana] and https://github.com/coreos/prometheus-operator[Prometheus] operators are installed. For further detail see https://github.com/integr8ly/application-monitoring-operator[integr8ly/application-monitoring-operator].
 
-The following command enables the monitoring service in the operator namespace:
+The operator will install it's own monitoring resrouces required by Grafana and Prometheus on startup and will install the Resources required for monitoring the UnifiedPush Server on creation of the UnifiedPushServer CR.
 
-[source,shell]
-----
-make monitoring/install
-----
-
-IMPORTANT: The namespaces are setup manually in the files link:./deploy/monitor/service_monitor.yaml[ServiceMonitor], link:./deploy/monitor/prometheus_rule.yaml[Prometheus Rules], link:./deploy/monitor/operator-service.yaml[Operator Service], and link:./deploy/monitor/grafana-dashboard[Grafana Dashboard]. Following an example from the link:./deploy/monitor/prometheus_rule.yaml[Prometheus Rules]. You should replace them if the operator is not installed in the default namespace.
-
-[source,yaml]
-----
-  expr: |
-          (1-absent(kube_pod_status_ready{condition="true", namespace="mobile-security-service"})) or sum(kube_pod_status_ready{condition="true", namespace="mobile-security-service"}) != 3
-
-[source,shell]
-----
-
-NOTE: The command `make monitoring/uninstall` will uninstall the Monitor Service.
+NOTE: These will be ignored if the required CRDs are not installed on the cluster. Restart the operator to install the resources if the application-monitoring stack is deployed afterwards.
 
 == Development
 

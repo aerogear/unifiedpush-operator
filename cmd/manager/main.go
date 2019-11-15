@@ -14,15 +14,19 @@ import (
 	"github.com/aerogear/unifiedpush-operator/pkg/apis"
 	"github.com/aerogear/unifiedpush-operator/pkg/controller"
 
+	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
+	messaginguserv1beta "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1"
+	integreatlyv1alpha1 "github.com/integr8ly/grafana-operator/pkg/apis/integreatly/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
-	messaginguserv1beta "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1"
-
+	"github.com/aerogear/unifiedpush-operator/version"
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
-	monclientv1 "github.com/coreos/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
+
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
@@ -32,8 +36,8 @@ import (
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
+	kruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -49,6 +53,7 @@ var (
 var log = logf.Log.WithName("cmd")
 
 func printVersion() {
+	log.Info(fmt.Sprintf("Starting the UnifiedPush Operator with Version: %s", version.Version))
 	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
 	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
 	log.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
@@ -110,7 +115,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("Registering Components.")
+	log.Info("Registering Components.", "")
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
@@ -146,15 +151,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Setup all Controllers
-	if err := controller.AddToManager(mgr); err != nil {
+	// Setup Scheme for Monitoring apis
+	if err := monitoringv1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}
 
-	operatorNamespace, err := k8sutil.GetOperatorNamespace()
-	if err != nil {
+	// Setup Scheme for Integreatly Grafana apis
+	if err := integreatlyv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	// Setup Scheme for Prometheus Monitoring apis
+	if err := monitoringv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	// Setup all Controllers
+	if err := controller.AddToManager(mgr); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
 	}
 
 	if err = serveCRMetrics(cfg); err != nil {
@@ -174,12 +192,30 @@ func main() {
 	}
 
 	if service != nil {
-		err = addMonitoringKeyLabelToService(cfg, operatorNamespace, service)
-		if err != nil {
-			log.Error(err, "Could not add monitoring-key label to operator metrics Service")
-		}
 
-		err = createServiceMonitor(cfg, operatorNamespace, service)
+		serviceMonitor := &monitoringv1.ServiceMonitor{
+			ObjectMeta: metav1.ObjectMeta{Name: service.Name, Namespace: service.Namespace},
+		}
+		op, err := controllerutil.CreateOrUpdate(context.TODO(), mgr.GetClient(), serviceMonitor, func(ignore kruntime.Object) error {
+
+			// Set defaults
+			defaultServiceMonitor := metrics.GenerateServiceMonitor(service)
+			serviceMonitor.Spec.Endpoints = defaultServiceMonitor.Spec.Endpoints
+			serviceMonitor.ObjectMeta.Labels = defaultServiceMonitor.ObjectMeta.Labels
+			// This needs to be deepcopied because it's the same object in memory as the
+			// ObjectMeta.Labels that will be modified below!
+			serviceMonitor.Spec.Selector = *defaultServiceMonitor.Spec.Selector.DeepCopy()
+
+			// Set additional labels for prometheus to match
+			monitoringLabels := map[string]string{"monitoring-key": "middleware"}
+			for k, v := range monitoringLabels {
+				serviceMonitor.ObjectMeta.Labels[k] = v
+			}
+
+			// Set owner reference to be the Service
+			controllerutil.SetControllerReference(service, serviceMonitor, mgr.GetScheme())
+			return nil
+		})
 		if err != nil {
 			log.Info("Could not create ServiceMonitor object", "error", err.Error())
 			// If this operator is deployed to a cluster without the prometheus-operator running, it will return
@@ -188,7 +224,28 @@ func main() {
 				log.Info("Install prometheus-operator in you cluster to create ServiceMonitor objects", "error", err.Error())
 			}
 		}
+		log.Info("Create or Update", "ServiceMonitor", serviceMonitor, "Operation Result", op)
 	}
+
+	operatorNamespace, err := k8sutil.GetOperatorNamespace()
+	if err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+	client := mgr.GetClient()
+	prometheusRule := &monitoringv1.PrometheusRule{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush-operator", Namespace: operatorNamespace}}
+
+	controllerutil.CreateOrUpdate(ctx, client, prometheusRule, func(ignore k8sruntime.Object) error {
+		reconcilePrometheusRule(prometheusRule)
+		return nil
+	})
+
+	grafanaDashboard := &integreatlyv1alpha1.GrafanaDashboard{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush-operator", Namespace: operatorNamespace}}
+
+	controllerutil.CreateOrUpdate(ctx, client, grafanaDashboard, func(ignore k8sruntime.Object) error {
+		reconcileGrafanaDashboard(grafanaDashboard)
+		return nil
+	})
 
 	log.Info("Starting the Cmd.")
 
@@ -197,46 +254,6 @@ func main() {
 		log.Error(err, "Manager exited non-zero")
 		os.Exit(1)
 	}
-}
-
-func addMonitoringKeyLabelToService(cfg *rest.Config, ns string, service *v1.Service) error {
-	kclient, err := client.New(cfg, client.Options{})
-	if err != nil {
-		return err
-	}
-
-	updatedLabels := map[string]string{"monitoring-key": "middleware"}
-	for k, v := range service.ObjectMeta.Labels {
-		updatedLabels[k] = v
-	}
-	service.ObjectMeta.Labels = updatedLabels
-
-	err = kclient.Update(context.TODO(), service)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// createServiceMonitor is a temporary fix until the version in the
-// operator-sdk is fixed to have the correct Path set on the Endpoints
-func createServiceMonitor(config *rest.Config, ns string, service *v1.Service) error {
-	mclient := monclientv1.NewForConfigOrDie(config)
-
-	sm := metrics.GenerateServiceMonitor(service)
-	eps := []monitoringv1.Endpoint{}
-	for _, ep := range sm.Spec.Endpoints {
-		eps = append(eps, monitoringv1.Endpoint{Port: ep.Port, Path: "/metrics"})
-	}
-	sm.Spec.Endpoints = eps
-
-	_, err := mclient.ServiceMonitors(ns).Create(sm)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // serveCRMetrics gets the Operator/CustomResource GVKs and generates metrics based on those types.
@@ -261,4 +278,457 @@ func serveCRMetrics(cfg *rest.Config) error {
 		return err
 	}
 	return nil
+}
+
+func reconcilePrometheusRule(promethuesRule *monitoringv1.PrometheusRule) {
+	labels := map[string]string{
+		"monitoring-key": "middleware",
+		"prometheus":     "application-monitoring",
+		"role":           "alert-rules",
+	}
+	critical := map[string]string{
+		"severity": "critical",
+	}
+	sop_url := fmt.Sprintf("https://github.com/aerogear/unifiedpush-operator/blob/%s/SOP/SOP-operator.adoc", version.Version)
+	upsPushOperatorDown := map[string]string{
+		"description": "The UnifiedPush Operator has been down for more than 5 minutes.",
+		"summary":     "The UnifiedPush Operator is down.",
+		"sop_url":     sop_url,
+	}
+	operatorName, err := k8sutil.GetOperatorName()
+	if err != nil {
+		log.Error(err, "")
+	}
+	promethuesRule.ObjectMeta.Labels = labels
+	job := fmt.Sprintf("%s-metrics", operatorName)
+	promethuesRule.Spec = monitoringv1.PrometheusRuleSpec{
+		Groups: []monitoringv1.RuleGroup{
+			{
+				Name: "general.rules",
+				Rules: []monitoringv1.Rule{
+					{
+						Alert: "UnifiedPushOperatorDown",
+						Expr: intstr.IntOrString{
+							Type:   intstr.String,
+							StrVal: fmt.Sprintf("absent(up{service=\"%s\"} == 1)", job),
+						},
+						For:         "5m",
+						Labels:      critical,
+						Annotations: upsPushOperatorDown,
+					},
+				},
+			},
+		},
+	}
+}
+
+func reconcileGrafanaDashboard(grafanaDashboard *integreatlyv1alpha1.GrafanaDashboard) {
+	operatorNamespace, err := k8sutil.GetOperatorNamespace()
+	if err != nil {
+		log.Error(err, "")
+	}
+	labels := map[string]string{
+		"monitoring-key": "middleware",
+		"prometheus":     "application-monitoring",
+	}
+	operatorName, err := k8sutil.GetOperatorName()
+	if err != nil {
+		log.Error(err, "")
+	}
+	service := fmt.Sprintf("%s-metrics", operatorName)
+
+	grafanaDashboard.ObjectMeta.Labels = labels
+	grafanaDashboard.Spec = integreatlyv1alpha1.GrafanaDashboardSpec{
+		Name: "unifiedpushoperator.json",
+		Json: `
+		{
+			"__requires": [
+			  {
+				"type": "grafana",
+				"id": "grafana",
+				"name": "Grafana",
+				"version": "4.3.2"
+			  },
+			  {
+				"type": "panel",
+				"id": "graph",
+				"name": "Graph",
+				"version": ""
+			  },
+			  {
+				"type": "datasource",
+				"id": "prometheus",
+				"name": "Prometheus",
+				"version": "1.0.0"
+			  },
+			  {
+				"type": "panel",
+				"id": "singlestat",
+				"name": "Singlestat",
+				"version": ""
+			  }
+			],
+			"annotations": {
+			  "list": [
+				{
+				  "builtIn": 1,
+				  "datasource": "-- Grafana --",
+				  "enable": true,
+				  "hide": true,
+				  "iconColor": "rgba(0, 211, 255, 1)",
+				  "name": "Annotations & Alerts",
+				  "type": "dashboard"
+				}
+			  ]
+			},
+			"description": "Operator metrics",
+			"editable": true,
+			"gnetId": null,
+			"graphTooltip": 0,
+			"links": [],
+			"panels": [
+			  {
+				"collapsed": false,
+				"gridPos": {
+				  "h": 1,
+				  "w": 24,
+				  "x": 0,
+				  "y": 0
+				},
+				"id": 9,
+				"panels": [],
+				"repeat": null,
+				"title": "Uptime",
+				"type": "row"
+			  },
+			  {
+				"aliasColors": {},
+				"bars": true,
+				"dashLength": 10,
+				"dashes": false,
+				"datasource": "Prometheus",
+				"fill": 1,
+				"gridPos": {
+				  "h": 8,
+				  "w": 24,
+				  "x": 3,
+				  "y": 1
+				},
+				"id": 1,
+				"legend": {
+				  "avg": false,
+				  "current": false,
+				  "max": false,
+				  "min": false,
+				  "show": true,
+				  "total": false,
+				  "values": false
+				},
+				"lines": true,
+				"linewidth": 1,
+				"links": [
+				  {
+					"type": "dashboard"
+				  }
+				],
+				"nullPointMode": "null",
+				"percentage": true,
+				"pointradius": 5,
+				"points": false,
+				"renderer": "flot",
+				"seriesOverrides": [],
+				"spaceLength": 10,
+				"stack": false,
+				"steppedLine": false,
+				"targets": [
+				  {
+					"expr": "kube_endpoint_address_available{namespace='` + operatorNamespace + `',endpoint='` + service + `'}",
+					"format": "time_series",
+					"hide": false,
+					"intervalFactor": 2,
+					"legendFormat": "{{ '{{' }}service{{ '}}' }} - Uptime",
+					"metric": "",
+					"refId": "A",
+					"step": 2
+				  }
+				],
+				"thresholds": [],
+				"timeFrom": null,
+				"timeRegions": [],
+				"timeShift": null,
+				"title": "Uptime",
+				"tooltip": {
+				  "shared": true,
+				  "sort": 0,
+				  "value_type": "individual"
+				},
+				"type": "graph",
+				"xaxis": {
+				  "buckets": null,
+				  "mode": "time",
+				  "name": null,
+				  "show": true,
+				  "values": []
+				},
+				"yaxes": [
+				  {
+					"format": "none",
+					"label": null,
+					"logBase": null,
+					"max": 1.5,
+					"min": 0,
+					"show": true
+				  },
+				  {
+					"format": "short",
+					"label": null,
+					"logBase": null,
+					"max": 2,
+					"min": 0,
+					"show": true
+				  }
+				],
+				"yaxis": {
+				  "align": false,
+				  "alignLevel": null
+				}
+			  },
+			  {
+				"collapsed": false,
+				"gridPos": {
+				  "h": 1,
+				  "w": 24,
+				  "x": 0,
+				  "y": 9
+				},
+				"id": 10,
+				"panels": [],
+				"repeat": null,
+				"title": "Resources",
+				"type": "row"
+			  },
+			  {
+				"aliasColors": {},
+				"bars": false,
+				"dashLength": 10,
+				"dashes": false,
+				"datasource": "Prometheus",
+				"fill": 1,
+				"gridPos": {
+				  "h": 8,
+				  "w": 24,
+				  "x": 0,
+				  "y": 10
+				},
+				"id": 4,
+				"legend": {
+				  "avg": false,
+				  "current": false,
+				  "max": false,
+				  "min": false,
+				  "show": true,
+				  "total": false,
+				  "values": false
+				},
+				"lines": true,
+				"linewidth": 1,
+				"links": [],
+				"nullPointMode": "null",
+				"percentage": false,
+				"pointradius": 5,
+				"points": false,
+				"renderer": "flot",
+				"seriesOverrides": [],
+				"spaceLength": 10,
+				"stack": false,
+				"steppedLine": false,
+				"targets": [
+				  {
+					"expr": "process_virtual_memory_bytes{namespace='` + operatorNamespace + `',service='` + service + `'}",
+					"format": "time_series",
+					"intervalFactor": 1,
+					"legendFormat": "Virtual Memory",
+					"refId": "A"
+				  },
+				  {
+					"expr": "process_resident_memory_bytes{namespace='` + operatorNamespace + `',service='` + service + `'}",
+					"format": "time_series",
+					"intervalFactor": 2,
+					"legendFormat": "Memory Usage",
+					"refId": "B",
+					"step": 2
+				  }
+				],
+				"thresholds": [],
+				"timeFrom": null,
+				"timeRegions": [],
+				"timeShift": null,
+				"title": "Memory Usage",
+				"tooltip": {
+				  "shared": true,
+				  "sort": 0,
+				  "value_type": "individual"
+				},
+				"type": "graph",
+				"xaxis": {
+				  "buckets": null,
+				  "mode": "time",
+				  "name": null,
+				  "show": true,
+				  "values": []
+				},
+				"yaxes": [
+				  {
+					"format": "bytes",
+					"label": null,
+					"logBase": 2,
+					"max": null,
+					"min": 0,
+					"show": true
+				  },
+				  {
+					"format": "short",
+					"label": null,
+					"logBase": 1,
+					"max": null,
+					"min": null,
+					"show": true
+				  }
+				],
+				"yaxis": {
+				  "align": false,
+				  "alignLevel": null
+				}
+			  },
+			  {
+				"aliasColors": {},
+				"bars": false,
+				"dashLength": 10,
+				"dashes": false,
+				"datasource": "Prometheus",
+				"fill": 1,
+				"gridPos": {
+				  "h": 8,
+				  "w": 24,
+				  "x": 0,
+				  "y": 18
+				},
+				"id": 2,
+				"legend": {
+				  "avg": false,
+				  "current": false,
+				  "max": false,
+				  "min": false,
+				  "show": true,
+				  "total": false,
+				  "values": false
+				},
+				"lines": true,
+				"linewidth": 1,
+				"links": [],
+				"nullPointMode": "null",
+				"percentage": false,
+				"pointradius": 5,
+				"points": false,
+				"renderer": "flot",
+				"seriesOverrides": [],
+				"spaceLength": 10,
+				"stack": false,
+				"steppedLine": false,
+				"targets": [
+				  {
+					"expr": "sum(rate(process_cpu_seconds_total{namespace='` + operatorNamespace + `',service='` + service + `'}[1m]))*1000",
+					"format": "time_series",
+					"interval": "",
+					"intervalFactor": 2,
+					"legendFormat": "UnifiedPush Operator- CPU Usage in Millicores",
+					"refId": "A",
+					"step": 2
+				  }
+				],
+				"thresholds": [],
+				"timeFrom": null,
+				"timeRegions": [],
+				"timeShift": null,
+				"title": "CPU Usage",
+				"tooltip": {
+				  "shared": true,
+				  "sort": 0,
+				  "value_type": "individual"
+				},
+				"transparent": false,
+				"type": "graph",
+				"xaxis": {
+				  "buckets": null,
+				  "mode": "time",
+				  "name": null,
+				  "show": true,
+				  "values": []
+				},
+				"yaxes": [
+				  {
+					"format": "short",
+					"label": "Millicores",
+					"logBase": 10,
+					"max": null,
+					"min": null,
+					"show": true
+				  },
+				  {
+					"format": "short",
+					"label": null,
+					"logBase": 1,
+					"max": null,
+					"min": null,
+					"show": true
+				  }
+				],
+				"yaxis": {
+				  "align": false,
+				  "alignLevel": null
+				}
+			  }
+			],
+			"refresh": "10s",
+			"schemaVersion": 16,
+			"style": "dark",
+			"tags": [],
+			"templating": {
+			  "list": []
+			},
+			"time": {
+			  "from": "now/d",
+			  "to": "now"
+			},
+			"timepicker": {
+			  "refresh_intervals": [
+				"5s",
+				"10s",
+				"30s",
+				"1m",
+				"5m",
+				"15m",
+				"30m",
+				"1h",
+				"2h",
+				"1d"
+			  ],
+			  "time_options": [
+				"5m",
+				"15m",
+				"1h",
+				"6h",
+				"12h",
+				"24h",
+				"2d",
+				"7d",
+				"30d"
+			  ]
+			},
+			"timezone": "browser",
+			"title": "UnifiedPush Operator",
+			"version": 2
+		  }
+		`,
+	}
 }

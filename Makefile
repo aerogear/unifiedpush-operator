@@ -87,9 +87,6 @@ monitoring/install:
 	- kubectl apply -n $(NAMESPACE) -f deploy/monitor/operator_service.yaml
 	- kubectl apply -n $(NAMESPACE) -f deploy/monitor/prometheus_rule.yaml
 	- kubectl apply -n $(NAMESPACE) -f deploy/monitor/grafana_dashboard.yaml
-	- kubectl apply -n $(NAMESPACE) -f deploy/monitor/push_service_monitor.yaml
-	- kubectl apply -n $(NAMESPACE) -f deploy/monitor/push_prometheus_rule.yaml
-	- kubectl apply -n $(NAMESPACE) -f deploy/monitor/push_grafana_dashboard.yaml
 
 .PHONY: monitoring/uninstall
 monitoring/uninstall:
@@ -98,9 +95,6 @@ monitoring/uninstall:
 	- kubectl delete -n $(NAMESPACE) -f deploy/monitor/service_monitor.yaml
 	- kubectl delete -n $(NAMESPACE) -f deploy/monitor/prometheus_rule.yaml
 	- kubectl delete -n $(NAMESPACE) -f deploy/monitor/grafana_dashboard.yaml
-	- kubectl delete -n $(NAMESPACE) -f deploy/monitor/push_service_monitor.yaml
-	- kubectl delete -n $(NAMESPACE) -f deploy/monitor/push_prometheus_rule.yaml
-	- kubectl delete -n $(NAMESPACE) -f deploy/monitor/push_grafana_dashboard.yaml
 	- kubectl delete -n $(NAMESPACE) -f deploy/monitor/operator_service.yaml
 
 .PHONY: example-pushapplication/apply
@@ -118,9 +112,9 @@ cluster/prepare:
 	- kubectl create namespace $(NAMESPACE)
 	- kubectl label namespace $(NAMESPACE) monitoring-key=middleware
 	- kubectl create namespace $(APP_NAMESPACE)
-	- kubectl create -n $(NAMESPACE) -f deploy/service_account.yaml
-	- kubectl create -f deploy/role.yaml
-	- kubectl create -n $(NAMESPACE) -f deploy/role_binding.yaml
+	- kubectl apply -n $(NAMESPACE) -f deploy/service_account.yaml
+	- kubectl apply -n $(NAMESPACE) -f deploy/role.yaml
+	- kubectl apply -n $(NAMESPACE) -f deploy/role_binding.yaml
 	- kubectl apply -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
 	- kubectl apply -f deploy/crds/push_v1alpha1_androidvariant_crd.yaml
 	- kubectl apply -f deploy/crds/push_v1alpha1_webpushvariant_crd.yaml
@@ -136,7 +130,7 @@ cluster/clean:
 	- kubectl delete -n $(NAMESPACE) webpushVariant --all
 	- kubectl delete -n $(NAMESPACE) pushApplication --all
 	- kubectl delete -n $(NAMESPACE) unifiedpushServer --all
-	- kubectl delete -f deploy/role.yaml
+	- kubectl delete -n $(NAMESPACE) -f deploy/role.yaml
 	- kubectl delete -n $(NAMESPACE) -f deploy/role_binding.yaml
 	- kubectl delete -n $(NAMESPACE) -f deploy/service_account.yaml
 	- kubectl delete -f deploy/crds/push_v1alpha1_pushapplication_crd.yaml
