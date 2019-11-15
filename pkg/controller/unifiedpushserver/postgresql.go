@@ -2,6 +2,7 @@ package unifiedpushserver
 
 import (
 	"fmt"
+
 	"github.com/aerogear/unifiedpush-operator/pkg/constants"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
@@ -34,21 +35,35 @@ func newPostgresqlPersistentVolumeClaim(cr *pushv1alpha1.UnifiedPushServer) (*co
 }
 
 func newPostgresqlSecret(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Secret, error) {
-	databasePassword, err := generatePassword()
-	if err != nil {
-		return nil, err
-	}
+	externaldb := &cr.Spec.ExternalDB
+	if !*externaldb {
+		databasePassword, err := generatePassword()
+		if err != nil {
+			return nil, err
+		}
 
-	return &corev1.Secret{
-		ObjectMeta: objectMeta(cr, "postgresql"),
-		StringData: map[string]string{
-			"POSTGRES_DATABASE":  "unifiedpush",
-			"POSTGRES_USERNAME":  "unifiedpush",
-			"POSTGRES_PASSWORD":  databasePassword,
-			"POSTGRES_HOST":      fmt.Sprintf("%s-postgresql.%s.svc", cr.Name, cr.Namespace),
-			"POSTGRES_SUPERUSER": "false",
-		},
-	}, nil
+		return &corev1.Secret{
+			ObjectMeta: objectMeta(cr, "postgresql"),
+			StringData: map[string]string{
+				"POSTGRES_DATABASE":  "unifiedpush",
+				"POSTGRES_USERNAME":  "unifiedpush",
+				"POSTGRES_PASSWORD":  databasePassword,
+				"POSTGRES_HOST":      fmt.Sprintf("%s-postgresql.%s.svc", cr.Name, cr.Namespace),
+				"POSTGRES_SUPERUSER": "false",
+			},
+		}, nil
+	} else {
+		return &corev1.Secret{
+			ObjectMeta: objectMeta(cr, "postgresql"),
+			StringData: map[string]string{
+				"POSTGRES_DATABASE":  cr.Spec.DatabaseName,
+				"POSTGRES_USERNAME":  cr.Spec.DatabaseUser,
+				"POSTGRES_PASSWORD":  cr.Spec.DatabasePassword,
+				"POSTGRES_HOST":      cr.Spec.DatabaseHost,
+				"POSTGRES_SUPERUSER": "false",
+			},
+		}, nil
+	}
 }
 
 func newPostgresqlDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1.Deployment, error) {

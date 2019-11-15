@@ -456,49 +456,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	}
 	//#endregion
 
-	//#region Postgres PVC
-	persistentVolumeClaim, err := newPostgresqlPersistentVolumeClaim(instance)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Set UnifiedPushServer instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, persistentVolumeClaim, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Check if this PersistentVolumeClaim already exists
-	foundPersistentVolumeClaim := &corev1.PersistentVolumeClaim{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: persistentVolumeClaim.Name, Namespace: persistentVolumeClaim.Namespace}, foundPersistentVolumeClaim)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new PersistentVolumeClaim", "PersistentVolumeClaim.Namespace", persistentVolumeClaim.Namespace, "PersistentVolumeClaim.Name", persistentVolumeClaim.Name)
-		err = r.client.Create(context.TODO(), persistentVolumeClaim)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	} else if err != nil {
-		return reconcile.Result{}, err
-	} else {
-		requiredPostgresPVCSize := getPostgresPVCSize(instance)
-
-		foundPVCSize := foundPersistentVolumeClaim.Spec.Resources.Requests[corev1.ResourceStorage]
-		if foundPVCSize.String() != requiredPostgresPVCSize {
-			reqLogger.Info("Request size of PersistentVolumeClaim is different than in the UnifiedPushServer spec or the operator defaults", "PersistentVolumeClaim.Namespace", persistentVolumeClaim.Namespace, "PersistentVolumeClaim.Name", persistentVolumeClaim.Name, "Found size", foundPVCSize.String(), "Spec size", requiredPostgresPVCSize)
-
-			foundPersistentVolumeClaim.Spec.Resources.Requests[corev1.ResourceStorage] = resource.MustParse(requiredPostgresPVCSize)
-
-			// enqueue
-			err = r.client.Update(context.TODO(), foundPersistentVolumeClaim)
-			if err != nil {
-				reqLogger.Error(err, "Failed to update PersistentVolumeClaim", "PersistentVolumeClaim.Namespace", foundPersistentVolumeClaim.Namespace, "PersistentVolumeClaim.Name", foundPersistentVolumeClaim.Name)
-				return reconcile.Result{}, err
-			}
-			return reconcile.Result{Requeue: true}, nil
-		}
-
-	}
-	//#endregion
-
 	//#region MIGRATION from old resources to new ones
 
 	// TODO: This migration block should be removed after a major release!
@@ -609,98 +566,146 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	//#endregion
 
-	//#region Postgres Deployment
-	postgresqlDeployment, err := newPostgresqlDeployment(instance)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
+	externaldb := instance.Spec.ExternalDB
+	if !externaldb {
 
-	// Set UnifiedPushServer instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, postgresqlDeployment, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Check if this Deployment already exists
-	foundPostgresqlDeployment := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlDeployment.Name, Namespace: postgresqlDeployment.Namespace}, foundPostgresqlDeployment)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Deployment", "Deployment.Namespace", postgresqlDeployment.Namespace, "Deployment.Name", postgresqlDeployment.Name)
-		err = r.client.Create(context.TODO(), postgresqlDeployment)
+		//#region Postgres PVC
+		persistentVolumeClaim, err := newPostgresqlPersistentVolumeClaim(instance)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-	} else if err != nil {
-		return reconcile.Result{}, err
-	} else {
-		postgresResourceRequirements := getPostgresResourceRequirements(instance)
 
-		containers := foundPostgresqlDeployment.Spec.Template.Spec.Containers
-		for i := range containers {
-			if containers[i].Name == cfg.PostgresContainerName {
-				if reflect.DeepEqual(containers[i].Resources, postgresResourceRequirements) == false {
-					reqLogger.Info("Postgres container resource requirements are different than in the UnifiedPushServer spec or the operator defaults", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name, "Found resource requirements", containers[i].Resources, "Spec resource requirements", postgresResourceRequirements)
-
-					containers[i].Resources = postgresResourceRequirements
-
-					// enqueue
-					err = r.client.Update(context.TODO(), foundPostgresqlDeployment)
-					if err != nil {
-						reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name)
-						return reconcile.Result{}, err
-					}
-					return reconcile.Result{Requeue: true}, nil
-				}
-			}
+		// Set UnifiedPushServer instance as the owner and controller
+		if err := controllerutil.SetControllerReference(instance, persistentVolumeClaim, r.scheme); err != nil {
+			return reconcile.Result{}, err
 		}
 
-		desiredImage := constants.PostgresImage
-
-		containerSpec := findContainerSpec(foundPostgresqlDeployment, cfg.PostgresContainerName)
-		if containerSpec == nil {
-			reqLogger.Info("Unable to do image reconcile: Unable to find container spec in deployment", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name, "ContainerSpec", cfg.PostgresContainerName)
-			return reconcile.Result{Requeue: true}, nil
-		} else if containerSpec.Image != desiredImage {
-			reqLogger.Info("Container spec in deployment is using a different image. Going to update it now.", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name, "ContainerSpec", cfg.PostgresContainerName, "ExistingImage", containerSpec.Image, "DesiredImage", desiredImage)
-
-			// update
-			updateContainerSpecImage(foundPostgresqlDeployment, cfg.PostgresContainerName, desiredImage)
-
-			// enqueue
-			err = r.client.Update(context.TODO(), foundPostgresqlDeployment)
+		// Check if this PersistentVolumeClaim already exists
+		foundPersistentVolumeClaim := &corev1.PersistentVolumeClaim{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: persistentVolumeClaim.Name, Namespace: persistentVolumeClaim.Namespace}, foundPersistentVolumeClaim)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new PersistentVolumeClaim", "PersistentVolumeClaim.Namespace", persistentVolumeClaim.Namespace, "PersistentVolumeClaim.Name", persistentVolumeClaim.Name)
+			err = r.client.Create(context.TODO(), persistentVolumeClaim)
 			if err != nil {
-				reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name)
 				return reconcile.Result{}, err
 			}
-			return reconcile.Result{Requeue: true}, nil
+		} else if err != nil {
+			return reconcile.Result{}, err
+		} else {
+			requiredPostgresPVCSize := getPostgresPVCSize(instance)
+
+			foundPVCSize := foundPersistentVolumeClaim.Spec.Resources.Requests[corev1.ResourceStorage]
+			if foundPVCSize.String() != requiredPostgresPVCSize {
+				reqLogger.Info("Request size of PersistentVolumeClaim is different than in the UnifiedPushServer spec or the operator defaults", "PersistentVolumeClaim.Namespace", persistentVolumeClaim.Namespace, "PersistentVolumeClaim.Name", persistentVolumeClaim.Name, "Found size", foundPVCSize.String(), "Spec size", requiredPostgresPVCSize)
+
+				foundPersistentVolumeClaim.Spec.Resources.Requests[corev1.ResourceStorage] = resource.MustParse(requiredPostgresPVCSize)
+
+				// enqueue
+				err = r.client.Update(context.TODO(), foundPersistentVolumeClaim)
+				if err != nil {
+					reqLogger.Error(err, "Failed to update PersistentVolumeClaim", "PersistentVolumeClaim.Namespace", foundPersistentVolumeClaim.Namespace, "PersistentVolumeClaim.Name", foundPersistentVolumeClaim.Name)
+					return reconcile.Result{}, err
+				}
+				return reconcile.Result{Requeue: true}, nil
+			}
+
 		}
-	}
-	//#endregion
+		//#endregion
 
-	//#region Postgres Service
-	postgresqlService, err := newPostgresqlService(instance)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Set UnifiedPushServer instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, postgresqlService, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Check if this Service already exists
-	foundPostgresqlService := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlService.Name, Namespace: postgresqlService.Namespace}, foundPostgresqlService)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Service", "Service.Namespace", postgresqlService.Namespace, "Service.Name", postgresqlService.Name)
-		err = r.client.Create(context.TODO(), postgresqlService)
+		//#region Postgres Deployment
+		postgresqlDeployment, err := newPostgresqlDeployment(instance)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-	} else if err != nil {
-		return reconcile.Result{}, err
-	}
-	//#endregion
 
+		// Set UnifiedPushServer instance as the owner and controller
+		if err := controllerutil.SetControllerReference(instance, postgresqlDeployment, r.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		// Check if this Deployment already exists
+		foundPostgresqlDeployment := &appsv1.Deployment{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlDeployment.Name, Namespace: postgresqlDeployment.Namespace}, foundPostgresqlDeployment)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new Deployment", "Deployment.Namespace", postgresqlDeployment.Namespace, "Deployment.Name", postgresqlDeployment.Name)
+			err = r.client.Create(context.TODO(), postgresqlDeployment)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		} else if err != nil {
+			return reconcile.Result{}, err
+		} else {
+			postgresResourceRequirements := getPostgresResourceRequirements(instance)
+
+			containers := foundPostgresqlDeployment.Spec.Template.Spec.Containers
+			for i := range containers {
+				if containers[i].Name == cfg.PostgresContainerName {
+					if reflect.DeepEqual(containers[i].Resources, postgresResourceRequirements) == false {
+						reqLogger.Info("Postgres container resource requirements are different than in the UnifiedPushServer spec or the operator defaults", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name, "Found resource requirements", containers[i].Resources, "Spec resource requirements", postgresResourceRequirements)
+
+						containers[i].Resources = postgresResourceRequirements
+
+						// enqueue
+						err = r.client.Update(context.TODO(), foundPostgresqlDeployment)
+						if err != nil {
+							reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name)
+							return reconcile.Result{}, err
+						}
+						return reconcile.Result{Requeue: true}, nil
+					}
+				}
+			}
+
+			desiredImage := constants.PostgresImage
+
+			containerSpec := findContainerSpec(foundPostgresqlDeployment, cfg.PostgresContainerName)
+			if containerSpec == nil {
+				reqLogger.Info("Unable to do image reconcile: Unable to find container spec in deployment", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name, "ContainerSpec", cfg.PostgresContainerName)
+				return reconcile.Result{Requeue: true}, nil
+			} else if containerSpec.Image != desiredImage {
+				reqLogger.Info("Container spec in deployment is using a different image. Going to update it now.", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name, "ContainerSpec", cfg.PostgresContainerName, "ExistingImage", containerSpec.Image, "DesiredImage", desiredImage)
+
+				// update
+				updateContainerSpecImage(foundPostgresqlDeployment, cfg.PostgresContainerName, desiredImage)
+
+				// enqueue
+				err = r.client.Update(context.TODO(), foundPostgresqlDeployment)
+				if err != nil {
+					reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundPostgresqlDeployment.Namespace, "Deployment.Name", foundPostgresqlDeployment.Name)
+					return reconcile.Result{}, err
+				}
+				return reconcile.Result{Requeue: true}, nil
+			}
+
+			//#endregion
+
+			//#region Postgres Service
+
+			postgresqlService, err := newPostgresqlService(instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
+			// Set UnifiedPushServer instance as the owner and controller
+			if err := controllerutil.SetControllerReference(instance, postgresqlService, r.scheme); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			// Check if this Service already exists
+			foundPostgresqlService := &corev1.Service{}
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlService.Name, Namespace: postgresqlService.Namespace}, foundPostgresqlService)
+			if err != nil && errors.IsNotFound(err) {
+				reqLogger.Info("Creating a new Service", "Service.Namespace", postgresqlService.Namespace, "Service.Name", postgresqlService.Name)
+				err = r.client.Create(context.TODO(), postgresqlService)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+			} else if err != nil {
+				return reconcile.Result{}, err
+			}
+			//#endregion
+		}
+	}
 	//#region ServiceAccount
 	serviceAccount, err := newUnifiedPushServiceAccount(instance)
 
