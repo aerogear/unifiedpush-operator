@@ -78,25 +78,6 @@ install:
 	@echo ....... Applying UnifiedPush Server .......
 	- kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml
 
-.PHONY: monitoring/install
-monitoring/install:
-	@echo Installing service monitor in ${NAMESPACE} :
-	- oc project ${NAMESPACE}
-	- kubectl label namespace ${NAMESPACE} monitoring-key=middleware
-	- kubectl apply -n $(NAMESPACE) -f deploy/monitor/service_monitor.yaml
-	- kubectl apply -n $(NAMESPACE) -f deploy/monitor/operator_service.yaml
-	- kubectl apply -n $(NAMESPACE) -f deploy/monitor/prometheus_rule.yaml
-	- kubectl apply -n $(NAMESPACE) -f deploy/monitor/grafana_dashboard.yaml
-
-.PHONY: monitoring/uninstall
-monitoring/uninstall:
-	@echo Uninstalling monitor service from ${NAMESPACE} :
-	- oc project ${NAMESPACE}
-	- kubectl delete -n $(NAMESPACE) -f deploy/monitor/service_monitor.yaml
-	- kubectl delete -n $(NAMESPACE) -f deploy/monitor/prometheus_rule.yaml
-	- kubectl delete -n $(NAMESPACE) -f deploy/monitor/grafana_dashboard.yaml
-	- kubectl delete -n $(NAMESPACE) -f deploy/monitor/operator_service.yaml
-
 .PHONY: example-pushapplication/apply
 example-pushapplication/apply:
 	@echo ....... Applying the PushApplication example in the current namespace  ......
@@ -139,7 +120,6 @@ cluster/clean:
 	- kubectl delete -f deploy/crds/push_v1alpha1_iostokenvariant_crd.yaml
 	- kubectl delete -f deploy/crds/push_v1alpha1_iosvariant_crd.yaml
 	- kubectl delete -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
-	- make monitoring/uninstall
 	- kubectl delete namespace $(NAMESPACE)
 	- kubectl delete namespace $(APP_NAMESPACE)
 
