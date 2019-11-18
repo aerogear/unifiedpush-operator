@@ -983,7 +983,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	serviceMonitor := &monitoringv1.ServiceMonitor{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush", Namespace: instance.Namespace}}
 	op, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, serviceMonitor, func(ignore runtime.Object) error {
 		reconcileServiceMonitor(serviceMonitor)
-		return nil
+		// Set UnifiedPushServer instance as the owner and controller
+		err := controllerutil.SetControllerReference(instance, serviceMonitor, r.scheme)
+		return err
 	})
 	if err != nil {
 		return reconcile.Result{}, err
@@ -997,7 +999,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	prometheusRule := &monitoringv1.PrometheusRule{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush", Namespace: instance.Namespace}}
 	op, err = controllerutil.CreateOrUpdate(context.TODO(), r.client, prometheusRule, func(ignore runtime.Object) error {
 		reconcilePrometheusRule(prometheusRule, instance)
-		return nil
+		// Set UnifiedPushServer instance as the owner and controller
+		err := controllerutil.SetControllerReference(instance, prometheusRule, r.scheme)
+		return err
 	})
 	if err != nil {
 		return reconcile.Result{}, err
@@ -1011,7 +1015,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	grafanaDashboard := &integreatlyv1alpha1.GrafanaDashboard{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpushserver-dashboard", Namespace: instance.Namespace}}
 	op, err = controllerutil.CreateOrUpdate(context.TODO(), r.client, grafanaDashboard, func(ignore runtime.Object) error {
 		reconcileGrafanaDashboard(grafanaDashboard, instance)
-		return nil
+		// Set UnifiedPushServer instance as the owner and controller
+		err := controllerutil.SetControllerReference(instance, grafanaDashboard, r.scheme)
+		return err
 	})
 	if err != nil {
 		return reconcile.Result{}, err

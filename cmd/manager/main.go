@@ -163,12 +163,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Setup Scheme for Prometheus Monitoring apis
-	if err := monitoringv1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "")
-		os.Exit(1)
-	}
-
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
 		log.Error(err, "")
@@ -213,8 +207,8 @@ func main() {
 			}
 
 			// Set owner reference to be the Service
-			controllerutil.SetControllerReference(service, serviceMonitor, mgr.GetScheme())
-			return nil
+			err = controllerutil.SetControllerReference(service, serviceMonitor, mgr.GetScheme())
+			return err
 		})
 		if err != nil {
 			log.Info("Could not create ServiceMonitor object", "error", err.Error())
@@ -236,14 +230,18 @@ func main() {
 
 		controllerutil.CreateOrUpdate(ctx, client, prometheusRule, func(ignore k8sruntime.Object) error {
 			reconcilePrometheusRule(prometheusRule)
-			return nil
+			// Set owner reference to be the Service
+			err = controllerutil.SetControllerReference(service, prometheusRule, mgr.GetScheme())
+			return err
 		})
 
 		grafanaDashboard := &integreatlyv1alpha1.GrafanaDashboard{ObjectMeta: metav1.ObjectMeta{Name: "unifiedpush-operator", Namespace: operatorNamespace}}
 
 		controllerutil.CreateOrUpdate(ctx, client, grafanaDashboard, func(ignore k8sruntime.Object) error {
 			reconcileGrafanaDashboard(grafanaDashboard)
-			return nil
+			// Set owner reference to be the Service
+			err = controllerutil.SetControllerReference(service, grafanaDashboard, mgr.GetScheme())
+			return err
 		})
 	}
 
