@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 - Operator creates the Monitoring Resources (GrafanaDashboard, PrometheusRule and ServiceMonitor) on creation of the UnifiedPushServer CR.
-- Operator creates its own Monitoring Resrouces (GrafanaDashboard, PrometheusRule) on installation.
+- Operator creates its own Monitoring Resources (GrafanaDashboard, PrometheusRule) on installation.
 - Removal of the templates for the related Monitoring Resources.
 
 ## [0.3.0] - 2019-10-10
