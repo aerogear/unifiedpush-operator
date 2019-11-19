@@ -106,7 +106,7 @@ cluster/prepare:
 .PHONY: cluster/clean
 cluster/clean:
 	- kubectl delete -n $(NAMESPACE) iosVariant --all
-	- kubectl delete -n $(NAMESPACE) iosTokenVariant --all	
+	- kubectl delete -n $(NAMESPACE) iosTokenVariant --all
 	- kubectl delete -n $(NAMESPACE) androidVariant --all
 	- kubectl delete -n $(NAMESPACE) webpushVariant --all
 	- kubectl delete -n $(NAMESPACE) pushApplication --all

@@ -76,6 +76,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 		config:            mgr.GetConfig(),
 		apiVersionChecker: getApiVersionChecker(clientset),
 		recorder:          mgr.GetRecorder(controllerName),
+		readyStatus:       true,
 	}
 }
 
@@ -256,6 +257,7 @@ type ReconcileUnifiedPushServer struct {
 	config            *rest.Config
 	apiVersionChecker *apiVersionChecker
 	recorder          record.EventRecorder
+	readyStatus       bool
 }
 
 // Reconcile reads the state of the cluster for a UnifiedPushServer object and makes changes based on the state read
@@ -688,6 +690,13 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				}
 				return reconcile.Result{Requeue: true}, nil
 			}
+
+			// Set ready status
+			deploymentReady, err := isDeploymentReady(foundPostgresqlDeployment)
+			if err != nil {
+				return r.manageError(instance, err)
+			}
+			r.readyStatus = r.readyStatus && deploymentReady
 		}
 		secondaryResources.add("Deployment", postgresqlDeployment.Name)
 		//#endregion
@@ -844,6 +853,8 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	} else if err != nil {
 		return r.manageError(instance, err)
 	}
+
+	r.readyStatus = r.readyStatus && isRouteReady(foundOauthProxyRoute)
 	secondaryResources.add("Route", oauthProxyRoute.Name)
 	//#endregion
 
@@ -945,6 +956,13 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			}
 			return reconcile.Result{Requeue: true}, nil
 		}
+
+		// Set ready status
+		deploymentReady, err := isDeploymentReady(foundUnifiedpushDeployment)
+		if err != nil {
+			return r.manageError(instance, err)
+		}
+		r.readyStatus = r.readyStatus && deploymentReady
 	}
 	secondaryResources.add("Deployment", unifiedpushDeployment.Name)
 	//#endregion
@@ -1077,13 +1095,12 @@ func (r *ReconcileUnifiedPushServer) manageError(instance *pushv1alpha1.UnifiedP
 }
 
 func (r *ReconcileUnifiedPushServer) manageSuccess(instance *pushv1alpha1.UnifiedPushServer, secondaryResources resources) (reconcile.Result, error) {
-	resourcesReady := true
-	instance.Status.Ready = resourcesReady
+	instance.Status.Ready = r.readyStatus
 	instance.Status.Message = ""
 	instance.Status.SecondaryResources = secondaryResources
 
 	// If resources are ready and we have not errored before now, we are in a reconciling phase
-	if resourcesReady {
+	if r.readyStatus {
 		instance.Status.Phase = pushv1alpha1.PhaseReconciling
 	} else {
 		instance.Status.Phase = pushv1alpha1.PhaseInitializing
