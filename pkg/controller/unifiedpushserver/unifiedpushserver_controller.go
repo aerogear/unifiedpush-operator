@@ -1032,7 +1032,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		err := controllerutil.SetControllerReference(instance, serviceMonitor, r.scheme)
 		return err
 	})
-	if err != nil {
+	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
 		return r.manageError(instance, err)
 	}
 	if op != controllerutil.OperationResultNone {
@@ -1048,7 +1048,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		err := controllerutil.SetControllerReference(instance, prometheusRule, r.scheme)
 		return err
 	})
-	if err != nil {
+	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
 		return r.manageError(instance, err)
 	}
 	if op != controllerutil.OperationResultNone {
@@ -1064,7 +1064,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		err := controllerutil.SetControllerReference(instance, grafanaDashboard, r.scheme)
 		return err
 	})
-	if err != nil {
+	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
 		return r.manageError(instance, err)
 	}
 	if op != controllerutil.OperationResultNone {
