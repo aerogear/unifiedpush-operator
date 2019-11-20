@@ -2,40 +2,37 @@ package unifiedpushserver
 
 import (
 	"context"
-
 	"os"
 	"reflect"
 	"time"
 
-	"github.com/aerogear/unifiedpush-operator/pkg/constants"
-
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
-
-	"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/config"
+	"github.com/aerogear/unifiedpush-operator/pkg/constants"
 	"github.com/aerogear/unifiedpush-operator/pkg/nspredicate"
 
 	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
 	messaginguserv1beta "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1"
 
+	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	integreatlyv1alpha1 "github.com/integr8ly/grafana-operator/pkg/apis/integreatly/v1alpha1"
+
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 
-	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
-	integreatlyv1alpha1 "github.com/integr8ly/grafana-operator/pkg/apis/integreatly/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -1081,7 +1078,7 @@ func (r *ReconcileUnifiedPushServer) manageError(instance *pushv1alpha1.UnifiedP
 
 	instance.Status.Message = issue.Error()
 	instance.Status.Ready = false
-	instance.Status.Phase = v1alpha1.PhaseFailing
+	instance.Status.Phase = pushv1alpha1.PhaseFailing
 
 	err := r.client.Status().Update(context.TODO(), instance)
 	if err != nil {
