@@ -69,24 +69,29 @@ spec:
                 - backendSecretName
                 type: object
               type: array
-            databaseHost:
-              description: Database host for external database support
-              type: string
-            databaseName:
-              description: Database name for external database support
-              type: string
-            databasePassword:
-              description: Database password for external database support
-              type: string
-            databasePort:
-              description: Database port for external database support
-              type: string
-            databaseUser:
-              description: Database user for external database support
-              type: string
+            database:
+              properties:
+                host:
+                  description: Host for external database support
+                  type: string
+                name:
+                  description: Name for external database support
+                  type: string
+                password:
+                  description: Password for external database support
+                  type: string
+                port:
+                  anyOf:
+                  - type: string
+                  - type: integer
+                  description: Port for external database support
+                user:
+                  description: User for external database support
+                  type: string
+              type: object
             externalDB:
-              description: When true, deployement wont be created, service with external
-                db details will be passed to ups
+              description: ExternalDB can be set to true to use details from Database
+                and connect to external db
               type: boolean
             oAuthResourceRequirements:
               type: object
@@ -101,8 +106,6 @@ spec:
               description: UseMessageBroker can be set to true to use managed queues,
                 if you are using enmasse. Defaults to false.
               type: boolean
-          required:
-          - externalDB
           type: object
         status:
           properties:

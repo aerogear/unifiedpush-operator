@@ -566,8 +566,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 
 	//#endregion
 
-	externaldb := instance.Spec.ExternalDB
-	if !externaldb {
+	if !instance.Spec.ExternalDB {
 
 		//#region Postgres PVC
 		persistentVolumeClaim, err := newPostgresqlPersistentVolumeClaim(instance)
@@ -678,33 +677,32 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			}
 
 			//#endregion
+		}
+		//#region Postgres Service
 
-			//#region Postgres Service
+		postgresqlService, err := newPostgresqlService(instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 
-			postgresqlService, err := newPostgresqlService(instance)
+		// Set UnifiedPushServer instance as the owner and controller
+		if err := controllerutil.SetControllerReference(instance, postgresqlService, r.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		// Check if this Service already exists
+		foundPostgresqlService := &corev1.Service{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlService.Name, Namespace: postgresqlService.Namespace}, foundPostgresqlService)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new Service", "Service.Namespace", postgresqlService.Namespace, "Service.Name", postgresqlService.Name)
+			err = r.client.Create(context.TODO(), postgresqlService)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
-
-			// Set UnifiedPushServer instance as the owner and controller
-			if err := controllerutil.SetControllerReference(instance, postgresqlService, r.scheme); err != nil {
-				return reconcile.Result{}, err
-			}
-
-			// Check if this Service already exists
-			foundPostgresqlService := &corev1.Service{}
-			err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlService.Name, Namespace: postgresqlService.Namespace}, foundPostgresqlService)
-			if err != nil && errors.IsNotFound(err) {
-				reqLogger.Info("Creating a new Service", "Service.Namespace", postgresqlService.Namespace, "Service.Name", postgresqlService.Name)
-				err = r.client.Create(context.TODO(), postgresqlService)
-				if err != nil {
-					return reconcile.Result{}, err
-				}
-			} else if err != nil {
-				return reconcile.Result{}, err
-			}
-			//#endregion
+		} else if err != nil {
+			return reconcile.Result{}, err
 		}
+		//#endregion
 	}
 	//#region ServiceAccount
 	serviceAccount, err := newUnifiedPushServiceAccount(instance)

@@ -35,8 +35,7 @@ func newPostgresqlPersistentVolumeClaim(cr *pushv1alpha1.UnifiedPushServer) (*co
 }
 
 func newPostgresqlSecret(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Secret, error) {
-	externaldb := &cr.Spec.ExternalDB
-	if !*externaldb {
+	if !cr.Spec.ExternalDB {
 		databasePassword, err := generatePassword()
 		if err != nil {
 			return nil, err
@@ -49,6 +48,7 @@ func newPostgresqlSecret(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Secret, er
 				"POSTGRES_USERNAME":  "unifiedpush",
 				"POSTGRES_PASSWORD":  databasePassword,
 				"POSTGRES_HOST":      fmt.Sprintf("%s-postgresql.%s.svc", cr.Name, cr.Namespace),
+				"POSTGRES_PORT":      "5432",
 				"POSTGRES_SUPERUSER": "false",
 			},
 		}, nil
@@ -56,10 +56,11 @@ func newPostgresqlSecret(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Secret, er
 		return &corev1.Secret{
 			ObjectMeta: objectMeta(cr, "postgresql"),
 			StringData: map[string]string{
-				"POSTGRES_DATABASE":  cr.Spec.DatabaseName,
-				"POSTGRES_USERNAME":  cr.Spec.DatabaseUser,
-				"POSTGRES_PASSWORD":  cr.Spec.DatabasePassword,
-				"POSTGRES_HOST":      cr.Spec.DatabaseHost,
+				"POSTGRES_DATABASE":  cr.Spec.Database.Name,
+				"POSTGRES_USERNAME":  cr.Spec.Database.User,
+				"POSTGRES_PASSWORD":  cr.Spec.Database.Password,
+				"POSTGRES_HOST":      cr.Spec.Database.Host,
+				"POSTGRES_PORT":      cr.Spec.Database.Port.String(),
 				"POSTGRES_SUPERUSER": "false",
 			},
 		}, nil
