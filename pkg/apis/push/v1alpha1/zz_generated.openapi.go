@@ -677,7 +677,7 @@ func schema_pkg_apis_push_v1alpha1_UnifiedPushServerStatus(ref common.ReferenceC
 						},
 					},
 				},
-				Required: []string{"phase", "message", "ready"},
+				Required: []string{"phase"},
 			},
 		},
 		Dependencies: []string{},

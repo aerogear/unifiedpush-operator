@@ -132,8 +132,6 @@ spec:
               type: object
           required:
           - phase
-          - message
-          - ready
           type: object
   version: v1alpha1
   versions:

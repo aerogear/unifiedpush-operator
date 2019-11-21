@@ -54,11 +54,11 @@ type UnifiedPushServerStatus struct {
 	Phase StatusPhase `json:"phase"`
 
 	// Message is a more human-readable message indicating details about current phase or error.
-	Message string `json:"message"`
+	Message string `json:"message,omitempty"`
 
 	// Ready is True if all resources are in a ready state and all work is done (phase should be
 	// "reconciling").
-	Ready bool `json:"ready"`
+	Ready bool `json:"ready,omitempty"`
 
 	// SecondaryResources is a map of all the secondary resources types and names created for
 	// this CR.  e.g "Deployment": [ "DeploymentName1", "DeploymentName2" ]
