@@ -84,8 +84,15 @@ func buildEnv(cr *pushv1alpha1.UnifiedPushServer) []corev1.EnvVar {
 			},
 		},
 		{
-			Name:  "POSTGRES_SERVICE_PORT",
-			Value: "5432",
+			Name: "POSTGRES_SERVICE_PORT",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					Key: "POSTGRES_PORT",
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: fmt.Sprintf("%s-postgresql", cr.Name),
+					},
+				},
+			},
 		},
 		{
 			Name: "POSTGRES_USER",
@@ -202,8 +209,15 @@ func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1
 							ImagePullPolicy: corev1.PullAlways,
 							Env: []corev1.EnvVar{
 								{
-									Name:  "POSTGRES_SERVICE_HOST",
-									Value: fmt.Sprintf("%s-postgresql", cr.Name),
+									Name: "POSTGRES_SERVICE_HOST",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											Key: "POSTGRES_HOST",
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: fmt.Sprintf("%s-postgresql", cr.Name),
+											},
+										},
+									},
 								},
 							},
 							Command: []string{

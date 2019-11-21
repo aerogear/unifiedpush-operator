@@ -69,6 +69,30 @@ spec:
                 - backendSecretName
                 type: object
               type: array
+            database:
+              properties:
+                host:
+                  description: Host for external database support
+                  type: string
+                name:
+                  description: Name for external database support
+                  type: string
+                password:
+                  description: Password for external database support
+                  type: string
+                port:
+                  anyOf:
+                  - type: string
+                  - type: integer
+                  description: Port for external database support
+                user:
+                  description: User for external database support
+                  type: string
+              type: object
+            externalDB:
+              description: ExternalDB can be set to true to use details from Database
+                and connect to external db
+              type: boolean
             oAuthResourceRequirements:
               type: object
             postgresPVCSize:

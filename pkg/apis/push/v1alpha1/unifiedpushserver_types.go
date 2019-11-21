@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -12,6 +13,11 @@ import (
 type UnifiedPushServerSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+
+	//ExternalDB can be set to true to use details from Database and connect to external db
+	ExternalDB bool `json:"externalDB,omitempty"`
+
+	Database UnifiedPushServerDatabase `json:"database,omitempty"`
 
 	// Backups is an array of configs that will be used to create CronJob resource instances
 	Backups []UnifiedPushServerBackup `json:"backups,omitempty"`
@@ -25,6 +31,20 @@ type UnifiedPushServerSpec struct {
 
 	// PVC size for Postgres service
 	PostgresPVCSize string `json:"postgresPVCSize,omitempty"`
+}
+
+// UnifiedPushServerDatabase contains the data needed to connect to external database
+type UnifiedPushServerDatabase struct {
+	//Name for external database support
+	Name string `json:"name,omitempty"`
+	//Password for external database support
+	Password string `json:"password,omitempty"`
+	//User for external database support
+	User string `json:"user,omitempty"`
+	//Host for external database support
+	Host string `json:"host,omitempty"`
+	//Port for external database support
+	Port intstr.IntOrString `json:"port,omitempty"`
 }
 
 // UnifiedPushServerStatus defines the observed state of UnifiedPushServer
