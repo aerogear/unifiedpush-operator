@@ -22,6 +22,12 @@ code/run: export APP_NAMESPACES    = $(NAMESPACE),$(APP_NAMESPACE)
 code/run: code/gen
 	operator-sdk up local
 
+.PHONY: code/debug
+code/run: export SERVICE_NAMESPACE = $(NAMESPACE)
+code/run: export APP_NAMESPACES    = $(NAMESPACE),$(APP_NAMESPACE)
+code/run: code/gen
+	operator-sdk up local --enable-delve
+
 .PHONY: code/gen
 code/gen: code/fix
 	operator-sdk generate k8s
@@ -106,7 +112,7 @@ cluster/prepare:
 .PHONY: cluster/clean
 cluster/clean:
 	- kubectl delete -n $(NAMESPACE) iosVariant --all
-	- kubectl delete -n $(NAMESPACE) iosTokenVariant --all	
+	- kubectl delete -n $(NAMESPACE) iosTokenVariant --all
 	- kubectl delete -n $(NAMESPACE) androidVariant --all
 	- kubectl delete -n $(NAMESPACE) webpushVariant --all
 	- kubectl delete -n $(NAMESPACE) pushApplication --all

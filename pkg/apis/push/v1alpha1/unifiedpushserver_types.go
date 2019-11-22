@@ -50,7 +50,20 @@ type UnifiedPushServerDatabase struct {
 // UnifiedPushServerStatus defines the observed state of UnifiedPushServer
 // +k8s:openapi-gen=true
 type UnifiedPushServerStatus struct {
+	// Phase indicates whether the CR is reconciling(good), failing(bad), or initializing.
 	Phase StatusPhase `json:"phase"`
+
+	// Message is a more human-readable message indicating details about current phase or error.
+	Message string `json:"message,omitempty"`
+
+	// Ready is True if all resources are in a ready state and all work is done (phase should be
+	// "reconciling"). The type in the Go code here is deliberately a pointer so that we can
+	// distinguish between false and "not set", since it's an optional field.
+	Ready *bool `json:"ready,omitempty"`
+
+	// SecondaryResources is a map of all the secondary resources types and names created for
+	// this CR.  e.g "Deployment": [ "DeploymentName1", "DeploymentName2" ]
+	SecondaryResources map[string][]string `json:"secondaryResources,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -110,9 +123,10 @@ type UnifiedPushServerBackup struct {
 type StatusPhase string
 
 var (
-	PhaseEmpty     StatusPhase = ""
-	PhaseComplete  StatusPhase = "Complete"
-	PhaseProvision StatusPhase = "Provisioning"
+	PhaseEmpty        StatusPhase
+	PhaseFailing      StatusPhase = "Failing"
+	PhaseReconciling  StatusPhase = "Reconciling"
+	PhaseInitializing StatusPhase = "Initializing"
 )
 
 func init() {
