@@ -22,6 +22,12 @@ code/run: export APP_NAMESPACES    = $(NAMESPACE),$(APP_NAMESPACE)
 code/run: code/gen
 	operator-sdk up local
 
+.PHONY: code/debug
+code/run: export SERVICE_NAMESPACE = $(NAMESPACE)
+code/run: export APP_NAMESPACES    = $(NAMESPACE),$(APP_NAMESPACE)
+code/run: code/gen
+	operator-sdk up local --enable-delve
+
 .PHONY: code/gen
 code/gen: code/fix
 	operator-sdk generate k8s
