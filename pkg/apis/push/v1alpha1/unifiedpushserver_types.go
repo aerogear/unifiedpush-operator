@@ -57,8 +57,9 @@ type UnifiedPushServerStatus struct {
 	Message string `json:"message,omitempty"`
 
 	// Ready is True if all resources are in a ready state and all work is done (phase should be
-	// "reconciling").
-	Ready bool `json:"ready,omitempty"`
+	// "reconciling"). The type in the Go code here is deliberately a pointer so that we can
+	// distinguish between false and "not set", since it's an optional field.
+	Ready *bool `json:"ready,omitempty"`
 
 	// SecondaryResources is a map of all the secondary resources types and names created for
 	// this CR.  e.g "Deployment": [ "DeploymentName1", "DeploymentName2" ]

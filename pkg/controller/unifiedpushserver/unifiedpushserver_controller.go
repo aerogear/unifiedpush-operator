@@ -1075,8 +1075,9 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 func (r *ReconcileUnifiedPushServer) manageError(instance *pushv1alpha1.UnifiedPushServer, issue error) (reconcile.Result, error) {
 	r.recorder.Event(instance, "Warning", "ReconcileFailed", issue.Error())
 
+	ready := false
+	instance.Status.Ready = &ready
 	instance.Status.Message = issue.Error()
-	instance.Status.Ready = false
 	instance.Status.Phase = pushv1alpha1.PhaseFailing
 
 	err := r.client.Status().Update(context.TODO(), instance)
@@ -1091,7 +1092,7 @@ func (r *ReconcileUnifiedPushServer) manageError(instance *pushv1alpha1.UnifiedP
 }
 
 func (r *ReconcileUnifiedPushServer) manageSuccess(instance *pushv1alpha1.UnifiedPushServer, secondaryResources resources, readyStatus bool) (reconcile.Result, error) {
-	instance.Status.Ready = readyStatus
+	instance.Status.Ready = &readyStatus
 	instance.Status.Message = ""
 	instance.Status.SecondaryResources = secondaryResources
 

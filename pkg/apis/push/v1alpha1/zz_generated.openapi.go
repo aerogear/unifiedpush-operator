@@ -650,7 +650,7 @@ func schema_pkg_apis_push_v1alpha1_UnifiedPushServerStatus(ref common.ReferenceC
 					},
 					"ready": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Ready is True if all resources are in a ready state and all work is done (phase should be \"reconciling\").",
+							Description: "Ready is True if all resources are in a ready state and all work is done (phase should be \"reconciling\"). The type in the Go code here is deliberately a pointer so that we can distinguish between false and \"not set\", since it's an optional field.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},

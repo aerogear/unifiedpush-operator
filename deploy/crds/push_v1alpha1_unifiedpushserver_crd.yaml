@@ -119,7 +119,9 @@ spec:
               type: string
             ready:
               description: Ready is True if all resources are in a ready state and
-                all work is done (phase should be "reconciling").
+                all work is done (phase should be "reconciling"). The type in the
+                Go code here is deliberately a pointer so that we can distinguish
+                between false and "not set", since it's an optional field.
               type: boolean
             secondaryResources:
               additionalProperties:
