@@ -35,17 +35,15 @@ func isDeploymentReady(deployment *appsv1.Deployment) (bool, error) {
 	if deployment == nil {
 		return false, nil
 	}
+
 	// A deployment has an array of conditions
 	for _, condition := range deployment.Status.Conditions {
-		// One failure condition exists, if this exists, return the Reason
 		if condition.Type == appsv1.DeploymentReplicaFailure {
+			// One failure condition exists, return the Reason
 			return false, errors.New(condition.Reason)
-			// A successful deployment will have the progressing condition type as true
-		} else if condition.Type == appsv1.DeploymentProgressing && condition.Status != conditionStatusSuccess {
-			return false, nil
 		}
 	}
-	return true, nil
+	return deployment.Status.ReadyReplicas != 0, nil
 }
 
 func isJobReady(job *batchv1.Job) (bool, error) {

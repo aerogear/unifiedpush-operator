@@ -73,7 +73,6 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 		config:            mgr.GetConfig(),
 		apiVersionChecker: getApiVersionChecker(clientset),
 		recorder:          mgr.GetRecorder(controllerName),
-		readyStatus:       true,
 	}
 }
 
@@ -254,7 +253,6 @@ type ReconcileUnifiedPushServer struct {
 	config            *rest.Config
 	apiVersionChecker *apiVersionChecker
 	recorder          record.EventRecorder
-	readyStatus       bool
 }
 
 // Reconcile reads the state of the cluster for a UnifiedPushServer object and makes changes based on the state read
@@ -266,6 +264,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling UnifiedPushServer")
 
+	readyStatus := true
 	secondaryResources := resources{}
 
 	// Fetch the UnifiedPushServer instance
@@ -693,7 +692,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			if err != nil {
 				return r.manageError(instance, err)
 			}
-			r.readyStatus = r.readyStatus && deploymentReady
+			readyStatus = readyStatus && deploymentReady
 		}
 		secondaryResources.add("Deployment", postgresqlDeployment.Name)
 		//#endregion
@@ -851,7 +850,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		return r.manageError(instance, err)
 	}
 
-	r.readyStatus = r.readyStatus && isRouteReady(foundOauthProxyRoute)
+	readyStatus = readyStatus && isRouteReady(foundOauthProxyRoute)
 	secondaryResources.add("Route", oauthProxyRoute.Name)
 	//#endregion
 
@@ -959,7 +958,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		if err != nil {
 			return r.manageError(instance, err)
 		}
-		r.readyStatus = r.readyStatus && deploymentReady
+		readyStatus = readyStatus && deploymentReady
 	}
 	secondaryResources.add("Deployment", unifiedpushDeployment.Name)
 	//#endregion
@@ -1070,7 +1069,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	//## endregion GrafanaDasboard
 	//#endregion
 
-	return r.manageSuccess(instance, secondaryResources)
+	return r.manageSuccess(instance, secondaryResources, readyStatus)
 }
 
 func (r *ReconcileUnifiedPushServer) manageError(instance *pushv1alpha1.UnifiedPushServer, issue error) (reconcile.Result, error) {
@@ -1091,13 +1090,13 @@ func (r *ReconcileUnifiedPushServer) manageError(instance *pushv1alpha1.UnifiedP
 	}, nil
 }
 
-func (r *ReconcileUnifiedPushServer) manageSuccess(instance *pushv1alpha1.UnifiedPushServer, secondaryResources resources) (reconcile.Result, error) {
-	instance.Status.Ready = r.readyStatus
+func (r *ReconcileUnifiedPushServer) manageSuccess(instance *pushv1alpha1.UnifiedPushServer, secondaryResources resources, readyStatus bool) (reconcile.Result, error) {
+	instance.Status.Ready = readyStatus
 	instance.Status.Message = ""
 	instance.Status.SecondaryResources = secondaryResources
 
 	// If resources are ready and we have not errored before now, we are in a reconciling phase
-	if r.readyStatus {
+	if readyStatus {
 		instance.Status.Phase = pushv1alpha1.PhaseReconciling
 	} else {
 		instance.Status.Phase = pushv1alpha1.PhaseInitializing
