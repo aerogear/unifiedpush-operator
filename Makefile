@@ -7,7 +7,6 @@ PACKAGES            ?= $(shell sh -c "find $(TOP_SRC_DIRS) -name \\*_test.go \
 TEST_PKGS           ?= $(addprefix $(PKG)/,$(PACKAGES))
 APP_FILE            ?= ./cmd/manager/main.go
 NAMESPACE           ?= unifiedpush
-APP_NAMESPACE       ?= unifiedpush-apps
 CODE_COMPILE_OUTPUT ?= build/_output/bin/unifiedpush-operator
 TEST_COMPILE_OUTPUT ?= build/_output/bin/unifiedpush-operator-test
 DEV_TAG             ?= $(shell sh -c "git rev-parse --short HEAD")
@@ -17,14 +16,10 @@ DEV_TAG             ?= $(shell sh -c "git rev-parse --short HEAD")
 ##############################
 
 .PHONY: code/run
-code/run: export SERVICE_NAMESPACE = $(NAMESPACE)
-code/run: export APP_NAMESPACES    = $(NAMESPACE),$(APP_NAMESPACE)
 code/run: code/gen
 	operator-sdk up local
 
 .PHONY: code/debug
-code/debug: export SERVICE_NAMESPACE = $(NAMESPACE)
-code/debug: export APP_NAMESPACES    = $(NAMESPACE),$(APP_NAMESPACE)
 code/debug: code/gen
 	operator-sdk up local --enable-delve
 
@@ -76,18 +71,14 @@ code/build/linux:
 
 .PHONY: install
 install:
-	@echo ....... Install .......
 	- make cluster/prepare
-	@echo ....... Applying the Operator .......
 	- kubectl apply -n $(NAMESPACE) -f deploy/operator.yaml
-	@echo ....... Applying UnifiedPush Server .......
 	- kubectl apply -n $(NAMESPACE) -f deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml
 
 .PHONY: cluster/prepare
 cluster/prepare:
 	- kubectl create namespace $(NAMESPACE)
 	- kubectl label namespace $(NAMESPACE) monitoring-key=middleware
-	- kubectl create namespace $(APP_NAMESPACE)
 	- kubectl apply -n $(NAMESPACE) -f deploy/service_account.yaml
 	- kubectl apply -n $(NAMESPACE) -f deploy/role.yaml
 	- kubectl apply -n $(NAMESPACE) -f deploy/role_binding.yaml
@@ -101,7 +92,6 @@ cluster/clean:
 	- kubectl delete -n $(NAMESPACE) -f deploy/service_account.yaml
 	- kubectl delete -f deploy/crds/push_v1alpha1_unifiedpushserver_crd.yaml
 	- kubectl delete namespace $(NAMESPACE)
-	- kubectl delete namespace $(APP_NAMESPACE)
 
 .PHONY: image/build
 image/build:

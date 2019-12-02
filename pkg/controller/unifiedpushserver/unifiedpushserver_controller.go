@@ -9,7 +9,6 @@ import (
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/config"
 	"github.com/aerogear/unifiedpush-operator/pkg/constants"
-	"github.com/aerogear/unifiedpush-operator/pkg/nspredicate"
 
 	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
 	messaginguserv1beta "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1"
@@ -85,14 +84,9 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource UnifiedPushServer
-	onlyEnqueueForServiceNamespace, err := nspredicate.NewFromEnvVar("SERVICE_NAMESPACE")
-	if err != nil {
-		return err
-	}
 	err = c.Watch(
 		&source.Kind{Type: &pushv1alpha1.UnifiedPushServer{}},
 		&handler.EnqueueRequestForObject{},
-		onlyEnqueueForServiceNamespace,
 	)
 	if err != nil {
 		return err
