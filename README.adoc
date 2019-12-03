@@ -96,157 +96,6 @@ IMPORTANT: It will install an example configuration setup for your Push Server. 
 
 NOTE: To install you need be logged in as a user with cluster privileges like the `system:admin` user. E.g. By using: `oc login -u system:admin`.
 
-=== Creating the PushApplication
-
-* Create a link:./deploy/crds/examples/push_v1alpha1_pushapplication_cr.yaml[PushApplication CR] as this example.
-+
-The app name and description need to be specified into the link:./deploy/crds/examples/push_v1alpha1_pushapplication_cr.yaml[PushApplication CR] as follows.
-+
-[source,yaml]
-----
-apiVersion: push.aerogear.org/v1alpha1
-kind: PushApplication
-metadata:
-  name: example-pushapplication
-spec:
-  description: 'An example push application to demonstrate the
-    unifiedpush-operator'
-----
-+
-* Run the following command to create the PushApplication into the Service
-+
-[source,shell]
-----
-$ make example-pushapplication/apply
-----
-+
-NOTE: You can delete it by running `make example-pushapplication/delete`
-
-=== Creating a Variant
-
-In the folder link:./deploy/crds/examples[examples] you will find several crs for different variants.  *Before you create them, please update their values for your deployment*.  You will need the push application id from the push application you just made, as well as variant specific configuration which is described in the variant's specific section.
-
-=== Creating an AndroidVariant for your App
-
-After creating the PushApplication above, you should be able to get
-the `pushApplicationId` from the status, this will be needed to be
-able to create Variants:
-
-[source,shell]
-----
-kubectl get pushApplication example-pushapplication -n unifiedpush-apps -o jsonpath='{.status.pushApplicationId}'
-----
-
-Here are all of the configurable fields in an AndroidVariant:
-
-|===
-|Field Name |Description
-
-|pushApplicationId
-|ID of the PushApplication that this variant corresponds to
-
-|description
-|Human friendly description for the variant
-
-|senderId
-|The "Google Project Number from the API Console
-
-|serverKey
-|The key from the Firebase Console of a project which has been enabled for FCM
-|===
-
-* Apply an AndroidVariantCR based on the example a link:./deploy/crds/examples/push_v1alpha1_androidvariant_cr.yaml[AndroidVariant CR]  as follows:
-
-[source,shell]
-----
-kubectl apply -n unifiedpush-apps -f ./deploy/crds/examples/push_v1alpha1_androidvariant_cr.yaml
-----
-
-=== Creating an IOSVariant for your App
-
-After creating the PushApplication above, you should be able to get the `pushApplicationId` from the status, this will be needed to be able to create Variants:
-
-[source,shell]
-----
-kubectl get PushApplication example-pushapplication -n unifiedpush-apps -o jsonpath='{.status.pushApplicationId}'
-----
-
-Here are all of the configurable fields in an IOSVariant:
-
-|===
-|Field Name |Description
-
-|pushApplicationId
-|ID of the PushApplication that this variant corresponds to
-
-|description
-|Human friendly description for the variant
-
-|certificate
-|The base64 encoded APNs certificate that is needed to establish a
- connection to Apple's APNs Push Servers
-
-|passphrase
-|The APNs passphrase that is needed to establish a connection to
- Apple's APNs Push Servers
-
-|production
-|If `true`, indicates that a connection to production APNs server should
- be used. If `false` a connection to the Sandbox/Development APNs server
- will be used.
-|===
-
-* Apply an AndroidVariantCR based on the example a link:./deploy/crds/examples/push_v1alpha1_iosvariant_cr.yaml[IOSVariant CR]  as follows:
-+
-[source,shell]
-----
-kubectl apply -n unifiedpush-apps -f ./deploy/crds/examples/push_v1alpha1_iosvariant_cr.yaml
-----
-
-=== Creating a WebPushVariant for your App
-
-After creating the PushApplication above, you should be able to get
-the `pushApplicationId` from the status, this will be needed to be
-able to create Variants:
-
-[source,shell]
-----
-kubectl get pushApplication example-pushapplication -n unifiedpush-apps -o jsonpath='{.status.pushApplicationId}'
-----
-
-Here are all of the configurable fields in a WebPushVariant:
-
-|===
-|Field Name |Description
-
-|pushApplicationId
-|ID of the PushApplication that this variant corresponds to
-
-|description
-|Human friendly description for the variant
-
-|alias
-|The alias to be used to identify this server.  Must be a url or mailto link
-
-|privateKey
-|The VAPID private key
-
-|publicKey
-|The VAPID public key
-|===
-
-* VAPID keys may be generated using an online tool such as link:https://tools.reactpwa.com/vapid[Secure VAPID key generator
-] or a command line tool such as link:https://www.npmjs.com/package/web-push[web-push]
-
-* Apply a WebPushVariantCR based on the example link:./deploy/crds/examples/push_v1alpha1_webpushvariant_cr.yaml[WebPushVariant CR] as follows:
-
-
-[source,shell]
-----
-kubectl apply -n unifiedpush-apps -f ./deploy/crds/examples/push_v1alpha1_webpushvariant_cr.yaml
-----
-
-
 === Uninstalling
 
 Use the following command to delete all related configuration applied by the `make install` of this project.
@@ -480,23 +329,6 @@ kubectl apply -f deploy/crds/push_v1alpha1_unifiedpushserver_cr.yaml -n unifiedp
 watch -n1 "kubectl get po -n unifiedpush && echo '' && kubectl get ups -o yaml -n unifiedpush"
 ....
 
-5. If you want to be able to work with resources that require the
-local instance of your operator to be able to talk to the UPS instance
-in the cluster, then you'll need to make a corresponding domain name
-available locally. Something like the following should work, by adding
-an entry to /etc/hosts for the example Service that's created, then
-forwarding the port from the relevant Pod in the cluster to the local
-machine. Run this in a separate terminal, and ctrl+c to clean it up
-when finished:
-
-// TODO: We could maybe use a non-privileged port instead of :80?
-....
-# su/sudo is needed to be able to:
-# - modify /etc/hosts
-# - bind to port :80
-KUBECONFIG=$HOME/.kube/config su -c "echo '127.0.0.1   example-unifiedpushserver-unifiedpush' >> /etc/hosts && kubectl port-forward $(kubectl get po -l service=ups -o name) 80:8080 && sed -i -e 's/^127.0.0.1   example-unifiedpushserver-unifiedpush$//g' -e '/^[[:space:]]*$/d' /etc/hosts"
-....
-
 6. When finished, clean up:
 
 ....
@@ -559,7 +391,7 @@ Images are automatically built and pushed to our https://quay.io/repository/aero
 - For every change merged to master a new image with the `master` tag is published.
 - For every change merged that has a git tag a new image with the `<operator-version>` and `latest` tags are published.
 
-== Tags Release
+== Tag Releases
 
 Following the steps
 
@@ -615,10 +447,6 @@ NOTE: See the link:./Jenkinsfile[Jenkinsfile].
 | *Command*                        | *Description*
 | `make install`                   | Creates the `{namespace}` namespace, application CRDS, cluster role and service account.
 | `make cluster/clean`                  | It will delete what was performed in the `make cluster/prepare` .
-| `make monitoring/install`        | Installs Monitoring Service in order to provide metrics
-| `make monitoring/uninstall`      | Uninstalls Monitoring Service in order to provide metrics, i.e. all configuration applied by `make monitoring/install`
-| `make example-pushapplication/apply`  | Applies the Example PushApplication CR `
-| `make example-pushapplication/delete`  | Delete the Example PushApplication CR `
 | `make cluster/prepare`                | It will apply all less the operator.yaml.
 |===
 

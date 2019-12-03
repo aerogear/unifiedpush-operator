@@ -9,7 +9,6 @@ import (
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/config"
 	"github.com/aerogear/unifiedpush-operator/pkg/constants"
-	"github.com/aerogear/unifiedpush-operator/pkg/nspredicate"
 
 	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
 	messaginguserv1beta "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1"
@@ -85,14 +84,9 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource UnifiedPushServer
-	onlyEnqueueForServiceNamespace, err := nspredicate.NewFromEnvVar("SERVICE_NAMESPACE")
-	if err != nil {
-		return err
-	}
 	err = c.Watch(
 		&source.Kind{Type: &pushv1alpha1.UnifiedPushServer{}},
 		&handler.EnqueueRequestForObject{},
-		onlyEnqueueForServiceNamespace,
 	)
 	if err != nil {
 		return err
@@ -279,30 +273,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		}
 		// Error reading the object - requeue the request.
 		return r.manageError(instance, err)
-	}
-
-	// look for other unifiedPush resources and don't provision a new one if there is another one with Phase=Complete
-	existingInstances := &pushv1alpha1.UnifiedPushServerList{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "UnifiedPushServer",
-			APIVersion: "push.aerogear.org/v1alpha1",
-		},
-	}
-	opts := &client.ListOptions{Namespace: instance.Namespace}
-	err = r.client.List(context.TODO(), opts, existingInstances)
-	if err != nil {
-		reqLogger.Error(err, "Failed to list UnifiedPush resources", "UnifiedPush.Namespace", instance.Namespace)
-		return r.manageError(instance, err)
-	} else if len(existingInstances.Items) > 1 { // check if > 1 since there's the current one already in that list.
-		for _, existingInstance := range existingInstances.Items {
-			if existingInstance.Name == instance.Name {
-				continue
-			}
-			if existingInstance.Status.Phase == pushv1alpha1.PhaseInitializing || existingInstance.Status.Phase == pushv1alpha1.PhaseReconciling || existingInstance.Status.Phase == pushv1alpha1.PhaseFailing {
-				reqLogger.Info("There is already a UnifiedPush resource in Complete phase. Doing nothing for this CR.", "UnifiedPush.Namespace", instance.Namespace, "UnifiedPush.Name", instance.Name)
-				return reconcile.Result{}, nil
-			}
-		}
 	}
 
 	if instance.Status.Phase == pushv1alpha1.PhaseEmpty {
@@ -974,7 +944,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	}
 
 	existingCronJobs := &batchv1beta1.CronJobList{}
-	opts = client.InNamespace(instance.Namespace).MatchingLabels(labels(instance, "backup"))
+	opts := client.InNamespace(instance.Namespace).MatchingLabels(labels(instance, "backup"))
 	err = r.client.List(context.TODO(), opts, existingCronJobs)
 	if err != nil {
 		return r.manageError(instance, err)

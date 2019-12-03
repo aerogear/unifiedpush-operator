@@ -6,9 +6,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## [0.4.0] - 2019-12-03
+### Added
+- UnifiedpushServer CRs can contain coordinates for an external PostgreSQL database
+- UnifiedpushServer CR status block has more useful information
+
+### Changed
+- Operator SA permissions are limited to the namespace now, no cluster permissions are given
 - Operator creates the Monitoring Resources (GrafanaDashboard, PrometheusRule and ServiceMonitor) on creation of the UnifiedPushServer CR.
 - Operator creates its own Monitoring Resources (GrafanaDashboard, PrometheusRule) on installation.
-- Removal of the templates for the related Monitoring Resources.
+
+### Removed
+- This version of the operator no longer deals with the PushApplication or *Variant CRDs
 
 ## [0.3.0] - 2019-10-10
 ### Changed
@@ -16,7 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Use static image references instead of ImageStreams
 
 ### Removed
-- Delete old resources that were created by the previous versions of the operator 
+- Delete old resources that were created by the previous versions of the operator
   (DeploymentConfig and ImageStreams)
 
 ## [0.2.0] - 2019-09-05

@@ -16,7 +16,7 @@ spec:
       containers:
         - name: unifiedpush-operator
           # Replace this with the built image name
-          image: quay.io/aerogear/unifiedpush-operator:0.3.0
+          image: quay.io/aerogear/unifiedpush-operator:0.4.0
           command:
           - unifiedpush-operator
           imagePullPolicy: Always
@@ -29,10 +29,6 @@ spec:
               memory: 64Mi
           env:
             - name: WATCH_NAMESPACE
-              value: ""
-            - name: APP_NAMESPACES
-              value: unifiedpush-apps
-            - name: SERVICE_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
