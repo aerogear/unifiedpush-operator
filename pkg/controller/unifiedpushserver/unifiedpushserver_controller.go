@@ -944,7 +944,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	}
 
 	existingCronJobs := &batchv1beta1.CronJobList{}
-	opts = client.InNamespace(instance.Namespace).MatchingLabels(labels(instance, "backup"))
+	opts := client.InNamespace(instance.Namespace).MatchingLabels(labels(instance, "backup"))
 	err = r.client.List(context.TODO(), opts, existingCronJobs)
 	if err != nil {
 		return r.manageError(instance, err)
