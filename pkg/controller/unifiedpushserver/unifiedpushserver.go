@@ -408,16 +408,6 @@ func reconcilePrometheusRule(prometheusRule *monitoringv1.PrometheusRule, cr *pu
 						Annotations: unifiedPushConsoleDownAnnotations,
 					},
 					{
-						Alert: "UnifiedPushDatabaseDown",
-						Expr: intstr.IntOrString{
-							Type:   intstr.String,
-							StrVal: fmt.Sprintf("absent(kube_pod_container_status_running{namespace=\"%s\",container=\"postgresql\"} == 1)", namespace),
-						},
-						For:         "5m",
-						Labels:      critical,
-						Annotations: unifiedPushDatabaseDownAnnotations,
-					},
-					{
 						Alert: "UnifiedPushJavaHeapThresholdExceeded",
 						Expr: intstr.IntOrString{
 							Type:   intstr.String,
@@ -470,6 +460,22 @@ func reconcilePrometheusRule(prometheusRule *monitoringv1.PrometheusRule, cr *pu
 				},
 			},
 		},
+	}
+
+	// Don't add UnifiedPushDatabaseDown rule if there's no Postgresql
+	if !cr.Spec.ExternalDB {
+		rule := monitoringv1.Rule{
+			Alert: "UnifiedPushDatabaseDown",
+			Expr: intstr.IntOrString{
+				Type:   intstr.String,
+				StrVal: fmt.Sprintf("absent(kube_pod_container_status_running{namespace=\"%s\",container=\"postgresql\"} == 1)", namespace),
+			},
+			For:         "5m",
+			Labels:      critical,
+			Annotations: unifiedPushDatabaseDownAnnotations,
+		}
+
+		prometheusRule.Spec.Groups[0].Rules = append(prometheusRule.Spec.Groups[0].Rules, rule)
 	}
 }
 

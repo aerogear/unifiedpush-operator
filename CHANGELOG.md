@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## [0.4.1] - 2019-12-11
+### Fixed
+- UnifiedPushDatabaseDown alert always fired if using external database
+
 ## [0.4.0] - 2019-12-03
 ### Added
 - UnifiedpushServer CRs can contain coordinates for an external PostgreSQL database
