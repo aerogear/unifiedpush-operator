@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## [0.4.2] - 2019-12-12
+### Fixed
+- Re-add POSTGRES_VERSION to secret to allow backup jobs to succeed again
+
 ## [0.4.1] - 2019-12-11
 ### Fixed
 - UnifiedPushDatabaseDown alert always fired if using external database
