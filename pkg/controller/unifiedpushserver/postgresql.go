@@ -44,12 +44,15 @@ func newPostgresqlSecret(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Secret, er
 		return &corev1.Secret{
 			ObjectMeta: objectMeta(cr, "postgresql"),
 			StringData: map[string]string{
+				// backup-container-image relies on specific keys being set here:
+				// https://github.com/integr8ly/backup-container-image/blob/master/image/tools/lib/component/postgres.sh
 				"POSTGRES_DATABASE":  "unifiedpush",
 				"POSTGRES_USERNAME":  "unifiedpush",
 				"POSTGRES_PASSWORD":  databasePassword,
 				"POSTGRES_HOST":      fmt.Sprintf("%s-postgresql.%s.svc", cr.Name, cr.Namespace),
 				"POSTGRES_PORT":      "5432",
 				"POSTGRES_SUPERUSER": "false",
+				"POSTGRES_VERSION":   "10",
 			},
 		}, nil
 	} else {
@@ -62,6 +65,7 @@ func newPostgresqlSecret(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Secret, er
 				"POSTGRES_HOST":      cr.Spec.Database.Host,
 				"POSTGRES_PORT":      cr.Spec.Database.Port.String(),
 				"POSTGRES_SUPERUSER": "false",
+				"POSTGRES_VERSION":   "10",
 			},
 		}, nil
 	}
