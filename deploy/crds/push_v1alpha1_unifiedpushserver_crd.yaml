@@ -70,6 +70,10 @@ spec:
                 type: object
               type: array
             database:
+              description: Database allows specifying the external PostgreSQL details
+                directly in the CR. Only one of Database or DatabaseSecret should
+                be specified, and ExternalDB must be true, otherwise a new PostgreSQL
+                instance will be created (and deleted) on the cluster automatically.
               properties:
                 host:
                   description: Host for external database support
@@ -89,6 +93,17 @@ spec:
                   description: User for external database support
                   type: string
               type: object
+            databaseSecret:
+              description: 'DatabaseSecret allows reading the external PostgreSQL
+                details from a pre-existing Secret (ExternalDB must be true for it
+                to be used). Only one of Database or DatabaseSecret should be specified,
+                and ExternalDB must be true, otherwise a new PostgreSQL instance will
+                be created (and deleted) on the cluster automatically.  Here''s an
+                example of all of the fields that the secret must contain:  POSTGRES_DATABASE:
+                sampledb POSTGRES_HOST: 172.30.139.148 POSTGRES_PORT: "5432" POSTGRES_USERNAME:
+                userMSM POSTGRES_PASSWORD: RmwWKKIM7or7oJig POSTGRES_SUPERUSER: "false"
+                POSTGRES_VERSION: "10"'
+              type: string
             externalDB:
               description: ExternalDB can be set to true to use details from Database
                 and connect to external db

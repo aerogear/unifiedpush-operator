@@ -719,29 +719,31 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	//#endregion
 
 	//#region Postgres Secret
-	postgresqlSecret, err := newPostgresqlSecret(instance)
-	if err != nil {
-		return r.manageError(instance, err)
-	}
-
-	// Set UnifiedPushServer instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, postgresqlSecret, r.scheme); err != nil {
-		return r.manageError(instance, err)
-	}
-
-	// Check if this Secret already exists
-	foundPostgresqlSecret := &corev1.Secret{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlSecret.Name, Namespace: postgresqlSecret.Namespace}, foundPostgresqlSecret)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Secret", "Secret.Namespace", postgresqlSecret.Namespace, "Secret.Name", postgresqlSecret.Name)
-		err = r.client.Create(context.TODO(), postgresqlSecret)
+	if instance.Spec.DatabaseSecret == "" {
+		postgresqlSecret, err := newPostgresqlSecret(instance)
 		if err != nil {
 			return r.manageError(instance, err)
 		}
-	} else if err != nil {
-		return r.manageError(instance, err)
+
+		// Set UnifiedPushServer instance as the owner and controller
+		if err := controllerutil.SetControllerReference(instance, postgresqlSecret, r.scheme); err != nil {
+			return r.manageError(instance, err)
+		}
+
+		// Check if this Secret already exists
+		foundPostgresqlSecret := &corev1.Secret{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlSecret.Name, Namespace: postgresqlSecret.Namespace}, foundPostgresqlSecret)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new Secret", "Secret.Namespace", postgresqlSecret.Namespace, "Secret.Name", postgresqlSecret.Name)
+			err = r.client.Create(context.TODO(), postgresqlSecret)
+			if err != nil {
+				return r.manageError(instance, err)
+			}
+		} else if err != nil {
+			return r.manageError(instance, err)
+		}
+		secondaryResources.add("Secret", postgresqlSecret.Name)
 	}
-	secondaryResources.add("Secret", postgresqlSecret.Name)
 	//#endregion
 
 	//#region OauthProxy Service

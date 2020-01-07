@@ -52,6 +52,17 @@ func TestReconcileUnifiedPushServer_Reconcile(t *testing.T) {
 			},
 		},
 		{
+			name:  "should create expected resources on reconcile of cr with external DB secret",
+			given: &crWithExternalDatabaseSecret,
+			expect: map[string]runtime.Object{
+				crWithExternalDatabaseSecret.Name:                                      &appsv1.Deployment{},
+				crWithExternalDatabaseSecret.Name:                                      &corev1.ServiceAccount{},
+				fmt.Sprintf("%s-unifiedpush", crWithExternalDatabaseSecret.Name):       &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithExternalDatabaseSecret.Name): &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithExternalDatabaseSecret.Name): &routev1.Route{},
+			},
+		},
+		{
 			name:  "should create expected resources on reconcile of cr with one backup specified",
 			given: &crWithBackup,
 			expect: map[string]runtime.Object{
@@ -125,6 +136,16 @@ var (
 				Host:     "127.0.0.1",
 				Port:     intstr.FromInt(5432),
 			},
+		},
+	}
+	crWithExternalDatabaseSecret = pushv1alpha1.UnifiedPushServer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-with-external-db-secret",
+			Namespace: "unifiedpush",
+		},
+		Spec: pushv1alpha1.UnifiedPushServerSpec{
+			ExternalDB:     true,
+			DatabaseSecret: "ext-db-secret",
 		},
 	}
 	crWithBackup = pushv1alpha1.UnifiedPushServer{
