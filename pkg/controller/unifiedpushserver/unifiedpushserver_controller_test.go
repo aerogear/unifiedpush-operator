@@ -10,6 +10,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,6 +36,22 @@ func TestReconcileUnifiedPushServer_Reconcile(t *testing.T) {
 				fmt.Sprintf("%s-unifiedpush", crWithDefaults.Name):       &corev1.Service{},
 				fmt.Sprintf("%s-unifiedpush-proxy", crWithDefaults.Name): &corev1.Service{},
 				fmt.Sprintf("%s-unifiedpush-proxy", crWithDefaults.Name): &routev1.Route{},
+			},
+		},
+		{
+			name:  "should create expected resources on reconcile of cr with one backup specified",
+			given: &crWithBackup,
+			expect: map[string]runtime.Object{
+				crWithBackup.Name:  &appsv1.Deployment{},
+				crWithBackup.Name:  &corev1.ServiceAccount{},
+				"example-backup-1": &batchv1beta1.CronJob{},
+				"example-backup-2": &batchv1beta1.CronJob{},
+				fmt.Sprintf("%s-postgresql", crWithBackup.Name):        &corev1.PersistentVolumeClaim{},
+				fmt.Sprintf("%s-postgresql", crWithBackup.Name):        &corev1.Service{},
+				fmt.Sprintf("%s-postgresql", crWithBackup.Name):        &corev1.Secret{},
+				fmt.Sprintf("%s-unifiedpush", crWithBackup.Name):       &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithBackup.Name): &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithBackup.Name): &routev1.Route{},
 			},
 		},
 	}
@@ -79,6 +96,28 @@ var (
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-unifiedpushserver",
 			Namespace: "unifiedpush",
+		},
+	}
+	crWithBackup = pushv1alpha1.UnifiedPushServer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-with-backups",
+			Namespace: "unifiedpush",
+		},
+		Spec: pushv1alpha1.UnifiedPushServerSpec{
+			Backups: []pushv1alpha1.UnifiedPushServerBackup{
+				pushv1alpha1.UnifiedPushServerBackup{
+					Name:                   "example-backup-1",
+					Schedule:               "0 0 0 0 0",
+					BackendSecretName:      "example-with-backup-postgresql",
+					BackendSecretNamespace: "unifiedpush",
+				},
+				pushv1alpha1.UnifiedPushServerBackup{
+					Name:                   "example-backup-2",
+					Schedule:               "0 0 0 0 0",
+					BackendSecretName:      "example-with-backup-postgresql",
+					BackendSecretNamespace: "unifiedpush",
+				},
+			},
 		},
 	}
 )

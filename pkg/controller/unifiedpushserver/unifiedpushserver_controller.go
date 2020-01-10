@@ -840,9 +840,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		if err != nil {
 			return r.manageError(instance, err)
 		}
-
-		// Deployment created successfully - don't requeue
-		return reconcile.Result{}, nil
 	} else if err != nil {
 		return r.manageError(instance, err)
 	} else {
@@ -971,7 +968,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			if err != nil {
 				return r.manageError(instance, err)
 			}
-			return reconcile.Result{}, nil
 		}
 		secondaryResources.add("CronJob", desiredCronJob.Name)
 	}
