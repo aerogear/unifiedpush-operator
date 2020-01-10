@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## [0.5.0] - 2020-01-12
+### Added
+- New field databaseSecret to UnifiedPushServer CRD spec.
+
+### Removed
+- Logic that cleans up DeploymentConfigs & ImageStreams after migration
+
+### Changed
+- Reduced permissions given to operator SA, since it no longer uses DC/IS
+
 ## [0.4.2] - 2019-12-12
 ### Fixed
 - Re-add POSTGRES_VERSION to secret to allow backup jobs to succeed again
