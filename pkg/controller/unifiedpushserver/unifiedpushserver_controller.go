@@ -951,7 +951,7 @@ func (r *ReconcileUnifiedPushServer) manageSuccess(instance *pushv1alpha1.Unifie
 	}
 
 	log.Info("Reconcile successful", "UnifiedPushServer.Namespace", instance.Namespace, "UnifiedPushServer.Name", instance.Name)
-	return reconcile.Result{RequeueAfter: requeueDelay}, nil
+	return reconcile.Result{}, nil
 }
 
 func getPostgresResourceRequirements(instance *pushv1alpha1.UnifiedPushServer) corev1.ResourceRequirements {
