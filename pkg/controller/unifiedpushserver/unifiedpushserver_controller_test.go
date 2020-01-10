@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -36,6 +37,18 @@ func TestReconcileUnifiedPushServer_Reconcile(t *testing.T) {
 				fmt.Sprintf("%s-unifiedpush", crWithDefaults.Name):       &corev1.Service{},
 				fmt.Sprintf("%s-unifiedpush-proxy", crWithDefaults.Name): &corev1.Service{},
 				fmt.Sprintf("%s-unifiedpush-proxy", crWithDefaults.Name): &routev1.Route{},
+			},
+		},
+		{
+			name:  "should create expected resources on reconcile of cr with external DB details",
+			given: &crWithExternalDatabase,
+			expect: map[string]runtime.Object{
+				crWithExternalDatabase.Name:                                      &appsv1.Deployment{},
+				crWithExternalDatabase.Name:                                      &corev1.ServiceAccount{},
+				fmt.Sprintf("%s-postgresql", crWithExternalDatabase.Name):        &corev1.Secret{},
+				fmt.Sprintf("%s-unifiedpush", crWithExternalDatabase.Name):       &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithExternalDatabase.Name): &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithExternalDatabase.Name): &routev1.Route{},
 			},
 		},
 		{
@@ -96,6 +109,22 @@ var (
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-unifiedpushserver",
 			Namespace: "unifiedpush",
+		},
+	}
+	crWithExternalDatabase = pushv1alpha1.UnifiedPushServer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-with-external-db",
+			Namespace: "unifiedpush",
+		},
+		Spec: pushv1alpha1.UnifiedPushServerSpec{
+			ExternalDB: true,
+			Database: pushv1alpha1.UnifiedPushServerDatabase{
+				Name:     "test",
+				User:     "me",
+				Password: "password",
+				Host:     "127.0.0.1",
+				Port:     intstr.FromInt(5432),
+			},
 		},
 	}
 	crWithBackup = pushv1alpha1.UnifiedPushServer{
