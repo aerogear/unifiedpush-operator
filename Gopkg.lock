@@ -447,15 +447,9 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:30a9fc8ac66cc8d28a91c94764b1b82dfcc707226e902db0e1b5893242f2e277"
+  digest = "1:e87d3f313113709e01fcf7a8b23cba603c0fce432557b93b970e06fda29ca445"
   name = "github.com/openshift/api"
-  packages = [
-    "apps/v1",
-    "image/docker10",
-    "image/dockerpre012",
-    "image/v1",
-    "route/v1",
-  ]
+  packages = ["route/v1"]
   pruneopts = "NUT"
   revision = "0d921e363e951d89f583292c60d013c318df64dc"
   version = "v3.9.0"
@@ -1170,8 +1164,6 @@
     "github.com/go-openapi/spec",
     "github.com/google/uuid",
     "github.com/integr8ly/grafana-operator/pkg/apis/integreatly/v1alpha1",
-    "github.com/openshift/api/apps/v1",
-    "github.com/openshift/api/image/v1",
     "github.com/openshift/api/route/v1",
     "github.com/operator-framework/operator-sdk/pkg/k8sutil",
     "github.com/operator-framework/operator-sdk/pkg/kube-metrics",
