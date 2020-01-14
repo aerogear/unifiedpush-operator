@@ -1,7 +1,6 @@
 package unifiedpushserver
 
 import (
-	"fmt"
 	"github.com/aerogear/unifiedpush-operator/pkg/constants"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
@@ -42,7 +41,7 @@ func backups(ups *pushv1alpha1.UnifiedPushServer) ([]batchv1beta1.CronJob, error
 										Image:           constants.BackupImage,
 										ImagePullPolicy: "Always",
 										Command:         buildBackupContainerCommand(upsBackup, ups.Namespace),
-										Env:             buildBackupCronJobEnvVars(upsBackup, ups.Name, ups.Namespace),
+										Env:             buildBackupCronJobEnvVars(upsBackup, ups.Name, ups.Namespace, postgresqlSecretName(ups)),
 									},
 								},
 								RestartPolicy: corev1.RestartPolicyOnFailure,
@@ -68,7 +67,7 @@ func buildBackupContainerCommand(upsBackup pushv1alpha1.UnifiedPushServerBackup,
 	return command
 }
 
-func buildBackupCronJobEnvVars(upsBackup pushv1alpha1.UnifiedPushServerBackup, upsName string, upsNamespace string) []corev1.EnvVar {
+func buildBackupCronJobEnvVars(upsBackup pushv1alpha1.UnifiedPushServerBackup, upsName string, upsNamespace string, postgresqlSecret string) []corev1.EnvVar {
 
 	envVars := []corev1.EnvVar{
 		{
@@ -77,7 +76,7 @@ func buildBackupCronJobEnvVars(upsBackup pushv1alpha1.UnifiedPushServerBackup, u
 		},
 		{
 			Name:  "COMPONENT_SECRET_NAME",
-			Value: fmt.Sprintf("%s-%s", upsName, "postgresql"),
+			Value: postgresqlSecret,
 		},
 		{
 			Name:  "COMPONENT_SECRET_NAMESPACE",

@@ -101,7 +101,7 @@ func newPostgresqlDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1.Deploy
 										SecretKeyRef: &corev1.SecretKeySelector{
 											Key: "POSTGRES_USERNAME",
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: fmt.Sprintf("%s-postgresql", cr.Name),
+												Name: postgresqlSecretName(cr),
 											},
 										},
 									},
@@ -112,7 +112,7 @@ func newPostgresqlDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1.Deploy
 										SecretKeyRef: &corev1.SecretKeySelector{
 											Key: "POSTGRES_PASSWORD",
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: fmt.Sprintf("%s-postgresql", cr.Name),
+												Name: postgresqlSecretName(cr),
 											},
 										},
 									},
@@ -123,7 +123,7 @@ func newPostgresqlDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1.Deploy
 										SecretKeyRef: &corev1.SecretKeySelector{
 											Key: "POSTGRES_DATABASE",
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: fmt.Sprintf("%s-postgresql", cr.Name),
+												Name: postgresqlSecretName(cr),
 											},
 										},
 									},
@@ -199,4 +199,12 @@ func newPostgresqlService(cr *pushv1alpha1.UnifiedPushServer) (*corev1.Service, 
 			},
 		},
 	}, nil
+}
+
+func postgresqlSecretName(cr *pushv1alpha1.UnifiedPushServer) string {
+	if cr.Spec.ExternalDB && cr.Spec.DatabaseSecret != "" {
+		return cr.Spec.DatabaseSecret
+	} else {
+		return fmt.Sprintf("%s-postgresql", cr.Name)
+	}
 }

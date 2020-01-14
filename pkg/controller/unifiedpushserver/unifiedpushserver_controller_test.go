@@ -2,104 +2,172 @@ package unifiedpushserver
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
+
 	routev1 "github.com/openshift/api/route/v1"
+
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func TestReconcileUnifiedPushServer_Reconcile(t *testing.T) {
-	// objects to track in the fake client
-	objs := []runtime.Object{
-		&pushServerInstance,
-	}
-
-	r := buildReconcileWithFakeClientWithMocks(objs, t)
-
-	// mock request to simulate Reconcile() being called on an event for a watched resource
-	req := reconcile.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      pushServerInstance.Name,
-			Namespace: pushServerInstance.Namespace,
+	scenarios := []struct {
+		name   string
+		given  *pushv1alpha1.UnifiedPushServer
+		expect map[string]runtime.Object
+	}{
+		{
+			name:  "should create expected resources on reconcile of simple empty cr",
+			given: &crWithDefaults,
+			expect: map[string]runtime.Object{
+				crWithDefaults.Name: &appsv1.Deployment{},
+				crWithDefaults.Name: &corev1.ServiceAccount{},
+				fmt.Sprintf("%s-postgresql", crWithDefaults.Name):        &corev1.PersistentVolumeClaim{},
+				fmt.Sprintf("%s-postgresql", crWithDefaults.Name):        &corev1.Service{},
+				fmt.Sprintf("%s-postgresql", crWithDefaults.Name):        &corev1.Secret{},
+				fmt.Sprintf("%s-unifiedpush", crWithDefaults.Name):       &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithDefaults.Name): &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithDefaults.Name): &routev1.Route{},
+			},
+		},
+		{
+			name:  "should create expected resources on reconcile of cr with external DB details",
+			given: &crWithExternalDatabase,
+			expect: map[string]runtime.Object{
+				crWithExternalDatabase.Name:                                      &appsv1.Deployment{},
+				crWithExternalDatabase.Name:                                      &corev1.ServiceAccount{},
+				fmt.Sprintf("%s-postgresql", crWithExternalDatabase.Name):        &corev1.Secret{},
+				fmt.Sprintf("%s-unifiedpush", crWithExternalDatabase.Name):       &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithExternalDatabase.Name): &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithExternalDatabase.Name): &routev1.Route{},
+			},
+		},
+		{
+			name:  "should create expected resources on reconcile of cr with external DB secret",
+			given: &crWithExternalDatabaseSecret,
+			expect: map[string]runtime.Object{
+				crWithExternalDatabaseSecret.Name:                                      &appsv1.Deployment{},
+				crWithExternalDatabaseSecret.Name:                                      &corev1.ServiceAccount{},
+				fmt.Sprintf("%s-unifiedpush", crWithExternalDatabaseSecret.Name):       &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithExternalDatabaseSecret.Name): &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithExternalDatabaseSecret.Name): &routev1.Route{},
+			},
+		},
+		{
+			name:  "should create expected resources on reconcile of cr with one backup specified",
+			given: &crWithBackup,
+			expect: map[string]runtime.Object{
+				crWithBackup.Name:  &appsv1.Deployment{},
+				crWithBackup.Name:  &corev1.ServiceAccount{},
+				"example-backup-1": &batchv1beta1.CronJob{},
+				"example-backup-2": &batchv1beta1.CronJob{},
+				fmt.Sprintf("%s-postgresql", crWithBackup.Name):        &corev1.PersistentVolumeClaim{},
+				fmt.Sprintf("%s-postgresql", crWithBackup.Name):        &corev1.Service{},
+				fmt.Sprintf("%s-postgresql", crWithBackup.Name):        &corev1.Secret{},
+				fmt.Sprintf("%s-unifiedpush", crWithBackup.Name):       &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithBackup.Name): &corev1.Service{},
+				fmt.Sprintf("%s-unifiedpush-proxy", crWithBackup.Name): &routev1.Route{},
+			},
 		},
 	}
 
-	res, err := r.Reconcile(req)
-	if err != nil {
-		t.Fatalf("reconcile: (%v)", err)
-	}
+	for _, scenario := range scenarios {
+		t.Run(scenario.name, func(t *testing.T) {
 
-	// Check if persistentVolumeClaim has been created
-	persistentVolumeClaim := &corev1.PersistentVolumeClaim{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-postgresql", Namespace: pushServerInstance.Namespace}, persistentVolumeClaim)
-	if err != nil {
-		t.Fatalf("get persistentVolumeClaim: (%v)", err)
-	}
+			// given
+			r := buildReconcileWithFakeClientWithMocks([]runtime.Object{scenario.given}, t)
+			req := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      scenario.given.Name,
+					Namespace: scenario.given.Namespace,
+				},
+			}
 
-	// Check if deployment has been created
-	dep := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), req.NamespacedName, dep)
-	if err != nil {
-		t.Fatalf("get deployment: (%v)", err)
-	}
+			// Required "backupjob" SA for backup CronJobs
+			err := r.client.Create(context.TODO(), &corev1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: "backupjob", Namespace: "unifiedpush"}})
 
-	// Check if service has been created
-	service := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-postgresql", Namespace: pushServerInstance.Namespace}, service)
-	if err != nil {
-		t.Fatalf("get service: (%v)", err)
-	}
+			// when
+			res, err := r.Reconcile(req)
+			if err != nil {
+				t.Fatalf("reconcile: (%v)", err)
+			}
+			if res.Requeue {
+				t.Error("Reconcile requeued unexpectedly")
+			}
 
-	// Check if serviceAccount has been created
-	serviceAccount := &corev1.ServiceAccount{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name, Namespace: pushServerInstance.Namespace}, serviceAccount)
-	if err != nil {
-		t.Fatalf("get serviceAccount: (%v)", err)
-	}
-
-	// Check if service has been created
-	secret := &corev1.Secret{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-postgresql", Namespace: pushServerInstance.Namespace}, secret)
-	if err != nil {
-		t.Fatalf("get secret: (%v)", err)
-	}
-
-	// Check if service has been created
-	oauthProxyService := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-unifiedpush-proxy", Namespace: pushServerInstance.Namespace}, oauthProxyService)
-	if err != nil {
-		t.Fatalf("get oauthProxyService: (%v)", err)
-	}
-
-	// Check if service has been created
-	serviceOauth := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-unifiedpush-proxy", Namespace: pushServerInstance.Namespace}, serviceOauth)
-	if err != nil {
-		t.Fatalf("get serviceOauth: (%v)", err)
-	}
-
-	// Check if route has been created
-	serviceOauthRoute := &routev1.Route{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-unifiedpush-proxy", Namespace: pushServerInstance.Namespace}, serviceOauthRoute)
-	if err != nil {
-		t.Fatalf("get service Oauth route: (%v)", err)
-	}
-
-	// Check if servicePush has been created
-	servicePush := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pushServerInstance.Name + "-unifiedpush", Namespace: pushServerInstance.Namespace}, servicePush)
-	if err != nil {
-		t.Fatalf("get servicePush: (%v)", err)
-	}
-
-	//TODO:Finish this test
-
-	// Check the result of reconciliation to make sure it has the desired state
-	if res.Requeue {
-		t.Error("reconcile did requeue which is not expected")
+			// then
+			for n, o := range scenario.expect {
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: n, Namespace: scenario.given.Namespace}, o)
+				if err != nil {
+					t.Fatalf("get %s %s: (%v)", o.GetObjectKind(), n, err)
+				}
+			}
+		})
 	}
 }
+
+var (
+	crWithDefaults = pushv1alpha1.UnifiedPushServer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-unifiedpushserver",
+			Namespace: "unifiedpush",
+		},
+	}
+	crWithExternalDatabase = pushv1alpha1.UnifiedPushServer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-with-external-db",
+			Namespace: "unifiedpush",
+		},
+		Spec: pushv1alpha1.UnifiedPushServerSpec{
+			ExternalDB: true,
+			Database: pushv1alpha1.UnifiedPushServerDatabase{
+				Name:     "test",
+				User:     "me",
+				Password: "password",
+				Host:     "127.0.0.1",
+				Port:     intstr.FromInt(5432),
+			},
+		},
+	}
+	crWithExternalDatabaseSecret = pushv1alpha1.UnifiedPushServer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-with-external-db-secret",
+			Namespace: "unifiedpush",
+		},
+		Spec: pushv1alpha1.UnifiedPushServerSpec{
+			ExternalDB:     true,
+			DatabaseSecret: "ext-db-secret",
+		},
+	}
+	crWithBackup = pushv1alpha1.UnifiedPushServer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-with-backups",
+			Namespace: "unifiedpush",
+		},
+		Spec: pushv1alpha1.UnifiedPushServerSpec{
+			Backups: []pushv1alpha1.UnifiedPushServerBackup{
+				pushv1alpha1.UnifiedPushServerBackup{
+					Name:                   "example-backup-1",
+					Schedule:               "0 0 0 0 0",
+					BackendSecretName:      "example-with-backup-postgresql",
+					BackendSecretNamespace: "unifiedpush",
+				},
+				pushv1alpha1.UnifiedPushServerBackup{
+					Name:                   "example-backup-2",
+					Schedule:               "0 0 0 0 0",
+					BackendSecretName:      "example-with-backup-postgresql",
+					BackendSecretNamespace: "unifiedpush",
+				},
+			},
+		},
+	}
+)

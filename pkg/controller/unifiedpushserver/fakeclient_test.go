@@ -4,8 +4,10 @@ import (
 	"testing"
 
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
-	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	imagev1 "github.com/openshift/api/image/v1"
+	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	enmassev1beta1 "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
+	messaginguserv1beta1 "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1"
+	integreatlyv1alpha1 "github.com/integr8ly/grafana-operator/pkg/apis/integreatly/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -17,19 +19,29 @@ import (
 func buildReconcileWithFakeClientWithMocks(objs []runtime.Object, t *testing.T) *ReconcileUnifiedPushServer {
 	s := scheme.Scheme
 
-	// Add route Openshift scheme
+	// Add Openshift route scheme
 	if err := routev1.AddToScheme(s); err != nil {
 		t.Fatalf("Unable to add route scheme: (%v)", err)
 	}
 
-	// Add apps Openshift scheme
-	if err := openshiftappsv1.AddToScheme(s); err != nil {
-		t.Fatalf("Unable to add appsv1 scheme: (%v)", err)
+	// Add Prometheus monitoring scheme
+	if err := monitoringv1.AddToScheme(s); err != nil {
+		t.Fatalf("Unable to add monitoringv1 scheme: (%v)", err)
 	}
 
-	// Add image Openshift scheme
-	if err := imagev1.AddToScheme(s); err != nil {
-		t.Fatalf("Unable to add imagev1 scheme: (%v)", err)
+	// Add integreatly scheme
+	if err := integreatlyv1alpha1.AddToScheme(s); err != nil {
+		t.Fatalf("Unable to add monitoringv1 scheme: (%v)", err)
+	}
+
+	// Add enmasse scheme
+	if err := enmassev1beta1.AddToScheme(s); err != nil {
+		t.Fatalf("Unable to add monitoringv1 scheme: (%v)", err)
+	}
+
+	// Add enmasse user scheme
+	if err := messaginguserv1beta1.AddToScheme(s); err != nil {
+		t.Fatalf("Unable to add monitoringv1 scheme: (%v)", err)
 	}
 
 	s.AddKnownTypes(pushv1alpha1.SchemeGroupVersion, &pushv1alpha1.UnifiedPushServer{})

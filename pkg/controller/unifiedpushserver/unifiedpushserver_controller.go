@@ -16,8 +16,6 @@ import (
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	integreatlyv1alpha1 "github.com/integr8ly/grafana-operator/pkg/apis/integreatly/v1alpha1"
 
-	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -88,24 +86,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		&source.Kind{Type: &pushv1alpha1.UnifiedPushServer{}},
 		&handler.EnqueueRequestForObject{},
 	)
-	if err != nil {
-		return err
-	}
-
-	// Watch for changes to secondary resource DeploymentConfig and requeue the owner UnifiedPushServer
-	err = c.Watch(&source.Kind{Type: &openshiftappsv1.DeploymentConfig{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
-	})
-	if err != nil {
-		return err
-	}
-
-	// Watch for changes to secondary resource ImageStream and requeue the owner UnifiedPushServer
-	err = c.Watch(&source.Kind{Type: &imagev1.ImageStream{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
-	})
 	if err != nil {
 		return err
 	}
@@ -437,116 +417,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	}
 	//#endregion
 
-	//#region MIGRATION from old resources to new ones
-
-	// TODO: This migration block should be removed after a major release!
-	// TODO: in UPS operator version <0.3.0, we were using DCs and ImageStreams.
-	// TODO: in 0.3.0, we introduced this code block to migrate from old resources to new ones.
-	// TODO: in a future version we should get rid of this migration block, as well as
-	// TODO: unneeded permissions to access these old resources.
-	dcResourceExists, err := r.apiVersionChecker.check("apps.openshift.io/v1")
-	if err != nil {
-		reqLogger.Error(err, "Unable to check if a OpenShift's apps.openshift.io/v1 api version is available.")
-		return r.manageError(instance, err)
-	}
-
-	imageStreamResourceExists, err := r.apiVersionChecker.check("image.openshift.io/v1")
-	if err != nil {
-		reqLogger.Error(err, "Unable to check if a OpenShift's image.openshift.io/v1 api version is available.")
-		return r.manageError(instance, err)
-	}
-
-	if dcResourceExists {
-		//#region DELETE UnifiedPush Server DeploymentConfig as we moved to Kube Deployments now
-		upsDeploymentConfigObjectMeta := metav1.ObjectMeta{
-			Namespace: instance.Namespace,
-			Name:      instance.Name, // this is the name of the DeploymentConfig we were using
-		}
-		foundUpsDeploymentConfig := &openshiftappsv1.DeploymentConfig{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: upsDeploymentConfigObjectMeta.Name, Namespace: upsDeploymentConfigObjectMeta.Namespace}, foundUpsDeploymentConfig)
-		if err != nil && !errors.IsNotFound(err) {
-			// if there is another error than the DC not being found
-			reqLogger.Error(err, "Unable to check if a DeploymentConfig exists for UnifiedPush Server.", "DeploymentConfig.Namespace", foundUpsDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUpsDeploymentConfig.Name)
-			return r.manageError(instance, err)
-		} else if err == nil {
-			reqLogger.Info("Found a DeploymentConfig for UnifiedPush Server. Deleting it.", "DeploymentConfig.Namespace", foundUpsDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUpsDeploymentConfig.Name)
-			err = r.client.Delete(context.TODO(), foundUpsDeploymentConfig)
-			if err != nil {
-				reqLogger.Error(err, "Unable to delete the DeploymentConfig for UnifiedPush Server.", "DeploymentConfig.Namespace", foundUpsDeploymentConfig.Namespace, "DeploymentConfig.Name", foundUpsDeploymentConfig.Name)
-				return r.manageError(instance, err)
-			}
-		}
-		//#endregion
-
-		//#region DELETE Postgres DeploymentConfig as we moved to Kube Deployments now
-		postgresDeploymentConfigObjectMeta := objectMeta(instance, "postgresql")
-		foundPostgresqlDeploymentConfig := &openshiftappsv1.DeploymentConfig{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresDeploymentConfigObjectMeta.Name, Namespace: postgresDeploymentConfigObjectMeta.Namespace}, foundPostgresqlDeploymentConfig)
-		if err != nil && !errors.IsNotFound(err) {
-			// if there is another error than the DC not being found
-			reqLogger.Error(err, "Unable to check if a DeploymentConfig exists for Postgres.", "DeploymentConfig.Namespace", foundPostgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", foundPostgresqlDeploymentConfig.Name)
-			return r.manageError(instance, err)
-		} else if err == nil {
-			reqLogger.Info("Found a DeploymentConfig for Postgres. Deleting it.", "DeploymentConfig.Namespace", foundPostgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", foundPostgresqlDeploymentConfig.Name)
-			err = r.client.Delete(context.TODO(), foundPostgresqlDeploymentConfig)
-			if err != nil {
-				reqLogger.Error(err, "Unable to delete the DeploymentConfig for Postgres.", "DeploymentConfig.Namespace", foundPostgresqlDeploymentConfig.Namespace, "DeploymentConfig.Name", foundPostgresqlDeploymentConfig.Name)
-				return r.manageError(instance, err)
-			}
-		}
-		//#endregion
-	}
-
-	if imageStreamResourceExists {
-		//#region DELETE OAuth Proxy ImageStream as we moved to using static image references
-		oauthProxyImageStreamObjectMeta := metav1.ObjectMeta{
-			Namespace: instance.Namespace,
-			Name:      "ups-oauth-proxy-imagestream", // this is the name of the image stream we were using
-		}
-		foundOAuthProxyImageStream := &imagev1.ImageStream{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: oauthProxyImageStreamObjectMeta.Name, Namespace: oauthProxyImageStreamObjectMeta.Namespace}, foundOAuthProxyImageStream)
-		if err != nil && !errors.IsNotFound(err) {
-			// if there is another error than the DC not being found
-			reqLogger.Error(err, "Unable to check if a ImageStream exists for OAuth Proxy.", "ImageStream.Namespace", foundOAuthProxyImageStream.Namespace, "ImageStream.Name", foundOAuthProxyImageStream.Name)
-			// don't do anything.
-			// we simply log this, and it should be ok to have some leftover ImageStreams
-		} else if err == nil {
-			reqLogger.Info("Found a ImageStream for OAuth Proxy. Deleting it.", "ImageStream.Namespace", foundOAuthProxyImageStream.Namespace, "ImageStream.Name", foundOAuthProxyImageStream.Name)
-			err = r.client.Delete(context.TODO(), foundOAuthProxyImageStream)
-			if err != nil {
-				reqLogger.Error(err, "Unable to delete ImageStream. Skipping it.", "ImageStream.Namespace", foundOAuthProxyImageStream.Namespace, "ImageStream.Name", foundOAuthProxyImageStream.Name)
-				// don't do anything.
-				// we simply log this, and it should be ok to have some leftover ImageStreams
-			}
-		}
-		//#endregion
-
-		//#region DELETE UnifiedPush Server ImageStream as we moved to using static image references
-		upsImageStreamObjectMeta := metav1.ObjectMeta{
-			Namespace: instance.Namespace,
-			Name:      "ups-imagestream", // this is the name of the image stream we were using
-		}
-		foundUpsImageStream := &imagev1.ImageStream{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: upsImageStreamObjectMeta.Name, Namespace: upsImageStreamObjectMeta.Namespace}, foundUpsImageStream)
-		if err != nil && !errors.IsNotFound(err) {
-			// if there is another error than the ImageStream not being found
-			reqLogger.Error(err, "Unable to check if an ImageStream exists for UnifiedPush Server.", "ImageStream.Namespace", foundUpsImageStream.Namespace, "ImageStream.Name", foundUpsImageStream.Name)
-			// don't do anything.
-			// we simply log this, and it should be ok to have some leftover ImageStreams
-		} else if err == nil {
-			reqLogger.Info("Found an ImageStream for UnifiedPush Server. Deleting it.", "ImageStream.Namespace", foundUpsImageStream.Namespace, "ImageStream.Name", foundUpsImageStream.Name)
-			err = r.client.Delete(context.TODO(), foundUpsImageStream)
-			if err != nil {
-				reqLogger.Error(err, "Unable to delete ImageStream. Skipping it.", "ImageStream.Namespace", foundUpsImageStream.Namespace, "ImageStream.Name", foundUpsImageStream.Name)
-				// don't do anything.
-				// we simply log this, and it should be ok to have some leftover ImageStreams
-			}
-		}
-		//#endregion
-	}
-
-	//#endregion
-
 	if !instance.Spec.ExternalDB {
 
 		//#region Postgres PVC
@@ -719,29 +589,31 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	//#endregion
 
 	//#region Postgres Secret
-	postgresqlSecret, err := newPostgresqlSecret(instance)
-	if err != nil {
-		return r.manageError(instance, err)
-	}
-
-	// Set UnifiedPushServer instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, postgresqlSecret, r.scheme); err != nil {
-		return r.manageError(instance, err)
-	}
-
-	// Check if this Secret already exists
-	foundPostgresqlSecret := &corev1.Secret{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlSecret.Name, Namespace: postgresqlSecret.Namespace}, foundPostgresqlSecret)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Secret", "Secret.Namespace", postgresqlSecret.Namespace, "Secret.Name", postgresqlSecret.Name)
-		err = r.client.Create(context.TODO(), postgresqlSecret)
+	if instance.Spec.DatabaseSecret == "" {
+		postgresqlSecret, err := newPostgresqlSecret(instance)
 		if err != nil {
 			return r.manageError(instance, err)
 		}
-	} else if err != nil {
-		return r.manageError(instance, err)
+
+		// Set UnifiedPushServer instance as the owner and controller
+		if err := controllerutil.SetControllerReference(instance, postgresqlSecret, r.scheme); err != nil {
+			return r.manageError(instance, err)
+		}
+
+		// Check if this Secret already exists
+		foundPostgresqlSecret := &corev1.Secret{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: postgresqlSecret.Name, Namespace: postgresqlSecret.Namespace}, foundPostgresqlSecret)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new Secret", "Secret.Namespace", postgresqlSecret.Namespace, "Secret.Name", postgresqlSecret.Name)
+			err = r.client.Create(context.TODO(), postgresqlSecret)
+			if err != nil {
+				return r.manageError(instance, err)
+			}
+		} else if err != nil {
+			return r.manageError(instance, err)
+		}
+		secondaryResources.add("Secret", postgresqlSecret.Name)
 	}
-	secondaryResources.add("Secret", postgresqlSecret.Name)
 	//#endregion
 
 	//#region OauthProxy Service
@@ -840,9 +712,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 		if err != nil {
 			return r.manageError(instance, err)
 		}
-
-		// Deployment created successfully - don't requeue
-		return reconcile.Result{}, nil
 	} else if err != nil {
 		return r.manageError(instance, err)
 	} else {
@@ -971,7 +840,6 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			if err != nil {
 				return r.manageError(instance, err)
 			}
-			return reconcile.Result{}, nil
 		}
 		secondaryResources.add("CronJob", desiredCronJob.Name)
 	}
@@ -1083,7 +951,7 @@ func (r *ReconcileUnifiedPushServer) manageSuccess(instance *pushv1alpha1.Unifie
 	}
 
 	log.Info("Reconcile successful", "UnifiedPushServer.Namespace", instance.Namespace, "UnifiedPushServer.Name", instance.Name)
-	return reconcile.Result{RequeueAfter: requeueDelay}, nil
+	return reconcile.Result{}, nil
 }
 
 func getPostgresResourceRequirements(instance *pushv1alpha1.UnifiedPushServer) corev1.ResourceRequirements {

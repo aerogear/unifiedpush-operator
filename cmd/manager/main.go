@@ -18,8 +18,6 @@ import (
 	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
 	messaginguserv1beta "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1"
 	integreatlyv1alpha1 "github.com/integr8ly/grafana-operator/pkg/apis/integreatly/v1alpha1"
-	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
@@ -131,6 +129,7 @@ func main() {
 		log.Error(err, "")
 		os.Exit(1)
 	}
+
 	//Watch AMQ Online Resources
 	if err := messaginguserv1beta.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
@@ -138,18 +137,6 @@ func main() {
 	}
 
 	if err := enmassev1beta.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "")
-		os.Exit(1)
-	}
-
-	// Setup Scheme for OpenShift Apis
-	if err := openshiftappsv1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "")
-		os.Exit(1)
-	}
-
-	// Setup Scheme for OpenShift Image apis
-	if err := imagev1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}
