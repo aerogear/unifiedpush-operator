@@ -70,7 +70,7 @@ func newOauthProxyRoute(cr *pushv1alpha1.UnifiedPushServer) (*routev1.Route, err
 	}, nil
 }
 
-func buildEnv(cr *pushv1alpha1.UnifiedPushServer) []corev1.EnvVar {
+func buildEnv(cr *pushv1alpha1.UnifiedPushServer, useMessageBroker bool) []corev1.EnvVar {
 	var env = []corev1.EnvVar{
 		{
 			Name: "POSTGRES_SERVICE_HOST",
@@ -129,7 +129,7 @@ func buildEnv(cr *pushv1alpha1.UnifiedPushServer) []corev1.EnvVar {
 		},
 	}
 
-	if cr.Spec.UseMessageBroker {
+	if useMessageBroker {
 		env = append(env,
 			corev1.EnvVar{
 				Name:  "ARTEMIS_USER",
@@ -168,7 +168,7 @@ func buildEnv(cr *pushv1alpha1.UnifiedPushServer) []corev1.EnvVar {
 
 }
 
-func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1.Deployment, error) {
+func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer, useMessageBroker bool) (*appsv1.Deployment, error) {
 
 	labels := map[string]string{
 		"app":     cr.Name,
@@ -232,7 +232,7 @@ func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1
 							Name:            cfg.UPSContainerName,
 							Image:           constants.UPSImage,
 							ImagePullPolicy: corev1.PullAlways,
-							Env:             buildEnv(cr),
+							Env:             buildEnv(cr, useMessageBroker),
 							Resources:       getUnifiedPushResourceRequirements(cr),
 							Ports: []corev1.ContainerPort{
 								{

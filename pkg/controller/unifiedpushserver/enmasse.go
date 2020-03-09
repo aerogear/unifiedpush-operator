@@ -84,7 +84,7 @@ func newMessagingUser(cr *pushv1alpha1.UnifiedPushServer) (*messaginguserv1beta.
 					Addresses: []string{
 						"*",
 					},
-					Operations: []string{
+					Operations: []messaginguserv1beta.AuthorizationOperation{
 						"send",
 						"recv",
 					},

@@ -9,6 +9,8 @@ import (
 	pushv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 	"github.com/aerogear/unifiedpush-operator/pkg/config"
 	"github.com/aerogear/unifiedpush-operator/pkg/constants"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 
 	enmassev1beta "github.com/enmasseproject/enmasse/pkg/apis/enmasse/v1beta1"
 	messaginguserv1beta "github.com/enmasseproject/enmasse/pkg/apis/user/v1beta1"
@@ -47,8 +49,10 @@ const (
 )
 
 var (
-	cfg = config.New()
-	log = logf.Log.WithName(controllerName)
+	cfg                = config.New()
+	log                = logf.Log.WithName(controllerName)
+	hasCheckedEnmasse  = false
+	canWatchEnmasseVal = false
 )
 
 // Add creates a new UnifiedPushServer Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -71,6 +75,64 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 		apiVersionChecker: getApiVersionChecker(clientset),
 		recorder:          mgr.GetRecorder(controllerName),
 	}
+}
+
+// Some versions of enmasse do not handle the address watches correctly
+// this method checks if the watches are handled correctly
+func canWatchEnmasse(cfg *rest.Config) bool {
+	if hasCheckedEnmasse {
+		return canWatchEnmasseVal
+	}
+	dynamicClient, err := dynamic.NewForConfig(cfg)
+	log.Info("Checking if can watch enmasse resources")
+	if err == nil {
+		dynamnicAddressResource := dynamicClient.Resource(schema.GroupVersionResource{
+			Group:    "enmasse.io",
+			Version:  "v1beta1",
+			Resource: "addresses",
+		})
+
+		watch, err := dynamnicAddressResource.Watch(metav1.ListOptions{Watch: true})
+		defer watch.Stop()
+
+		if err == nil {
+
+			timeout := make(chan bool, 1)
+			go func() {
+				time.Sleep(100 * time.Millisecond)
+				timeout <- true
+			}()
+
+			select {
+			case event := <-watch.ResultChan():
+				if len(string((event).Type)) == 0 {
+					log.Info("Enmasse does not support address watch correctly.")
+					hasCheckedEnmasse = true
+					canWatchEnmasseVal = false
+					return false //The malfunctioning code immedieatly returns an event with an empty type
+				}
+				log.Info("enmasse resource watches enabled event was " + string((event).Type))
+				hasCheckedEnmasse = true
+				canWatchEnmasseVal = true
+				return true //If the event type is not empty, enmasse properly uses addresses
+			case <-timeout:
+				log.Info("enmasse resource watches enabled no event")
+				hasCheckedEnmasse = true
+				canWatchEnmasseVal = true
+				return true //If there is no event, enmasse properly uses addresses
+			}
+
+		}
+		log.Error(err, "Could not watch address.")
+		hasCheckedEnmasse = true
+		canWatchEnmasseVal = true
+		return false // there was an error connecting to enmasse
+
+	}
+
+	// there was an error connecting to creating the client to connect to enmasse
+	log.Error(err, "Could not create dynamic client.")
+	return false
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -153,36 +215,38 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to secondary resource MessagingUser and requeue the owner UnifiedPushServer
-	err = c.Watch(&source.Kind{Type: &messaginguserv1beta.MessagingUser{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
-	})
-	// If the problem is just a missing kind, don't worry about it
-	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
-		return err
-	}
+	if canWatchEnmasse(mgr.GetConfig()) {
+		// Watch for changes to secondary resource MessagingUser and requeue the owner UnifiedPushServer
+		err = c.Watch(&source.Kind{Type: &messaginguserv1beta.MessagingUser{}}, &handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &pushv1alpha1.UnifiedPushServer{},
+		})
+		// If the problem is just a missing kind, don't worry about it
+		if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
+			return err
+		}
 
-	// Watch for changes to secondary resource AddressSpace and requeue the owner UnifiedPushServer
-	err = c.Watch(&source.Kind{Type: &enmassev1beta.AddressSpace{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
-	})
-	// If the problem is just a missing kind, don't worry about it
-	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
-		return err
-	}
+		// Watch for changes to secondary resource AddressSpace and requeue the owner UnifiedPushServer
+		err = c.Watch(&source.Kind{Type: &enmassev1beta.AddressSpace{}}, &handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &pushv1alpha1.UnifiedPushServer{},
+		})
+		// If the problem is just a missing kind, don't worry about it
+		if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
+			return err
+		}
 
-	// Watch for changes to secondary resource Address and requeue the owner UnifiedPushServer
-	err = c.Watch(&source.Kind{Type: &enmassev1beta.Address{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
-	})
-	// If the problem is just a missing kind, don't worry about it
-	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
-		return err
-	}
+		// Watch for changes to secondary resource Address and requeue the owner UnifiedPushServer
+		err = c.Watch(&source.Kind{Type: &enmassev1beta.Address{}}, &handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &pushv1alpha1.UnifiedPushServer{},
+		})
 
+		// If the problem is just a missing kind, don't worry about it
+		if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
+			return err
+		}
+	}
 	// Watch for changes to secondary resource ServiceMonitor and requeue the owner UnifiedPushServer
 	err = c.Watch(&source.Kind{Type: &monitoringv1.ServiceMonitor{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
@@ -265,7 +329,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	}
 
 	//#region AMQ resource reconcile
-	if instance.Spec.UseMessageBroker {
+	if instance.Spec.UseMessageBroker && canWatchEnmasse(r.config) {
 		//#region create addressSpace
 		addressSpace := newAddressSpace(instance)
 
@@ -313,6 +377,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			reqLogger.Info("Creating a new MessagingUser", "MessagingUser.Namespace", user.Namespace, "MessagingUser.Name", user.Name)
 			err = r.client.Create(context.TODO(), user)
 			if err != nil {
+				log.Error(err, "Could not create messaginguser")
 				return r.manageError(instance, err)
 			}
 
@@ -361,6 +426,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 				reqLogger.Info("Creating a new Queue", "Queue.Namespace", queue.Namespace, "Queue.Name", queue.Name)
 				err = r.client.Create(context.TODO(), queue)
 				if err != nil {
+					reqLogger.Error(err, "Could not create queue")
 					return r.manageError(instance, err)
 				}
 				requeueCreate = true
@@ -697,7 +763,7 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 	//#endregion
 
 	//#region UPS Deployment
-	unifiedpushDeployment, err := newUnifiedPushServerDeployment(instance)
+	unifiedpushDeployment, err := newUnifiedPushServerDeployment(instance, instance.Spec.UseMessageBroker && canWatchEnmasse(r.config))
 
 	if err := controllerutil.SetControllerReference(instance, unifiedpushDeployment, r.scheme); err != nil {
 		return r.manageError(instance, err)
