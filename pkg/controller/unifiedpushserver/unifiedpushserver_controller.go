@@ -93,10 +93,9 @@ func canWatchEnmasse(cfg *rest.Config) bool {
 		})
 
 		watch, err := dynamnicAddressResource.Watch(metav1.ListOptions{Watch: true})
-		defer watch.Stop()
 
 		if err == nil {
-
+			defer watch.Stop()
 			timeout := make(chan bool, 1)
 			go func() {
 				time.Sleep(100 * time.Millisecond)
