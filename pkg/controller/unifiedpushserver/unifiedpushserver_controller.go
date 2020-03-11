@@ -86,7 +86,7 @@ func canWatchEnmasse(cfg *rest.Config) bool {
 	dynamicClient, err := dynamic.NewForConfig(cfg)
 	log.Info("Checking if can watch enmasse resources")
 	if err == nil {
-		dynamnicAddressResource := dynamicClient.Resource(schema.GroupVersionResource{
+		dynamicAddressResource := dynamicClient.Resource(schema.GroupVersionResource{
 			Group:    "enmasse.io",
 			Version:  "v1beta1",
 			Resource: "addresses",
