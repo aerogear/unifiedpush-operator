@@ -1,5 +1,5 @@
 channels:
-- currentCSV: unifiedpush-operator.v0.4.2
+- currentCSV: unifiedpush-operator.v0.4.3
   name: stable
 defaultChannel: stable
 packageName: unifiedpush-operator

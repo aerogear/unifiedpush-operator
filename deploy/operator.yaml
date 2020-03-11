@@ -16,7 +16,7 @@ spec:
       containers:
         - name: unifiedpush-operator
           # Replace this with the built image name
-          image: quay.io/aerogear/unifiedpush-operator:0.4.2
+          image: quay.io/aerogear/unifiedpush-operator:0.4.3
           command:
           - unifiedpush-operator
           imagePullPolicy: Always
