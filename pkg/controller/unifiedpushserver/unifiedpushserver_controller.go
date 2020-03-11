@@ -173,36 +173,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to secondary resource MessagingUser and requeue the owner UnifiedPushServer
-	err = c.Watch(&source.Kind{Type: &messaginguserv1beta.MessagingUser{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
-	})
-	// If the problem is just a missing kind, don't worry about it
-	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
-		return err
-	}
-
-	// Watch for changes to secondary resource AddressSpace and requeue the owner UnifiedPushServer
-	err = c.Watch(&source.Kind{Type: &enmassev1beta.AddressSpace{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
-	})
-	// If the problem is just a missing kind, don't worry about it
-	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
-		return err
-	}
-
-	// Watch for changes to secondary resource Address and requeue the owner UnifiedPushServer
-	err = c.Watch(&source.Kind{Type: &enmassev1beta.Address{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &pushv1alpha1.UnifiedPushServer{},
-	})
-	// If the problem is just a missing kind, don't worry about it
-	if _, isNoKindMatchError := err.(*meta.NoKindMatchError); err != nil && !isNoKindMatchError {
-		return err
-	}
-
 	// Watch for changes to secondary resource ServiceMonitor and requeue the owner UnifiedPushServer
 	err = c.Watch(&source.Kind{Type: &monitoringv1.ServiceMonitor{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
