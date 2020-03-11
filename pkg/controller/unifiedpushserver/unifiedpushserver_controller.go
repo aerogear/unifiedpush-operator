@@ -108,7 +108,7 @@ func canWatchEnmasse(cfg *rest.Config) bool {
 					log.Info("Enmasse does not support address watch correctly.")
 					hasCheckedEnmasse = true
 					canWatchEnmasseVal = false
-					return false //The malfunctioning code immedieatly returns an event with an empty type
+					return false //The malfunctioning code immediately returns an event with an empty type
 				}
 				log.Info("enmasse resource watches enabled event was " + string((event).Type))
 				hasCheckedEnmasse = true
