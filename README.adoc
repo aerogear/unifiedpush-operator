@@ -1,6 +1,7 @@
 :toc:
 :toc-placement!:
 
+
 // gEmoji for admonitions, see
 // https://gist.github.com/dcode/0cfbf2699a1fe9b46ff04c41721dda74#admonitions
 ifdef::env-github[]
