@@ -23,6 +23,7 @@ pipeline {
         OPENSHIFT_PROJECT_NAME = "unifiedpush"
         CLONED_REPOSITORY_PATH = "src/github.com/aerogear/unifiedpush-operator"
         CREDENTIALS_ID = "quay-aerogear-bot"
+        QUAY_TOKEN_ID = "quay-aerogear-token"
     }
 
     options {
@@ -162,6 +163,7 @@ pipeline {
                 // qe-pipeline-library step
                 tagRemoteContainerImage(
                     credentialsId: "${env.CREDENTIALS_ID}",
+                    bearerToken: "${env.QUAY_TOKEN_ID}",
                     sourceImage: "${env.OPERATOR_CONTAINER_IMAGE_CANDIDATE_NAME}",
                     targetImage: "${env.OPERATOR_CONTAINER_IMAGE_NAME}",
                     deleteOriginalImage: true
