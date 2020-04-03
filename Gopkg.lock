@@ -136,8 +136,7 @@
   version = "v2.9.3"
 
 [[projects]]
-  branch = "master"
-  digest = "1:7efb40040debf1fe1a114dace0d1a2f601e34ca10c67570d8c0214a431440ba7"
+  digest = "1:eee0c46303f0932cae48eef35165d8f8153c476980cd872f0ad369ba24641f5b"
   name = "github.com/enmasseproject/enmasse"
   packages = [
     "pkg/apis/enmasse",
@@ -146,7 +145,8 @@
     "pkg/apis/user/v1beta1",
   ]
   pruneopts = "NUT"
-  revision = "410a8fdb9799c6e488d8b696e2d36ded55846304"
+  revision = "e93f734028460f0edaac3f2f3647286efdab96c0"
+  version = "0.31.0"
 
 [[projects]]
   digest = "1:4304cca260ab815326ca42d9c28fb843342748267034c51963e13f5e54e727d1"
