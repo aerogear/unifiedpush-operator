@@ -169,6 +169,8 @@ func newPostgresqlDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1.Deploy
 							},
 						},
 					},
+					Affinity:    cr.Spec.Affinity,
+					Tolerations: cr.Spec.Tolerations,
 					Volumes: []corev1.Volume{
 						{
 							Name: fmt.Sprintf("%s-postgresql-data", cr.Name),

@@ -45,6 +45,8 @@ func backups(ups *pushv1alpha1.UnifiedPushServer) ([]batchv1beta1.CronJob, error
 									},
 								},
 								RestartPolicy: corev1.RestartPolicyOnFailure,
+								Affinity:      ups.Spec.Affinity,
+								Tolerations:   ups.Spec.Tolerations,
 							},
 						},
 					},

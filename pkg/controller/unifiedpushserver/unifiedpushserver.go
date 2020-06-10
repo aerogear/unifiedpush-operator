@@ -291,6 +291,8 @@ func newUnifiedPushServerDeployment(cr *pushv1alpha1.UnifiedPushServer) (*appsv1
 							},
 						},
 					},
+					Affinity:    cr.Spec.Affinity,
+					Tolerations: cr.Spec.Tolerations,
 				},
 			},
 		},

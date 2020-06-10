@@ -51,6 +51,14 @@ func findContainerSpec(deployment *appsv1.Deployment, name string) *corev1.Conta
 	return nil
 }
 
+func findPodSpec(deployment *appsv1.Deployment) *corev1.PodSpec {
+	if deployment == nil || &deployment.Spec == nil || &deployment.Spec.Template == nil || &deployment.Spec.Template.Spec == nil {
+		return nil
+	}
+
+	return &deployment.Spec.Template.Spec
+}
+
 func updateContainerSpecImage(deployment *appsv1.Deployment, name string, image string) {
 	if deployment == nil || &deployment.Spec == nil || &deployment.Spec.Template == nil || &deployment.Spec.Template.Spec == nil || &deployment.Spec.Template.Spec.Containers == nil || len(deployment.Spec.Template.Spec.Containers) == 0 {
 		return

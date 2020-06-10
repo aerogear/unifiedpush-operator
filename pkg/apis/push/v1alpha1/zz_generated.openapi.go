@@ -128,11 +128,28 @@ func schema_pkg_apis_push_v1alpha1_UnifiedPushServerSpec(ref common.ReferenceCal
 							Format:      "",
 						},
 					},
+					"affinity": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/api/core/v1.Affinity"),
+						},
+					},
+					"tolerations": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.Toleration"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.UnifiedPushServerBackup", "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.UnifiedPushServerDatabase", "k8s.io/api/core/v1.ResourceRequirements"},
+			"github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.UnifiedPushServerBackup", "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1.UnifiedPushServerDatabase", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.Toleration"},
 	}
 }
 
