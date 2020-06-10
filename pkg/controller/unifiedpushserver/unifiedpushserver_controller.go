@@ -792,6 +792,23 @@ func (r *ReconcileUnifiedPushServer) Reconcile(request reconcile.Request) (recon
 			return reconcile.Result{Requeue: true}, nil
 		}
 
+		podSpec := findPodSpec(foundUnifiedpushDeployment)
+		if podSpec == nil {
+			reqLogger.Info("Unable to do image reconcile: Unable to find pod spec in deployment", "Deployment.Namespace", foundUnifiedpushDeployment.Namespace, "Deployment.Name", foundUnifiedpushDeployment.Name)
+			return reconcile.Result{Requeue: true}, nil
+		} else {
+			podSpec.Affinity = instance.Spec.Affinity
+			podSpec.Tolerations = instance.Spec.Tolerations
+
+			// update
+			err = r.client.Update(context.TODO(), foundUnifiedpushDeployment)
+			if err != nil {
+				reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", foundUnifiedpushDeployment.Namespace, "Deployment.Name", foundUnifiedpushDeployment.Name)
+				return r.manageError(instance, err)
+			}
+			return reconcile.Result{Requeue: true}, nil
+		}
+
 		// Set ready status
 		deploymentReady, err := isDeploymentReady(foundUnifiedpushDeployment)
 		if err != nil {

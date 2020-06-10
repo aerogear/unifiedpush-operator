@@ -51,6 +51,9 @@ type UnifiedPushServerSpec struct {
 
 	// PVC size for Postgres service
 	PostgresPVCSize string `json:"postgresPVCSize,omitempty"`
+
+	Affinity    *corev1.Affinity    `json:"affinity,omitempty"`
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // UnifiedPushServerStatus defines the observed state of UnifiedPushServer

@@ -31,6 +31,8 @@ spec:
           type: object
         spec:
           properties:
+            affinity:
+              type: object
             backups:
               description: Backups is an array of configs that will be used to create
                 CronJob resource instances
@@ -115,6 +117,10 @@ spec:
               type: string
             postgresResourceRequirements:
               type: object
+            tolerations:
+              items:
+                type: object
+              type: array
             unifiedPushResourceRequirements:
               type: object
             useMessageBroker:
