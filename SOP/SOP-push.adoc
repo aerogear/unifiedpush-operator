@@ -507,21 +507,23 @@ NOTE: You can save the logs by running `oc logs <database-podname> > <filename>.
 This alert indicates that the Service pod(s) is/are facing performance issues.
 
 . Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
-. Following the steps <<To scale the pod>> in order to try to solve performance issues.
+. Restart the affected pod if the heap memory usage is still higher than the threshold.
+
 
 ==== UnifiedPushJavaNonHeapThresholdExceeded
 
 This alert indicates that the Service pod(s) is/are facing performance issues.
 
 . Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
-. Following the steps <<To scale the pod>> in order to try to solve performance issues.
+. Restart the affected pod if the nonheap memory usage is still higher than the threshold.
+
 
 ==== UnifiedPushJavaGCTimePerMinuteScavenge
 
 This alert indicates that the Service pod(s) is/are facing performance issues.
 
 . Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
-. Following the steps <<To scale the pod>> in order to try to solve performance issues.
+. Restart the affected pod if the garbage collector usage is still higher than the threshold.
 
 === Warning
 
