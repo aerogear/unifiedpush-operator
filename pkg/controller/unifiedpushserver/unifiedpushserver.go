@@ -356,11 +356,6 @@ func reconcilePrometheusRule(prometheusRule *monitoringv1.PrometheusRule, cr *pu
 		"summary":     "The aerogear-unifiedpush-server Database is down.",
 		"sop_url":     sop_url,
 	}
-	unifiedPushJavaHeapThresholdExceededAnnotations := map[string]string{
-		"description": "The Heap Usage of the aerogear-unifiedpush-server Server exceeded 90% of usage.",
-		"summary":     "The aerogear-unifiedpush-server Server JVM Heap Threshold Exceeded 90% of usage.",
-		"sop_url":     sop_url,
-	}
 	unifiedPushJavaNonHeapThresholdExceededAnnotations := map[string]string{
 		"description": "The nonheap usage of the aerogear-unifiedpush-server Server exceeded 90% of usage.",
 		"summary":     "The nonheap usage of the aerogear-unifiedpush-server Server exceeded 90% of usage.",
@@ -408,16 +403,6 @@ func reconcilePrometheusRule(prometheusRule *monitoringv1.PrometheusRule, cr *pu
 						For:         "5m",
 						Labels:      critical,
 						Annotations: unifiedPushConsoleDownAnnotations,
-					},
-					{
-						Alert: "UnifiedPushJavaHeapThresholdExceeded",
-						Expr: intstr.IntOrString{
-							Type:   intstr.String,
-							StrVal: fmt.Sprintf("100 * jvm_memory_bytes_used{area=\"heap\",namespace=\"%s\"}/ jvm_memory_bytes_max{area=\"heap\",namespace=\"%s\"}> 90", namespace, namespace),
-						},
-						For:         "1m",
-						Labels:      critical,
-						Annotations: unifiedPushJavaHeapThresholdExceededAnnotations,
 					},
 					{
 						Alert: "UnifiedPushJavaNonHeapThresholdExceeded",

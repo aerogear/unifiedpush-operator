@@ -502,13 +502,6 @@ NOTE: You can save the logs by running `oc logs <database-podname> > <filename>.
 . Check the operator pod is present as it is responsible for managing the service pod as described in https://github.com/aerogear/unifiedpush-operator/blob/0.1.2/SOP/SOP-operator.adoc[UnifiedPushOperatorDown]
 . In order to fix it, try to deploy it again by running `oc rollout --latest dc/unifiedpush-postgresql`
 
-==== UnifiedPushJavaHeapThresholdExceeded
-
-This alert indicates that the Service pod(s) is/are facing performance issues.
-
-. Please following the <<To capture the logs>> procedure in order to capture the required information to send it to its maintainers.
-. Following the steps <<To scale the pod>> in order to try to solve performance issues.
-
 ==== UnifiedPushJavaNonHeapThresholdExceeded
 
 This alert indicates that the Service pod(s) is/are facing performance issues.
