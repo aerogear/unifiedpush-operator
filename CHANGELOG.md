@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## [0.5.1] - 2021-8-9
+### Changed
+- Alerts updated to support Openshift 4.8.
+
 ## [0.5.0] - 2020-01-12
 ### Added
 - New field databaseSecret to UnifiedPushServer CRD spec.
