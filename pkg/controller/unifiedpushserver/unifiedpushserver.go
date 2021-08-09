@@ -388,7 +388,7 @@ func reconcilePrometheusRule(prometheusRule *monitoringv1.PrometheusRule, cr *pu
 						Alert: "UnifiedPushDown",
 						Expr: intstr.IntOrString{
 							Type:   intstr.String,
-							StrVal: fmt.Sprintf("absent(kube_pod_container_status_running{namespace=\"%s\",container=\"ups\"} >= 1)", namespace),
+							StrVal: fmt.Sprintf("absent(kube_pod_container_status_ready{namespace=\"%s\",container=\"ups\"} >= 1)", namespace),
 						},
 						For:         "5m",
 						Labels:      critical,
@@ -455,7 +455,7 @@ func reconcilePrometheusRule(prometheusRule *monitoringv1.PrometheusRule, cr *pu
 			Alert: "UnifiedPushDatabaseDown",
 			Expr: intstr.IntOrString{
 				Type:   intstr.String,
-				StrVal: fmt.Sprintf("absent(kube_pod_container_status_running{namespace=\"%s\",container=\"postgresql\"} == 1)", namespace),
+				StrVal: fmt.Sprintf("absent(kube_pod_container_status_ready{namespace=\"%s\",container=\"postgresql\"} == 1)", namespace),
 			},
 			For:         "5m",
 			Labels:      critical,
