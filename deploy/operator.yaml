@@ -15,7 +15,7 @@ spec:
       serviceAccountName: unifiedpush-operator
       containers:
         - name: unifiedpush-operator
-          image: quay.io/aerogear/unifiedpush-operator:v0.5.1
+          image: quay.io/aerogear/unifiedpush-operator:v0.5.2
           command:
           - unifiedpush-operator
           imagePullPolicy: Always
