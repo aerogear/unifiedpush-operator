@@ -327,7 +327,6 @@ func reconcileGrafanaDashboard(grafanaDashboard *integreatlyv1alpha1.GrafanaDash
 
 	grafanaDashboard.ObjectMeta.Labels = labels
 	grafanaDashboard.Spec = integreatlyv1alpha1.GrafanaDashboardSpec{
-		Name: "unifiedpushoperator.json",
 		Json: `
 		{
 			"__requires": [

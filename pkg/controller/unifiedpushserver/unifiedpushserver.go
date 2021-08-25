@@ -498,7 +498,6 @@ func reconcileGrafanaDashboard(grafanaDashboard *integreatlyv1alpha1.GrafanaDash
 	namespace := cr.Namespace
 	grafanaDashboard.ObjectMeta.Labels = labels
 	grafanaDashboard.Spec = integreatlyv1alpha1.GrafanaDashboardSpec{
-		Name: "unifiedpushserver.json",
 		Json: `{
 			"__requires": [
 				{

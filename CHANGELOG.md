@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## [0.5.2] - 2021-08-24
+### Changed
+- Grafana operator dependency has been updated to bring in up to date data structs.
 ## [0.5.1] - 2021-8-9
 ### Changed
 - Alerts updated to support Openshift 4.8.

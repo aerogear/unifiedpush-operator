@@ -363,12 +363,12 @@
   version = "v1.0"
 
 [[projects]]
-  digest = "1:3462503e52d1b33590aa7232edd5df9169e805796510b9819f8bed01cbc5fc0e"
+  digest = "1:42d65a208ab8ef8127f46179eb51f5c478774f43303e560185fd03405718243e"
   name = "github.com/integr8ly/grafana-operator"
   packages = ["pkg/apis/integreatly/v1alpha1"]
   pruneopts = "NUT"
-  revision = "a35bd7b92f5b1f71ecc7039b22ed8949c740575f"
-  version = "v2.0.0"
+  revision = "6ca66a0818cfcb1b8df272634a82fc3fb6b160d7"
+  version = "v3.10.3"
 
 [[projects]]
   digest = "1:da62aa6632d04e080b8a8b85a59ed9ed1550842a0099a55f3ae3a20d02a3745a"
